@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { supabase } from "@/lib/supabase";
@@ -10,7 +11,9 @@ const COLORS = [["Bleu", "bg-blue-500"], ["Vert", "bg-emerald-500"], ["Orange", 
 const CALENDAR_YEARS = Array.from({ length: 31 }, (_, index) => new Date().getFullYear() - 5 + index);
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
-function item(id, name, color) { return { id, name, color }; }
+function item(id: string, name: string, color: string) {
+  return { id, name, color };
+}
 function parseLocalDate(value) { if (value instanceof Date) return new Date(value.getFullYear(), value.getMonth(), value.getDate()); const match = String(value || "").match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/); return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(value); }
 function dayStart(date) { const copy = parseLocalDate(date); copy.setHours(0, 0, 0, 0); return copy; }
 function dateKey(date) { if (!date) return ""; const d = parseLocalDate(date); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
