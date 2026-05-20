@@ -762,7 +762,36 @@ const table = isCategory
 
   const sessionsFor = (date) => activeSessions.filter((session) => session.date === dateKey(date));
   const proposalsFor = (date) => activeProposals.filter((proposal) => proposal.date === dateKey(date));
-  const programProposal = (proposal) => { updateSession((items) => items.some((session) => session.sourceProposalId === proposal.id) ? items : [...items, proposalToSession(proposal)]); setProposals((items) => items.map((p) => p.id === proposal.id ? { ...p, status: "Programmée" } : p)); };
+ const programProposal = async (proposal) => {
+  const alreadyExists = activeSessions.some(
+    (session) => session.sourceProposalId === proposal.id
+  );
+
+  if (!alreadyExists) {
+    const session = proposalToSession(proposal);
+
+    await supabase.from("calendar_workouts").insert({
+      athlete_id: proposal.athleteId,
+      date: proposal.date,
+      workout_type: session.category,
+      title: session.title,
+      duration: session.totalDuration,
+      completed: false,
+    });
+  }
+
+  const { error } = await supabase
+    .from("athlete_proposals")
+    .update({ status: "Programmée" })
+    .eq("id", proposal.id);
+
+  if (error) {
+    console.error("Erreur programmation proposition", error);
+    return;
+  }
+
+  await loadAllData();
+};
   const addAthleteProposal = async (proposal) => {
   const { data, error } = await supabase
     .from("athlete_proposals")
@@ -924,7 +953,65 @@ function YearView({ setMonth, setMode }) { return <div className="grid grid-cols
 function MonthView({ days, sessionsFor, proposalsFor, setSelectedDate, setMode }) { return <div><div className="mb-2 grid grid-cols-7 gap-1 sm:gap-2">{DAYS.map((day) => <div key={day} className="py-2 text-center text-sm text-zinc-400">{day}</div>)}</div><div className="grid grid-cols-7 gap-1 sm:gap-2">{days.map((date, index) => { const daySessions = date ? sessionsFor(date) : []; const dayProposals = date ? proposalsFor(date) : []; return <button key={index} onClick={() => { if (date) { setSelectedDate(date); setMode("day"); } }} className={`min-h-20 rounded-xl border p-1 text-left sm:min-h-28 sm:rounded-2xl sm:p-2 ${date ? "border-zinc-700 bg-zinc-800 hover:bg-zinc-700" : "border-transparent"}`}>{date && <><div className="text-xs font-bold sm:text-sm">{date.getDate()}</div><div className="mt-2 space-y-1">{daySessions.slice(0, 2).map((session) => <div key={session.id} className={`${statusStyle[sessionStatus(session)]} truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}>{session.title}</div>)}{dayProposals.slice(0, 2).map((proposal) => <div key={proposal.id} className={`${proposalStyle(proposal.status)} truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}>{proposal.title || proposal.type}</div>)}{!daySessions.length && !dayProposals.length && <div className="mt-4 text-xs text-zinc-500">Cliquer pour importer</div>}</div></>}</button>; })}</div></div>; }
 function DayView({ athleteActive, selectedDate, setMode, sessions, proposals, cpData, updateFeedback, updateNonDone, updateSession, setProposals, programProposal, addAthleteProposal, isCoach }) { return <div className="space-y-5"><div className="flex items-center justify-between gap-3"><div><h3 className="text-2xl font-bold">{selectedDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</h3><p className="text-sm text-zinc-400">Séances et propositions du jour.</p></div><Btn onClick={() => setMode("month")}>Retour mois</Btn></div>{sessions.length ? <div className="space-y-4">{sessions.map((session) => <Session key={session.id} session={session} cpData={cpData} updateFeedback={updateFeedback} updateNonDone={updateNonDone} updateSession={updateSession} isCoach={isCoach} />)}</div> : <Empty text="Aucune séance programmée." />}{!isCoach && <AthleteProposalForm selectedDate={selectedDate} addAthleteProposal={addAthleteProposal} />}{!!proposals.length && <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4"><h4 className="mb-3 font-semibold">Propositions de {athleteActive.name}</h4><div className="space-y-2">{proposals.map((proposal) => <Proposal key={proposal.id} proposal={proposal} setProposals={setProposals} programProposal={programProposal} isCoach={isCoach} />)}</div></div>}</div>; }
 function AthleteProposalForm({ selectedDate, addAthleteProposal }) { const [type, setType] = useState("Disponibilité"); const [title, setTitle] = useState(""); const [message, setMessage] = useState(""); const ready = title.trim() && message.trim(); function submit() { if (!ready) return; addAthleteProposal({ type, title: title.trim(), message: message.trim() }); setTitle(""); setMessage(""); setType("Disponibilité"); } return <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4"><h4 className="mb-2 font-semibold">Faire une proposition au coach</h4><p className="mb-4 text-sm text-zinc-400">Propose une course, une contrainte, une indisponibilité ou une idée pour le {selectedDate.toLocaleDateString("fr-FR")}.</p><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Type de proposition"><Select value={type} onChange={(event) => setType(event.target.value)}>{["Disponibilité", "Indisponibilité", "Course à ajouter", "Demande de repos", "Contrainte horaire", "Autre"].map((row) => <option key={row}>{row}</option>)}</Select></Field><Field label="Titre"><Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex : Course XCO / indisponible matin" /></Field></div><div className="mt-3"><Field label="Message au coach"><Textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={4} placeholder="Explique ce que tu proposes ou ce que tu veux signaler." /></Field></div><Btn variant="primary" className={`mt-3 w-full sm:w-auto ${!ready ? "opacity-40" : ""}`} disabled={!ready} onClick={submit}>Envoyer la proposition</Btn></div>; }
-function Proposal({ proposal, setProposals, programProposal, isCoach }) { const scheduled = proposal.status === "Programmée"; const setStatus = (status) => status === "Programmée" ? programProposal(proposal) : setProposals((items) => status === "Refusée" ? items.filter((row) => row.id !== proposal.id) : items.map((row) => row.id === proposal.id ? { ...row, status } : row)); return <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><Badge className={proposalStyle(proposal.status)}>{scheduled ? "Programmée" : "Proposition"}</Badge><h5 className="mt-2 font-bold">{proposal.type} — {proposal.title || "Sans titre"}</h5><p className="text-sm text-zinc-400">{proposal.date || "Date non précisée"} • {proposal.status}</p><p className="mt-2 text-sm text-zinc-300">{proposal.message}</p></div>{isCoach && !scheduled && <div className="flex gap-2"><Btn variant="primary" onClick={() => setStatus("Programmée")}>Programmer</Btn><Btn onClick={() => setStatus("Refusée")}>Refuser</Btn></div>}</div></div>; }
+function Proposal({ proposal, setProposals, programProposal, isCoach }) {
+  const scheduled = proposal.status === "Programmée";
+
+  async function refuseProposal() {
+    const { error } = await supabase
+      .from("athlete_proposals")
+      .update({ status: "Refusée" })
+      .eq("id", proposal.id);
+
+    if (error) {
+      console.error("Erreur refus proposition", error);
+      return;
+    }
+
+    setProposals((items) =>
+      items.map((row) =>
+        row.id === proposal.id
+          ? { ...row, status: "Refusée" }
+          : row
+      )
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <Badge className={proposalStyle(proposal.status)}>
+            {scheduled ? "Programmée" : proposal.status}
+          </Badge>
+
+          <h5 className="mt-2 font-bold">
+            {proposal.type} — {proposal.title || "Sans titre"}
+          </h5>
+
+          <p className="text-sm text-zinc-400">
+            {proposal.date || "Date non précisée"} • {proposal.status}
+          </p>
+
+          <p className="mt-2 text-sm text-zinc-300">
+            {proposal.message}
+          </p>
+        </div>
+
+        {isCoach && proposal.status === "À traiter" && (
+          <div className="flex gap-2">
+            <Btn variant="primary" onClick={() => programProposal(proposal)}>
+              Programmer
+            </Btn>
+
+            <Btn onClick={refuseProposal}>
+              Refuser
+            </Btn>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 function Session({ session, cpData, updateFeedback, updateNonDone, updateSession, isCoach }) { const status = sessionStatus(session); const ready = feedbackReady(session.feedback); const changeFeedback = (field, value) => updateFeedback(session.id, field, value); const changeNonDone = (field, value) => updateNonDone(session.id, field, value); const patch = (fn) => updateSession((items) => items.map((item) => item.id === session.id ? fn(item) : item)); return <article className="rounded-3xl border border-zinc-700 bg-zinc-800 p-3 sm:p-5"><div className="flex flex-col gap-4 md:flex-row md:justify-between"><div><div className="text-sm text-zinc-400">{session.category} • {session.subcategory}</div><h4 className="text-xl font-bold sm:text-2xl">{session.title}</h4><p className="text-zinc-300">Durée : {session.totalDuration || "—"} • RPE attendu : {session.expectedRpe || "—"}</p></div><div className="flex flex-wrap gap-2"><span className={`${statusStyle[status]} rounded-xl px-3 py-2 text-sm font-bold`}>{statusLabel[status]}</span>{status === "awaitingAction" && <span className="rounded-xl bg-yellow-100 px-3 py-2 text-sm font-bold text-black">Retour à compléter</span>}{isCoach && <Btn
   onClick={async () => {
     await supabase
