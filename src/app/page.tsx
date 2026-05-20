@@ -744,8 +744,6 @@ const table = isCategory
   ? "workout_categories"
   : "workout_subcategories";
 
-console.log("RENOMMAGE", { kind, oldName, name, table });
-
   const { error } = await supabase
     .from(table)
     .delete()
@@ -992,26 +990,109 @@ function LibraryPage({ categories, setCategories, subcategories, setSubcategorie
 >
   Supprimer
 </Btn></div></div>)}</div></div><details className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5"><summary className="cursor-pointer text-xl font-semibold">Gérer les catégories et sous-parties</summary><div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2"><Editable title="Catégories" items={categories} setItems={setCategories} kind="category" {...{ rename, removeItem }} /><Editable title="Sous-parties" items={subcategories} setItems={setSubcategories} kind="subcategory" {...{ rename, removeItem }} /></div></details></Panel>; }
-function Editable({ title, items, setItems, kind, rename, removeItem }) { return <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-5"><h3 className="mb-4 text-xl font-bold">{title}</h3><div className="space-y-2">{items.map((row) => <div key={row.id} className="grid grid-cols-1 gap-2 rounded-2xl bg-zinc-800 p-3 md:grid-cols-4"><span className={`${row.color} rounded-xl px-3 py-2 text-center text-sm font-semibold`}>{row.name}</span><Input defaultValue={row.name} onBlur={(event) => rename(kind, row.id, event.target.value)} /><ColorSelect
-  value={row.color}
-  onChange={async (event) => {
-    const color = event.target.value;
-    const table = kind === "category"
-      ? "workout_categories"
-      : "workout_subcategories";
+function Editable({ title, items, setItems, kind, rename, removeItem }) {
+  const [editing, setEditing] = useState({});
 
-    await supabase
-      .from(table)
-      .update({ color })
-      .eq("id", row.id);
+  function updateDraft(row, field, value) {
+    setEditing((current) => ({
+      ...current,
+      [row.id]: {
+        name: current[row.id]?.name ?? row.name,
+        color: current[row.id]?.color ?? row.color,
+        [field]: value,
+      },
+    }));
+  }
 
-    setItems(
-      items.map((itemRow) =>
-        itemRow.id === row.id ? { ...itemRow, color } : itemRow
+  async function validateEdit(row) {
+    const draft = editing[row.id] || row;
+    const name = draft.name.trim();
+
+    if (!name) return;
+
+    if (name !== row.name) {
+      await rename(kind, row.id, name);
+    }
+
+    if (draft.color !== row.color) {
+      const table =
+        kind === "category" ? "workout_categories" : "workout_subcategories";
+
+      await supabase
+        .from(table)
+        .update({ color: draft.color })
+        .eq("id", row.id);
+    }
+
+    setItems((current) =>
+      current.map((itemRow) =>
+        itemRow.id === row.id
+          ? { ...itemRow, name, color: draft.color }
+          : itemRow
       )
     );
-  }}
-/><Btn variant="danger" onClick={() => removeItem(kind, row.name)}>Supprimer</Btn></div>)}</div></div>; }
+
+    setEditing((current) => {
+      const copy = { ...current };
+      delete copy[row.id];
+      return copy;
+    });
+  }
+
+  async function confirmRemove(row) {
+    const ok = window.confirm(`Supprimer "${row.name}" ?`);
+    if (!ok) return;
+
+    await removeItem(kind, row.name);
+  }
+
+  return (
+    <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-5">
+      <h3 className="mb-4 text-xl font-bold">{title}</h3>
+
+      <div className="space-y-2">
+        {items.map((row) => {
+          const draft = editing[row.id] || row;
+
+          return (
+            <div
+              key={row.id}
+              className="grid grid-cols-1 gap-2 rounded-2xl bg-zinc-800 p-3 md:grid-cols-5"
+            >
+              <span
+                className={`${draft.color} rounded-xl px-3 py-2 text-center text-sm font-semibold`}
+              >
+                {draft.name}
+              </span>
+
+              <Input
+                value={draft.name}
+                onChange={(event) =>
+                  updateDraft(row, "name", event.target.value)
+                }
+              />
+
+              <ColorSelect
+                value={draft.color}
+                onChange={(event) =>
+                  updateDraft(row, "color", event.target.value)
+                }
+              />
+
+              <Btn variant="primary" onClick={() => validateEdit(row)}>
+                Valider modification
+              </Btn>
+
+              <Btn variant="danger" onClick={() => confirmRemove(row)}>
+                Supprimer
+              </Btn>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 function AthletePage({ athleteActive, activeId, calendarYear, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors }) { const a = athleteActive; return <div className="grid grid-cols-1 gap-6 xl:grid-cols-3"><Panel className="h-fit"><h2 className="mb-2 text-2xl font-semibold">Fiche de {a.name}</h2><div className="space-y-4">{[["Nom", "name"], ["Nom du calendrier", "calendarName"], ["Email", "email"], ["Âge", "age"], ["Taille", "height"], ["Poids", "weight"]].map(([label, key]) => <Field key={key} label={label}><Input value={a[key]} onChange={(event) => updateAthlete(key, event.target.value)} /></Field>)}</div></Panel><section className="space-y-6 xl:col-span-2"><Panel><h2 className="mb-4 text-2xl font-semibold">Objectifs et contexte</h2><div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">{[["Court terme", "shortGoal"], ["Moyen terme", "mediumGoal"], ["Long terme", "longGoal"]].map(([label, key]) => <Field key={key} label={label}><Textarea value={a[key]} onChange={(event) => updateAthlete(key, event.target.value)} rows={4} /></Field>)}</div><Field label="Contexte"><Textarea value={a.context} onChange={(event) => updateAthlete("context", event.target.value)} rows={5} /></Field></Panel><Stats stats={stats} training={training} sessions={activeSessions} athleteId={activeId} calendarYear={calendarYear} weekColors={weekColors} setWeekColors={setWeekColors} /><CP athlete={a} updateAthlete={updateAthlete} cpData={cpData} /><Panel><h2 className="mb-2 text-2xl font-semibold">Invitation individuelle</h2><p className="text-sm text-zinc-400">Lien prévu : https://ta-plateforme-coaching.fr/invitation/{a.inviteToken}</p><div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-sm"><div className="text-zinc-400">Code invitation</div><div className="mt-1 font-mono text-lg font-bold">{a.inviteToken}</div></div></Panel></section></div>; }
 function Stats({ training, sessions, athleteId, calendarYear, weekColors, setWeekColors }) { const years = availableYears(sessions, calendarYear); const latestDone = [...sessions].filter((session) => feedbackDone(session.feedback)).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime())[0]; const latestInfo = latestDone ? weekInfoForYear(latestDone.date, parseLocalDate(latestDone.date).getFullYear()) : null; const latestKey = latestDone ? `${latestDone.id}-${latestDone.feedback?.validated}-${latestDone.date}` : ""; const [selectedYear, setSelectedYear] = useState(latestInfo?.year || calendarYear || training.year || years[0]); const [selectedWeek, setSelectedWeek] = useState(latestInfo?.label || "S1"); useEffect(() => { if (latestInfo) { setSelectedYear(latestInfo.year); setSelectedWeek(latestInfo.label); } }, [latestKey]); const activeYear = years.includes(Number(selectedYear)) ? Number(selectedYear) : years[0]; const yearTraining = trainingStats(sessions, activeYear); const yearDone = yearTraining.doneSessions || []; const yearStats = { rpe: avg(yearDone, "rpe"), motivation: avg(yearDone, "motivation"), pleasure: avg(yearDone, "pleasure") }; const week = yearTraining.weeks.find((row) => row.week === selectedWeek) || yearTraining.weeks[0]; const tagKey = `${athleteId}-${activeYear}-${selectedWeek}`; const selectedTag = weekColors[tagKey] || "Aucun"; const cards = [["Séances prévues", yearTraining.planned], ["Séances réalisées", yearTraining.done], ["Temps total", `${yearTraining.totals.time.toFixed(1)} h`], ["RPE moyen", yearStats.rpe], ["Motivation moyenne", yearStats.motivation], ["Plaisir moyen", yearStats.pleasure]]; function tagWeek(value) { setWeekColors((items) => { const next = { ...items }; if (value === "Aucun") delete next[tagKey]; else next[tagKey] = value; return next; }); } return <Panel><div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h2 className="text-2xl font-semibold">Statistiques entraînement de l’année</h2><p className="mt-1 text-sm text-zinc-400">Choisis une année, sélectionne une semaine, puis ajoute une couleur de planification.</p></div><div className="flex flex-col gap-2 md:flex-row md:items-center"><Btn onClick={() => { if (latestInfo) { setSelectedYear(latestInfo.year); setSelectedWeek(latestInfo.label); } }} className={!latestInfo ? "opacity-40" : ""} disabled={!latestInfo}>Dernière séance réalisée</Btn><Select value={activeYear} onChange={(event) => { setSelectedYear(Number(event.target.value)); setSelectedWeek("S1"); }} className="md:w-40">{years.map((year) => <option key={year} value={year}>{year}</option>)}</Select></div></div><div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">{cards.map(([label, value]) => <StatCard key={label} label={label} value={value} />)}</div><WeekPicker weeks={yearTraining.weeks} selectedWeek={selectedWeek} setSelectedWeek={setSelectedWeek} selectedYear={activeYear} athleteId={athleteId} weekColors={weekColors} /><WeekDetail
   week={week}
