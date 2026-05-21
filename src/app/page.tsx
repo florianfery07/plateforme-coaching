@@ -510,6 +510,13 @@ async function acceptInvite(inviteToken, email, password) {
     (row) => row.inviteToken === inviteToken
   );
 
+    if (athleteToLink?.user_id) {
+    return {
+      ok: false,
+      message: "Invitation déjà utilisée.",
+    };
+  }
+
   if (!athleteToLink) {
     return {
       ok: false,
