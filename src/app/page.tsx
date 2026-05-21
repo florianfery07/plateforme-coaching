@@ -1272,7 +1272,7 @@ function AthletePage({ athleteActive, activeId, calendarYear, updateAthlete, cpD
           <h2 className="mb-2 text-2xl font-semibold">Invitation individuelle</h2>
 
           <p className="text-sm text-zinc-400">
-            Lien prévu : https://myrideplan.vercel.app/invitation/{a.inviteToken}
+            Lien prévu : https://myrideplan.vercel.app/?invite={a.inviteToken}
           </p>
 
           <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-sm">
