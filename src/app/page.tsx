@@ -1029,7 +1029,7 @@ if (inviteToken) {
             <input
               className="w-full border rounded-xl p-3"
               type="password"
-              placeholder="Mot de passe"
+              placeholder="Créer un mot de passe (6 caractères minimum)"
               value={invitePassword}
               onChange={(event) => setInvitePassword(event.target.value)}
             />
