@@ -505,6 +505,67 @@ if (athleteError) {
 
   return true;
 }
+async function acceptInvite(inviteToken, email, password) {
+  const athleteToLink = athletes.find(
+    (row) => row.inviteToken === inviteToken
+  );
+
+  if (!athleteToLink) {
+    return {
+      ok: false,
+      message: "Invitation introuvable ou invalide.",
+    };
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: error.message || "Erreur création compte athlète.",
+    };
+  }
+
+  if (!data.user) {
+    return {
+      ok: false,
+      message: "Compte créé, mais utilisateur non récupéré.",
+    };
+  }
+
+  const { error: updateError } = await supabase
+    .from("athletes")
+    .update({
+      user_id: data.user.id,
+      email,
+    })
+    .eq("id", athleteToLink.id);
+
+  if (updateError) {
+    return {
+      ok: false,
+      message: updateError.message || "Erreur liaison athlète.",
+    };
+  }
+
+  setAuth({
+    role: "athlete",
+    athleteId: athleteToLink.id,
+  });
+
+  setActiveId(athleteToLink.id);
+  setView("calendar");
+
+  await loadAllData();
+
+  return {
+    ok: true,
+    message: "Compte athlète créé et lié.",
+  };
+}
 
 async function logout() {
   await supabase.auth.signOut();
@@ -842,7 +903,7 @@ const table = isCategory
   ]);
 };
 
-  if (!auth) return <AuthPage athletes={athletes} loginCoach={loginCoach} loginAthlete={loginAthlete} />;
+  if (!auth) return <AuthPage athletes={athletes} loginCoach={loginCoach} loginAthlete={loginAthlete} acceptInvite={acceptInvite} />;
 
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
@@ -860,12 +921,22 @@ function Header({ view, setView, auth, logout }) {
   const nav = auth?.role === "coach" ? [["calendar", "Calendriers"], ["create", "Création séance"], ["library", "Bibliothèque"], ["athlete", "Fiche athlète"], ["management", "Gestion athlètes"]] : [["calendar", "Mon calendrier"]];
   return <header className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"><div><h1 className="text-2xl font-bold sm:text-3xl xl:text-4xl">Ma Plateforme Coaching Cycliste</h1><p className="mt-2 text-sm text-zinc-400 sm:text-base">Calendriers individuels, bibliothèque, fiches athlètes, retours et propositions.</p></div><div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:gap-3">{nav.map(([key, label]) => <button key={key} onClick={() => setView(key)} className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold sm:px-5 sm:text-base ${view === key ? "bg-white text-black" : "border border-zinc-800 bg-zinc-900 hover:bg-zinc-800"}`}>{label}</button>)}<button onClick={logout} className="shrink-0 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold text-zinc-300 sm:px-5 sm:text-base">Déconnexion</button></div></header>;
 }
-function AuthPage({ athletes, loginCoach, loginAthlete }) {
+function AuthPage({ athletes, loginCoach, loginAthlete, acceptInvite }) {
   const [coachEmail, setCoachEmail] = useState("");
   const [coachPassword, setCoachPassword] = useState("");
   const [athleteEmail, setAthleteEmail] = useState("");
 const [athletePassword, setAthletePassword] = useState("");
   const [error, setError] = useState("");
+const [inviteEmail, setInviteEmail] = useState("");
+const [invitePassword, setInvitePassword] = useState("");
+const [inviteMessage, setInviteMessage] = useState("");
+const inviteToken =
+  typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("invite")
+    : "";
+const invitedAthlete = inviteToken
+  ? athletes.find((row) => row.inviteToken === inviteToken)
+  : null;
 
   async function submitCoach(event) {
     event.preventDefault();
@@ -886,6 +957,88 @@ const [athletePassword, setAthletePassword] = useState("");
       setError("Code athlète invalide");
     }
   }
+
+  async function submitInvite(event) {
+  event.preventDefault();
+
+  if (!inviteToken) {
+    setInviteMessage("Lien d’invitation invalide.");
+    return;
+  }
+
+  if (!inviteEmail.trim() || !invitePassword.trim()) {
+    setInviteMessage("Email et mot de passe obligatoires.");
+    return;
+  }
+
+  const result = await acceptInvite(
+    inviteToken,
+    inviteEmail.trim(),
+    invitePassword
+  );
+
+  if (!result.ok) {
+    setInviteMessage(result.message);
+    return;
+  }
+
+  setInviteMessage("Compte créé. Connexion en cours...");
+}
+
+if (inviteToken) {
+  return (
+    <div className="min-h-screen bg-neutral-100 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Invitation athlète</h1>
+
+          {invitedAthlete ? (
+            <p className="text-sm text-neutral-500">
+              Créer le compte pour {invitedAthlete.name}
+            </p>
+          ) : (
+            <p className="text-sm text-red-600">
+              Invitation introuvable. Vérifie que le lien est complet.
+            </p>
+          )}
+        </div>
+
+        {inviteMessage && (
+          <div className="bg-neutral-100 text-neutral-700 p-3 rounded-xl text-sm">
+            {inviteMessage}
+          </div>
+        )}
+
+        {invitedAthlete && (
+          <form onSubmit={submitInvite} className="space-y-3">
+            <input
+              className="w-full border rounded-xl p-3"
+              type="email"
+              placeholder="Email athlète"
+              value={inviteEmail}
+              onChange={(event) => setInviteEmail(event.target.value)}
+            />
+
+            <input
+              className="w-full border rounded-xl p-3"
+              type="password"
+              placeholder="Mot de passe"
+              value={invitePassword}
+              onChange={(event) => setInvitePassword(event.target.value)}
+            />
+
+            <button
+              className="w-full bg-black text-white rounded-xl p-3"
+              type="submit"
+            >
+              Créer mon compte athlète
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-neutral-100 flex items-center justify-center p-6">
