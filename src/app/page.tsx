@@ -146,6 +146,7 @@ export default function CoachingPlatformMockup() {
   const [sessions, setSessions] = useState({ "athlete-1": [], "athlete-2": [], "athlete-3": [] });
   const [proposals, setProposals] = useState([{ id: "proposal-1", athleteId: "athlete-1", type: "Course à ajouter", date: dateKey(now), title: "XCO régional", message: "J’aimerais l’ajouter au calendrier.", status: "À traiter" }]);
   const [weekColors, setWeekColors] = useState({});
+const [weekNotes, setWeekNotes] = useState({});
   const [auth, setAuth] = useState(null);
 
 async function loadAllData() {
@@ -289,15 +290,17 @@ const { data: proposalData } = await supabase
 
 if (proposalData) {
   setProposals(
-    proposalData.map((row) => ({
-      id: row.id,
-      athleteId: row.athlete_id,
-      date: row.date,
-      type: row.type,
-      title: row.title,
-      message: row.message,
-      status: row.status || "À traiter",
-    }))
+    proposalData
+      .filter((row) => row.status !== "Refusée")
+      .map((row) => ({
+        id: row.id,
+        athleteId: row.athlete_id,
+        date: row.date,
+        type: row.type,
+        title: row.title,
+        message: row.message,
+        status: row.status || "À traiter",
+      }))
   );
 }
 const { data: weekColorData } = await supabase
@@ -310,6 +313,20 @@ if (weekColorData) {
       weekColorData.map((row) => [
         `${row.athlete_id}-${row.year}-${row.week}`,
         row.color_name,
+      ])
+    )
+  );
+}
+const { data: weekNoteData } = await supabase
+  .from("athlete_week_notes")
+  .select("*");
+
+if (weekNoteData) {
+  setWeekNotes(
+    Object.fromEntries(
+      weekNoteData.map((row) => [
+        `${row.athlete_id}-${row.year}-${row.week}`,
+        row.note || "",
       ])
     )
   );
@@ -384,17 +401,17 @@ useEffect(() => {
     )
   );
 
-const fieldMap = {
-  shortGoal: "short_goal",
-  mediumGoal: "medium_goal",
-  longGoal: "long_goal",
-};
+  const fieldMap = {
+    shortGoal: "short_goal",
+    mediumGoal: "medium_goal",
+    longGoal: "long_goal",
+  };
 
-const supabaseField = fieldMap[field] || field;
+  const supabaseField = fieldMap[field] || field;
 
-const updates = {
-  [supabaseField]: value
-};
+  const updates = {
+    [supabaseField]: value
+  };
 
   const { error } = await supabase
     .from("athletes")
@@ -833,7 +850,7 @@ const table = isCategory
     {view === "calendar" && <CalendarPage {...{ athleteActive, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, updateFeedback, updateNonDone, updateSession, setProposals, programProposal, addAthleteProposal, isCoach }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
-    {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors }} />}
+    {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete }} />}
     <DevChecks />
   </div></div>;
@@ -964,6 +981,7 @@ function Proposal({ proposal, setProposals, programProposal, isCoach }) {
 
     if (error) {
       console.error("Erreur refus proposition", error);
+      alert(error.message || "Erreur Supabase refus proposition");
       return;
     }
 
@@ -1180,53 +1198,257 @@ function Editable({ title, items, setItems, kind, rename, removeItem }) {
     </div>
   );
 }
-function AthletePage({ athleteActive, activeId, calendarYear, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors }) { const a = athleteActive; return <div className="grid grid-cols-1 gap-6 xl:grid-cols-3"><Panel className="h-fit"><h2 className="mb-2 text-2xl font-semibold">Fiche de {a.name}</h2><div className="space-y-4">{[["Nom", "name"], ["Nom du calendrier", "calendarName"], ["Email", "email"], ["Âge", "age"], ["Taille", "height"], ["Poids", "weight"]].map(([label, key]) => <Field key={key} label={label}><Input value={a[key]} onChange={(event) => updateAthlete(key, event.target.value)} /></Field>)}</div></Panel><section className="space-y-6 xl:col-span-2"><Panel><h2 className="mb-4 text-2xl font-semibold">Objectifs et contexte</h2><div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">{[["Court terme", "shortGoal"], ["Moyen terme", "mediumGoal"], ["Long terme", "longGoal"]].map(([label, key]) => <Field key={key} label={label}><Textarea value={a[key]} onChange={(event) => updateAthlete(key, event.target.value)} rows={4} /></Field>)}</div><Field label="Contexte"><Textarea value={a.context} onChange={(event) => updateAthlete("context", event.target.value)} rows={5} /></Field></Panel><Stats stats={stats} training={training} sessions={activeSessions} athleteId={activeId} calendarYear={calendarYear} weekColors={weekColors} setWeekColors={setWeekColors} /><CP athlete={a} updateAthlete={updateAthlete} cpData={cpData} /><Panel><h2 className="mb-2 text-2xl font-semibold">Invitation individuelle</h2><p className="text-sm text-zinc-400">Lien prévu : https://ta-plateforme-coaching.fr/invitation/{a.inviteToken}</p><div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-sm"><div className="text-zinc-400">Code invitation</div><div className="mt-1 font-mono text-lg font-bold">{a.inviteToken}</div></div></Panel></section></div>; }
-function Stats({ training, sessions, athleteId, calendarYear, weekColors, setWeekColors }) { const years = availableYears(sessions, calendarYear); const latestDone = [...sessions].filter((session) => feedbackDone(session.feedback)).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime())[0]; const latestInfo = latestDone ? weekInfoForYear(latestDone.date, parseLocalDate(latestDone.date).getFullYear()) : null; const latestKey = latestDone ? `${latestDone.id}-${latestDone.feedback?.validated}-${latestDone.date}` : ""; const [selectedYear, setSelectedYear] = useState(latestInfo?.year || calendarYear || training.year || years[0]); const [selectedWeek, setSelectedWeek] = useState(latestInfo?.label || "S1"); useEffect(() => { if (latestInfo) { setSelectedYear(latestInfo.year); setSelectedWeek(latestInfo.label); } }, [latestKey]); const activeYear = years.includes(Number(selectedYear)) ? Number(selectedYear) : years[0]; const yearTraining = trainingStats(sessions, activeYear); const yearDone = yearTraining.doneSessions || []; const yearStats = { rpe: avg(yearDone, "rpe"), motivation: avg(yearDone, "motivation"), pleasure: avg(yearDone, "pleasure") }; const week = yearTraining.weeks.find((row) => row.week === selectedWeek) || yearTraining.weeks[0]; const tagKey = `${athleteId}-${activeYear}-${selectedWeek}`; const selectedTag = weekColors[tagKey] || "Aucun"; const cards = [["Séances prévues", yearTraining.planned], ["Séances réalisées", yearTraining.done], ["Temps total", `${yearTraining.totals.time.toFixed(1)} h`], ["RPE moyen", yearStats.rpe], ["Motivation moyenne", yearStats.motivation], ["Plaisir moyen", yearStats.pleasure]]; function tagWeek(value) { setWeekColors((items) => { const next = { ...items }; if (value === "Aucun") delete next[tagKey]; else next[tagKey] = value; return next; }); } return <Panel><div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h2 className="text-2xl font-semibold">Statistiques entraînement de l’année</h2><p className="mt-1 text-sm text-zinc-400">Choisis une année, sélectionne une semaine, puis ajoute une couleur de planification.</p></div><div className="flex flex-col gap-2 md:flex-row md:items-center"><Btn onClick={() => { if (latestInfo) { setSelectedYear(latestInfo.year); setSelectedWeek(latestInfo.label); } }} className={!latestInfo ? "opacity-40" : ""} disabled={!latestInfo}>Dernière séance réalisée</Btn><Select value={activeYear} onChange={(event) => { setSelectedYear(Number(event.target.value)); setSelectedWeek("S1"); }} className="md:w-40">{years.map((year) => <option key={year} value={year}>{year}</option>)}</Select></div></div><div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">{cards.map(([label, value]) => <StatCard key={label} label={label} value={value} />)}</div><WeekPicker weeks={yearTraining.weeks} selectedWeek={selectedWeek} setSelectedWeek={setSelectedWeek} selectedYear={activeYear} athleteId={athleteId} weekColors={weekColors} /><WeekDetail
+function AthletePage({ athleteActive, activeId, calendarYear, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }) {
+  const a = athleteActive;
+
+  return (
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <Panel className="h-fit">
+        <h2 className="mb-2 text-2xl font-semibold">Fiche de {a.name}</h2>
+
+        <div className="space-y-4">
+          {[
+            ["Nom", "name"],
+            ["Nom du calendrier", "calendarName"],
+            ["Email", "email"],
+            ["Âge", "age"],
+            ["Taille", "height"],
+            ["Poids", "weight"],
+          ].map(([label, key]) => (
+            <Field key={key} label={label}>
+              <Input
+                value={a[key]}
+                onChange={(event) => updateAthlete(key, event.target.value)}
+              />
+            </Field>
+          ))}
+        </div>
+      </Panel>
+
+      <section className="space-y-6 xl:col-span-2">
+        <Panel>
+          <h2 className="mb-4 text-2xl font-semibold">Objectifs et contexte</h2>
+
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              ["Court terme", "shortGoal"],
+              ["Moyen terme", "mediumGoal"],
+              ["Long terme", "longGoal"],
+            ].map(([label, key]) => (
+              <Field key={key} label={label}>
+                <Textarea
+                  value={a[key]}
+                  onChange={(event) => updateAthlete(key, event.target.value)}
+                  rows={4}
+                />
+              </Field>
+            ))}
+          </div>
+
+          <Field label="Contexte">
+            <Textarea
+              value={a.context}
+              onChange={(event) => updateAthlete("context", event.target.value)}
+              rows={5}
+            />
+          </Field>
+        </Panel>
+
+        <Stats
+  stats={stats}
+  training={training}
+  sessions={activeSessions}
+  athleteId={activeId}
+  calendarYear={calendarYear}
+  weekColors={weekColors}
+  setWeekColors={setWeekColors}
+  weekNotes={weekNotes}
+  setWeekNotes={setWeekNotes}
+/>
+
+        <CP athlete={a} updateAthlete={updateAthlete} cpData={cpData} />
+
+        <Panel>
+          <h2 className="mb-2 text-2xl font-semibold">Invitation individuelle</h2>
+
+          <p className="text-sm text-zinc-400">
+            Lien prévu : https://ta-plateforme-coaching.fr/invitation/{a.inviteToken}
+          </p>
+
+          <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-sm">
+            <div className="text-zinc-400">Code invitation</div>
+
+            <div className="mt-1 font-mono text-lg font-bold">
+              {a.inviteToken}
+            </div>
+          </div>
+        </Panel>
+      </section>
+    </div>
+  );
+}
+
+function Stats({ training, sessions, athleteId, calendarYear, weekColors, setWeekColors, weekNotes, setWeekNotes }) { const years = availableYears(sessions, calendarYear); const latestDone = [...sessions].filter((session) => feedbackDone(session.feedback)).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime())[0]; const latestInfo = latestDone ? weekInfoForYear(latestDone.date, parseLocalDate(latestDone.date).getFullYear()) : null; const latestKey = latestDone ? `${latestDone.id}-${latestDone.feedback?.validated}-${latestDone.date}` : ""; const [selectedYear, setSelectedYear] = useState(latestInfo?.year || calendarYear || training.year || years[0]); const [selectedWeek, setSelectedWeek] = useState(latestInfo?.label || "S1"); useEffect(() => { if (latestInfo) { setSelectedYear(latestInfo.year); setSelectedWeek(latestInfo.label); } }, [latestKey]); const activeYear = years.includes(Number(selectedYear)) ? Number(selectedYear) : years[0]; const yearTraining = trainingStats(sessions, activeYear); const yearDone = yearTraining.doneSessions || []; const yearStats = { rpe: avg(yearDone, "rpe"), motivation: avg(yearDone, "motivation"), pleasure: avg(yearDone, "pleasure") }; const week = yearTraining.weeks.find((row) => row.week === selectedWeek) || yearTraining.weeks[0]; const tagKey = `${athleteId}-${activeYear}-${selectedWeek}`; const selectedTag = weekColors[tagKey] || "Aucun"; const cards = [["Séances prévues", yearTraining.planned], ["Séances réalisées", yearTraining.done], ["Temps total", `${yearTraining.totals.time.toFixed(1)} h`], ["RPE moyen", yearStats.rpe], ["Motivation moyenne", yearStats.motivation], ["Plaisir moyen", yearStats.pleasure]]; function tagWeek(value) { setWeekColors((items) => { const next = { ...items }; if (value === "Aucun") delete next[tagKey]; else next[tagKey] = value; return next; }); } return (
+  <Panel>
+    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h2 className="text-2xl font-semibold">Statistiques entraînement de l’année</h2><p className="mt-1 text-sm text-zinc-400">Choisis une année, sélectionne une semaine, puis ajoute une couleur de planification.</p></div><div className="flex flex-col gap-2 md:flex-row md:items-center"><Btn onClick={() => { if (latestInfo) { setSelectedYear(latestInfo.year); setSelectedWeek(latestInfo.label); } }} className={!latestInfo ? "opacity-40" : ""} disabled={!latestInfo}>Dernière séance réalisée</Btn><Select value={activeYear} onChange={(event) => { setSelectedYear(Number(event.target.value)); setSelectedWeek("S1"); }} className="md:w-40">{years.map((year) => <option key={year} value={year}>{year}</option>)}</Select></div></div><div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">{cards.map(([label, value]) => <StatCard key={label} label={label} value={value} />)}</div><WeekPicker weeks={yearTraining.weeks} selectedWeek={selectedWeek} setSelectedWeek={setSelectedWeek} selectedYear={activeYear} athleteId={athleteId} weekColors={weekColors} /><WeekDetail
   week={week}
   selectedTag={selectedTag}
   tagWeek={tagWeek}
   athleteId={athleteId}
   activeYear={activeYear}
-/></Panel>; }
+  weekNotes={weekNotes}
+  setWeekNotes={setWeekNotes}
+/>
+</Panel>
+);
+}
 function StatCard({ label, value }) { return <div className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-center"><div className="text-xs text-zinc-400">{label}</div><div className="text-2xl font-bold">{value}</div></div>; }
 function WeekPicker({ weeks, selectedWeek, setSelectedWeek, selectedYear, athleteId, weekColors }) { return <div className="mt-6"><h3 className="mb-3 text-lg font-semibold">Semaines de l’année</h3><div className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-[repeat(13,minmax(0,1fr))]">{weeks.map((week) => { const tag = weekColors[`${athleteId}-${selectedYear}-${week.week}`]; const tagColor = weekLabels.find((row) => row.name === tag)?.color; const base = selectedWeek === week.week ? "border-white bg-white text-black" : week.sessions ? "border-zinc-600 bg-zinc-800 text-white" : "border-zinc-800 bg-zinc-900 text-zinc-500"; return <button key={week.week} onClick={() => setSelectedWeek(week.week)} className={`rounded-xl border px-2 py-2 text-sm font-semibold ${tagColor || base}`}><span className="block">{week.week}</span><span className="block text-[10px] font-normal opacity-80">{week.range}</span></button>; })}</div><div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-400">{weekLabels.filter((row) => row.name !== "Aucun").map((row) => <span key={row.name} className={`rounded-full border px-3 py-1 ${row.color}`}>{row.name}</span>)}</div></div>; }
-function WeekDetail({ week, selectedTag, tagWeek, athleteId, activeYear }) { const details = [["Séances réalisées", week.sessions], ["Temps", `${week.time.toFixed(1)} h`], ["RPE moyen", trainingAverage(week.rpeSum, week.sessions)], ["Motivation moyenne", trainingAverage(week.motivationSum, week.sessions)], ["Plaisir moyen", trainingAverage(week.pleasureSum,
- week.sessions)]]; return <div className="mt-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5"><div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h3 className="text-2xl font-bold">Détail {week.week}</h3><p className="text-sm text-zinc-400">{week.range} • Résumé de la semaine sélectionnée.</p></div><Field label="Couleur / type de semaine"><Select
-  value={selectedTag}
-  onChange={async (event) => {
-    const value = event.target.value;
+function WeekDetail({ week, selectedTag, tagWeek, athleteId, activeYear, weekNotes, setWeekNotes }) {
+  const noteKey = `${athleteId}-${activeYear}-${week.week}`;
+  const weekNote = weekNotes[noteKey] || "";
 
-    tagWeek(value);
+  const details = [
+    ["Séances réalisées", week.sessions],
+    ["Temps", `${week.time.toFixed(1)} h`],
+    ["RPE moyen", trainingAverage(week.rpeSum, week.sessions)],
+    ["Motivation moyenne", trainingAverage(week.motivationSum, week.sessions)],
+    ["Plaisir moyen", trainingAverage(week.pleasureSum, week.sessions)],
+  ];
 
-    if (value === "Aucun") {
-      await supabase
-        .from("athlete_week_colors")
-        .delete()
-        .eq("athlete_id", athleteId)
-        .eq("year", activeYear)
-        .eq("week", week.week);
+  async function saveWeekNote(value) {
+    setWeekNotes((items) => ({
+      ...items,
+      [noteKey]: value,
+    }));
 
-      return;
-    }
-
-    await supabase
-      .from("athlete_week_colors")
+    const { error } = await supabase
+      .from("athlete_week_notes")
       .upsert(
         {
           athlete_id: athleteId,
           year: activeYear,
           week: week.week,
-          color_name: value,
+          note: value,
+          updated_at: new Date().toISOString(),
         },
         { onConflict: "athlete_id,year,week" }
       );
-  }}
-  className="md:w-52"
->{weekLabels.map((row) => <option key={row.name} value={row.name}>{row.name}</option>)}</Select></Field></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">{details.map(([label, value]) => <StatCard key={label} label={label} value={value} />)}</div><div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4"><h4 className="mb-3 font-semibold">Séances validées comptabilisées dans cette semaine</h4>{week.sessionsList?.length ? <div className="space-y-2">{week.sessionsList.map((session) => <div key={session.id} className="rounded-xl bg-zinc-800 p-3 text-sm"><div className="font-semibold">{dateKey(session.date)} — {session.title}</div><div className="text-zinc-400">{feedbackDone(session.feedback) ? (
-  <>Temps : {session.feedback.actualTime} • RPE : {session.feedback.rpe} • Motivation : {session.feedback.motivation} • Plaisir : {session.feedback.pleasure}</>
-) : (
-  <>Non faite : {session.nonDone?.reason} {session.nonDone?.fatigue && `• Fatigue : ${session.nonDone.fatigue}`} {session.nonDone?.pain && `• Douleur : ${session.nonDone.pain}`}</>
-)}</div></div>)}</div> : <div className="text-sm text-zinc-500">Aucune séance validée sur cette semaine.</div>}</div></div>; }
+
+    if (error) {
+      console.error("Erreur sauvegarde note semaine", error);
+      alert(error.message || "Erreur sauvegarde note semaine");
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h3 className="text-2xl font-bold">Détail {week.week}</h3>
+          <p className="text-sm text-zinc-400">
+            {week.range} • Résumé de la semaine sélectionnée.
+          </p>
+        </div>
+
+        <Field label="Couleur / type de semaine">
+          <Select
+            value={selectedTag}
+            onChange={async (event) => {
+              const value = event.target.value;
+              tagWeek(value);
+
+              if (value === "Aucun") {
+                await supabase
+                  .from("athlete_week_colors")
+                  .delete()
+                  .eq("athlete_id", athleteId)
+                  .eq("year", activeYear)
+                  .eq("week", week.week);
+                return;
+              }
+
+              await supabase
+                .from("athlete_week_colors")
+                .upsert(
+                  {
+                    athlete_id: athleteId,
+                    year: activeYear,
+                    week: week.week,
+                    color_name: value,
+                  },
+                  { onConflict: "athlete_id,year,week" }
+                );
+            }}
+            className="md:w-52"
+          >
+            {weekLabels.map((row) => (
+              <option key={row.name} value={row.name}>
+                {row.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+        {details.map(([label, value]) => (
+          <StatCard key={label} label={label} value={value} />
+        ))}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+        <h4 className="mb-2 font-semibold">Note de fin de semaine</h4>
+        <p className="mb-3 text-sm text-zinc-400">
+          Ressenti, fatigue, progression, points à retenir ou ajustements pour la suite.
+        </p>
+
+        <Textarea
+          value={weekNote}
+          onChange={(event) => saveWeekNote(event.target.value)}
+          rows={5}
+          placeholder="Ex : bonne semaine, fatigue correcte, séance PMA difficile mais bien encaissée..."
+        />
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+        <h4 className="mb-3 font-semibold">
+          Séances validées comptabilisées dans cette semaine
+        </h4>
+
+        {week.sessionsList?.length ? (
+          <div className="space-y-2">
+            {week.sessionsList.map((session) => (
+              <div key={session.id} className="rounded-xl bg-zinc-800 p-3 text-sm">
+                <div className="font-semibold">
+                  {dateKey(session.date)} — {session.title}
+                </div>
+
+                <div className="text-zinc-400">
+                  {feedbackDone(session.feedback) ? (
+                    <>
+                      Temps : {session.feedback.actualTime} • RPE : {session.feedback.rpe} • Motivation : {session.feedback.motivation} • Plaisir : {session.feedback.pleasure}
+                    </>
+                  ) : (
+                    <>
+                      Non faite : {session.nonDone?.reason}{" "}
+                      {session.nonDone?.fatigue && `• Fatigue : ${session.nonDone.fatigue}`}{" "}
+                      {session.nonDone?.pain && `• Douleur : ${session.nonDone.pain}`}
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-zinc-500">
+            Aucune séance validée sur cette semaine.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 function CP({ athlete: a, updateAthlete, cpData }) { return <Panel><h2 className="mb-2 text-2xl font-semibold">Tests principaux — puissance critique</h2><div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">{[["5 min", "power5"], ["12 min", "power12"], ["20 min", "power20"], ["Poids", "weight"]].map(([label, key]) => <Field key={key} label={label}><Input value={a[key]} onChange={(event) => updateAthlete(key, event.target.value)} /></Field>)}</div>{cpData ? <><div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">{[["CP", `${cpData.cp} W`], ["W′", `${cpData.wPrime} J`], ["W/kg", cpData.wattsPerKg]].map(([label, value]) => <div key={label} className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-center"><div className="text-sm text-zinc-400">{label}</div><div className="text-3xl font-bold">{value}</div></div>)}</div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{cpData.zones.map((zone) => <div key={zone.id} className="flex justify-between rounded-2xl border border-zinc-700 bg-zinc-800 p-4"><span>{zone.id} — {zone.name}</span><b>{zoneWatts(zone.id, cpData)}</b></div>)}</div></> : <Empty text="Renseigne les tests pour générer les zones." />}</Panel>; }
 function ManagementPage({ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete }) { const [confirmDelete, setConfirmDelete] = useState(null); return <Panel><h2 className="mb-2 text-2xl font-semibold">Ma gestion des athlètes & calendriers</h2><p className="mb-5 text-sm text-zinc-400">Ajout ou suppression d’athlètes dans un espace séparé.</p><div className="grid grid-cols-1 gap-4 xl:grid-cols-2"><div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5"><h3 className="mb-3 text-lg font-semibold">Ajouter un athlète</h3><div className="flex flex-col gap-3 sm:flex-row"><Input value={newAthlete} onChange={(event) => setNewAthlete(event.target.value)} placeholder="Nom de l’athlète" /><Btn variant="primary" onClick={addAthlete}>+ Ajouter</Btn></div></div><div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5"><h3 className="mb-3 text-lg font-semibold">Supprimer un calendrier</h3><div className="space-y-3">{athletes.map((athleteItem) => <div key={athleteItem.id} className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4"><div className="flex items-center justify-between gap-3"><div><b>{athleteItem.name}</b><div className="text-xs text-zinc-500">{athleteItem.calendarName}</div></div><Btn variant="danger" onClick={() => setConfirmDelete(athleteItem.id)} className={athletes.length <= 1 ? "opacity-40" : ""} disabled={athletes.length <= 1}>Supprimer</Btn></div>{confirmDelete === athleteItem.id && <div className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4"><div className="text-sm text-zinc-300">Confirmer la suppression de <b>{athleteItem.name}</b> ? Cette action retirera son calendrier, ses propositions et ses données de séances.</div><div className="mt-3 flex flex-col gap-2 sm:flex-row"><Btn variant="danger" onClick={() => { deleteAthlete(athleteItem.id); setConfirmDelete(null); }}>Confirmer</Btn><Btn onClick={() => setConfirmDelete(null)}>Annuler</Btn></div></div>}</div>)}</div></div></div></Panel>; }
 function DevChecks() { const future = calendarSession(defaultLibrary[0], addDays(new Date(), 2)); const awaiting = calendarSession(defaultLibrary[0], new Date()); const readyOnly = { ...awaiting, feedback: { ...awaiting.feedback, actualTime: "1h30", rpe: "7", motivation: "8", pleasure: "4", comment: "RAS" } }; const completed = { ...readyOnly, feedback: { ...readyOnly.feedback, validated: true } }; const justified = { ...awaiting, nonDone: { validated: true, reason: "Malade" } }; const checks = [["CP", Boolean(criticalPower(420, 360, 330, 70)?.cp)], ["Zone 7", criticalPower(420, 360, 330, 70)?.zones.length === 7], ["Temps converti", durationHours("1h30") === 1.5], ["Calendrier", monthDays(2026, 0).length >= 31], ["Proposition blanche", proposalStyle("Programmée") === "bg-white text-black"], ["Futur blanc", sessionStatus(future) === "planned"], ["Retour incomplet jaune", sessionStatus(awaiting) === "awaitingAction"], ["Retour complet non validé jaune", sessionStatus(readyOnly) === "awaitingAction"], ["Retour validé vert", sessionStatus(completed) === "done"], ["Non faite gris", sessionStatus(justified) === "notDoneJustified"], ["Stats semaines réelles", [52, 53].includes(trainingStats([completed], new Date().getFullYear()).weeks.length)], ["Années stats", availableYears([completed], 2029).includes(2029)], ["Années futures", availableYears([], 2045).includes(2045)], ["Stats temps", trainingStats([completed], new Date().getFullYear()).totals.time === 1.5], ["Stats synchronisées", trainingStats([completed], weekInfo(completed.date).year).done === 1], ["Stats calendrier 2029", trainingStats([{ ...completed, date: "2029-02-20" }], 2029).done === 1], ["Stats semaine 8", trainingStats([{ ...completed, date: "2029-02-20" }], 2029).weeks.find((week) => week.week === "S8")?.sessions === 1], ["Détail semaine complet", trainingStats([{ ...completed, date: "2029-04-18" }], 2029).weeks.find((week) => week.week === weekInfo("2029-04-18").label)?.time === 1.5], ["Liste séances semaine", trainingStats([{ ...completed, date: "2029-04-18" }], 2029).weeks.find((week) => week.week === weekInfo("2029-04-18").label)?.sessionsList?.length === 1], ["Couleurs semaines", weekLabels.length >= 8], ["Date locale", dateKey(new Date(2026, 0, 1)) === "2026-01-01"], ["Parse date locale", parseLocalDate("2029-02-20").getMonth() === 1], ["Semaine ISO", weekInfo(new Date(2026, 0, 1)).label === "S1"], ["Clé couleur athlete", `${"athlete-1"}-${2026}-${"S1"}` === "athlete-1-2026-S1"], ["Dates semaines réelles", trainingStats([completed], 2026).weeks[0].range === "29/12 - 04/01"], ["Semaine calendrier", weekInfo(new Date("2029-02-20")).label === "S8"], ["21 mai semaine 21", weekInfoForYear("2026-05-21", 2026).label === "S21"], ["21 mai dans plage", findWeekForDate("2026-05-21", 2026).range === "18/05 - 24/05"], ["Semaine 20 mai", trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.sessions === 1], ["Temps semaine 20", trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.time === 1.5], ["Liste semaine 20", trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.sessionsList?.[0]?.id === completed.id], ["RPE semaine 20", trainingAverage(trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.rpeSum, 1) === "7.0"], ["21 mai compté S21", trainingStats([{ ...completed, date: "2026-05-21" }], 2026).weeks.find((week) => week.week === "S21")?.sessions === 1], ["21 mai pas S20", trainingStats([{ ...completed, date: "2026-05-21" }], 2026).weeks.find((week) => week.week === "S20")?.sessions === 0], ["Token invitation", athlete("test", "Test").inviteToken === "invite-test"], ["Proposition session", proposalToSession({ id: "p1", type: "Course", title: "Test", date: "2026-05-21", message: "OK" }).sourceProposalId === "p1"]]; return <Panel className="text-sm text-zinc-400"><b className="text-white">Tests intégrés</b><div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-4">{checks.map(([label, ok]) => <div key={label}>{label} : {ok ? "OK" : "Erreur"}</div>)}</div></Panel>; }
