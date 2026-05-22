@@ -599,13 +599,66 @@ async function logout() {
   async function deleteAthlete(athleteId) {
   if (athletes.length <= 1) return;
 
-  const { error } = await supabase
+  const ok = window.confirm(
+    "Supprimer cet athlète ? Toutes ses séances, propositions, notes et couleurs de semaines seront supprimées."
+  );
+
+  if (!ok) return;
+
+  const { data: workoutsToDelete, error: workoutsFetchError } = await supabase
+    .from("calendar_workouts")
+    .select("id")
+    .eq("athlete_id", athleteId);
+
+  if (workoutsFetchError) {
+    console.error("Erreur récupération séances avant suppression", workoutsFetchError);
+    alert(workoutsFetchError.message || "Erreur récupération séances");
+    return;
+  }
+
+  const workoutIds = (workoutsToDelete || []).map((row) => row.id);
+
+  if (workoutIds.length) {
+    const { error: feedbackDeleteError } = await supabase
+      .from("workout_feedbacks")
+      .delete()
+      .in("workout_id", workoutIds);
+
+    if (feedbackDeleteError) {
+      console.error("Erreur suppression feedbacks", feedbackDeleteError);
+      alert(feedbackDeleteError.message || "Erreur suppression feedbacks");
+      return;
+    }
+  }
+
+  const tablesToClean = [
+    ["calendar_workouts", "athlete_id"],
+    ["athlete_proposals", "athlete_id"],
+    ["athlete_week_colors", "athlete_id"],
+    ["athlete_week_notes", "athlete_id"],
+  ];
+
+  for (const [table, column] of tablesToClean) {
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq(column, athleteId);
+
+    if (error) {
+      console.error(`Erreur suppression ${table}`, error);
+      alert(error.message || `Erreur suppression ${table}`);
+      return;
+    }
+  }
+
+  const { error: athleteDeleteError } = await supabase
     .from("athletes")
     .delete()
     .eq("id", athleteId);
 
-  if (error) {
-    console.error("Erreur suppression athlète", error);
+  if (athleteDeleteError) {
+    console.error("Erreur suppression athlète", athleteDeleteError);
+    alert(athleteDeleteError.message || "Erreur suppression athlète");
     return;
   }
 
@@ -617,14 +670,25 @@ async function logout() {
     delete copy[athleteId];
     return copy;
   });
-  setProposals((items) => items.filter((proposal) => proposal.athleteId !== athleteId));
+  setProposals((items) =>
+    items.filter((proposal) => proposal.athleteId !== athleteId)
+  );
   setWeekColors((items) =>
     Object.fromEntries(
       Object.entries(items).filter(([key]) => !key.startsWith(`${athleteId}-`))
     )
   );
+  setWeekNotes((items) =>
+    Object.fromEntries(
+      Object.entries(items).filter(([key]) => !key.startsWith(`${athleteId}-`))
+    )
+  );
 
-  if (activeId === athleteId) setActiveId(next[0].id);
+  if (activeId === athleteId && next.length) {
+    setActiveId(next[0].id);
+  }
+
+  await loadAllData();
 } 
   async function saveWorkout() {
   if (!draft.title.trim()) return;
@@ -895,10 +959,12 @@ const table = isCategory
   await loadAllData();
 };
   const addAthleteProposal = async (proposal) => {
+  const proposalAthleteId = auth?.role === "athlete" ? auth.athleteId : activeId;
+
   const { data, error } = await supabase
     .from("athlete_proposals")
     .insert({
-      athlete_id: activeId,
+      athlete_id: proposalAthleteId,
       date: dateKey(selectedDate),
       status: "À traiter",
       type: proposal.type,
@@ -937,7 +1003,7 @@ const table = isCategory
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete }} />}
-    <DevChecks />
+    {auth?.role === "coach" && <DevChecks />}
   </div></div>;
 }
 
@@ -978,7 +1044,7 @@ const invitedAthlete = inviteToken
     const ok = await loginAthlete(athleteEmail, athletePassword);
 
     if (!ok) {
-      setError("Code athlète invalide");
+      setError("Email ou mot de passe incorrect, ou compte athlète non lié.");
     }
   }
 
