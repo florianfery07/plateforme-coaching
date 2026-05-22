@@ -357,7 +357,8 @@ useEffect(() => {
       return;
     }
 
-    setAuth({ role: "coach" });
+    await supabase.auth.signOut();
+    setAuth(null);
   }
 
   restoreSession();
@@ -453,13 +454,25 @@ useEffect(() => {
   setNewAthlete("");
 } 
 async function loginCoach(email, password) {
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (error) {
+  if (error || !data.user) {
     console.error("Erreur connexion coach", error);
+    return false;
+  }
+
+  const { data: athlete } = await supabase
+    .from("athletes")
+    .select("id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+
+  if (athlete) {
+    await supabase.auth.signOut();
+    console.error("Ce compte est un compte athlète, pas coach.");
     return false;
   }
 
@@ -474,27 +487,26 @@ async function loginAthlete(email, password) {
     password,
   });
 
-if (error) {
-  console.error("Erreur connexion athlète", error);
-  return false;
-}
+  if (error || !data.user) {
+    console.error("Erreur connexion athlète", error);
+    return false;
+  }
 
-if (!data.user) {
-  return false;
-}
+  const { data: athlete, error: athleteError } = await supabase
+    .from("athletes")
+    .select("*")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
 
-const { data: athlete, error: athleteError } = await supabase
-  .from("athletes")
-  .select("*")
-  .eq("user_id", data.user.id)
-  .single();
-
-if (athleteError) {
-  console.error("Erreur récupération athlète", athleteError);
-}
+  if (athleteError) {
+    console.error("Erreur récupération athlète", athleteError);
+    await supabase.auth.signOut();
+    return false;
+  }
 
   if (!athlete) {
     console.error("Aucun athlète lié à ce compte");
+    await supabase.auth.signOut();
     return false;
   }
 
@@ -502,6 +514,11 @@ if (athleteError) {
     role: "athlete",
     athleteId: athlete.id,
   });
+
+  setActiveId(athlete.id);
+  setView("calendar");
+
+  await loadAllData();
 
   return true;
 }
