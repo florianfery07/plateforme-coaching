@@ -1,138 +1,200 @@
 // @ts-nocheck
 
-import {
-  Btn,
-  Field,
-  Input,
-  Panel,
-} from "@/components/ui/ui";
+import { useState } from "react";
 
-export default function AuthPage({
-  authMode,
-  setAuthMode,
-  coachEmail,
-  setCoachEmail,
-  coachPassword,
-  setCoachPassword,
-  athleteEmail,
-  setAthleteEmail,
-  athletePassword,
-  setAthletePassword,
-  inviteToken,
-  setInviteToken,
-  authError,
-  loginCoach,
-  loginAthlete,
-  acceptInvite,
-}) {
+export default function AuthPage({ athletes, loginCoach, loginAthlete, acceptInvite }) {
+  const [coachEmail, setCoachEmail] = useState("");
+  const [coachPassword, setCoachPassword] = useState("");
+  const [athleteEmail, setAthleteEmail] = useState("");
+  const [athletePassword, setAthletePassword] = useState("");
+  const [error, setError] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePassword, setInvitePassword] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
+
+  const inviteToken =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("invite")
+      : "";
+
+  const invitedAthlete = inviteToken
+    ? athletes.find((row) => row.inviteToken === inviteToken)
+    : null;
+
+  async function submitCoach(event) {
+    event.preventDefault();
+
+    const ok = await loginCoach(coachEmail, coachPassword);
+
+    if (!ok) {
+      setError("Email ou mot de passe incorrect");
+    }
+  }
+
+  async function submitAthlete(event) {
+    event.preventDefault();
+
+    const ok = await loginAthlete(athleteEmail, athletePassword);
+
+    if (!ok) {
+      setError("Email ou mot de passe incorrect, ou compte athlète non lié.");
+    }
+  }
+
+  async function submitInvite(event) {
+    event.preventDefault();
+
+    if (!inviteToken) {
+      setInviteMessage("Lien d’invitation invalide.");
+      return;
+    }
+
+    if (!inviteEmail.trim() || !invitePassword.trim()) {
+      setInviteMessage("Email et mot de passe obligatoires.");
+      return;
+    }
+
+    const result = await acceptInvite(
+      inviteToken,
+      inviteEmail.trim(),
+      invitePassword
+    );
+
+    if (!result.ok) {
+      setInviteMessage(result.message);
+      return;
+    }
+
+    setInviteMessage("Compte créé. Connexion en cours...");
+  }
+
+  if (inviteToken) {
+    return (
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Invitation athlète</h1>
+
+            {invitedAthlete ? (
+              <p className="text-sm text-neutral-500">
+                Créer le compte pour {invitedAthlete.name}
+              </p>
+            ) : (
+              <p className="text-sm text-red-600">
+                Invitation introuvable. Vérifie que le lien est complet.
+              </p>
+            )}
+          </div>
+
+          {inviteMessage && (
+            <div className="bg-neutral-100 text-neutral-700 p-3 rounded-xl text-sm">
+              {inviteMessage}
+            </div>
+          )}
+
+          {invitedAthlete && (
+            <form onSubmit={submitInvite} className="space-y-3">
+              <input
+                className="w-full border rounded-xl p-3"
+                type="email"
+                placeholder="Email athlète"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.target.value)}
+              />
+
+              <input
+                className="w-full border rounded-xl p-3"
+                type="password"
+                placeholder="Créer un mot de passe (6 caractères minimum)"
+                value={invitePassword}
+                onChange={(event) => setInvitePassword(event.target.value)}
+              />
+
+              <button
+                className="w-full bg-black text-white rounded-xl p-3"
+                type="submit"
+              >
+                Créer mon compte athlète
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-md items-center px-4">
-      <Panel className="w-full space-y-5">
-        <div className="space-y-1 text-center">
-          <h1 className="text-3xl font-black tracking-tight">
-            MyRide
-          </h1>
-
-          <p className="text-sm text-zinc-400">
-            Plateforme de coaching
+    <div className="min-h-screen bg-neutral-100 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Plateforme Coaching</h1>
+          <p className="text-sm text-neutral-500">
+            Connexion coach ou athlète
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <Btn
-            className="flex-1"
-            variant={authMode === "coach" ? "primary" : "secondary"}
-            onClick={() => setAuthMode("coach")}
-          >
-            Coach
-          </Btn>
-
-          <Btn
-            className="flex-1"
-            variant={authMode === "athlete" ? "primary" : "secondary"}
-            onClick={() => setAuthMode("athlete")}
-          >
-            Athlète
-          </Btn>
-        </div>
-
-        {authMode === "coach" ? (
-          <div className="space-y-4">
-            <Field label="Email">
-              <Input
-                type="email"
-                value={coachEmail}
-                onChange={(e) => setCoachEmail(e.target.value)}
-              />
-            </Field>
-
-            <Field label="Mot de passe">
-              <Input
-                type="password"
-                value={coachPassword}
-                onChange={(e) => setCoachPassword(e.target.value)}
-              />
-            </Field>
-
-            <Btn
-              className="w-full"
-              variant="primary"
-              onClick={loginCoach}
-            >
-              Connexion coach
-            </Btn>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <Field label="Email">
-              <Input
-                type="email"
-                value={athleteEmail}
-                onChange={(e) => setAthleteEmail(e.target.value)}
-              />
-            </Field>
-
-            <Field label="Mot de passe">
-              <Input
-                type="password"
-                value={athletePassword}
-                onChange={(e) => setAthletePassword(e.target.value)}
-              />
-            </Field>
-
-            <Btn
-              className="w-full"
-              variant="primary"
-              onClick={loginAthlete}
-            >
-              Connexion athlète
-            </Btn>
-
-            <div className="border-t border-zinc-800 pt-4">
-              <Field label="Code invitation">
-                <Input
-                  value={inviteToken}
-                  onChange={(e) => setInviteToken(e.target.value)}
-                />
-              </Field>
-
-              <Btn
-                className="mt-4 w-full"
-                variant="secondary"
-                onClick={acceptInvite}
-              >
-                Accepter une invitation
-              </Btn>
-            </div>
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded-xl text-sm">
+            {error}
           </div>
         )}
 
-        {authError ? (
-          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
-            {authError}
-          </div>
-        ) : null}
-      </Panel>
+        <form onSubmit={submitCoach} className="space-y-3">
+          <h2 className="font-semibold">Connexion Coach</h2>
+
+          <input
+            className="w-full border rounded-xl p-3"
+            type="email"
+            placeholder="Email coach"
+            value={coachEmail}
+            onChange={(event) => setCoachEmail(event.target.value)}
+          />
+
+          <input
+            className="w-full border rounded-xl p-3"
+            type="password"
+            placeholder="Mot de passe"
+            value={coachPassword}
+            onChange={(event) => setCoachPassword(event.target.value)}
+          />
+
+          <button
+            className="w-full bg-black text-white rounded-xl p-3"
+            type="submit"
+          >
+            Se connecter coach
+          </button>
+        </form>
+
+        <div className="border-t pt-4">
+          <form onSubmit={submitAthlete} className="space-y-3">
+            <h2 className="font-semibold">Connexion Athlète</h2>
+
+            <input
+              className="w-full border rounded-xl p-3"
+              type="email"
+              placeholder="Email athlète"
+              value={athleteEmail}
+              onChange={(event) => setAthleteEmail(event.target.value)}
+            />
+
+            <input
+              className="w-full border rounded-xl p-3"
+              type="password"
+              placeholder="Mot de passe"
+              value={athletePassword}
+              onChange={(event) => setAthletePassword(event.target.value)}
+            />
+
+            <button
+              className="w-full bg-neutral-800 text-white rounded-xl p-3"
+              type="submit"
+            >
+              Se connecter athlète
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
