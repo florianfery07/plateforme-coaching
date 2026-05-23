@@ -62,6 +62,7 @@ import {
 import AuthPage from "@/components/auth/AuthPage";
 import CalendarPage from "@/components/calendar/CalendarPage";
 import Header from "@/components/layout/Header";
+import AthleteSelector from "@/components/athlete/AthleteSelector";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
@@ -973,8 +974,6 @@ const table = isCategory
   </div></div>;
 }
 
-
-function AthleteSelector({ visible, athletes, activeId, setActiveId }) { if (!visible) return null; const badges = [["Programmée", "bg-white text-black"], ["Action attendue", "bg-yellow-400 text-black"], ["Réalisée", "bg-emerald-500 text-white"], ["Non faite justifiée", "bg-zinc-700 text-white"], ["Proposition", "bg-zinc-500 text-white"]]; return <Panel><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap">{athletes.map((a) => <button key={a.id} onClick={() => setActiveId(a.id)} className={`shrink-0 rounded-xl border px-4 py-3 text-sm font-semibold sm:py-2 sm:text-base ${activeId === a.id ? "border-white bg-white text-black" : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}>{a.calendarName}</button>)}</div><div className="flex flex-wrap gap-2">{badges.map(([text, klass]) => <Badge key={text} className={klass}>{text}</Badge>)}</div></div></Panel>; }
 function CalendarPageOld(props) { return <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-4"><Panel className={props.isCoach ? "xl:col-span-3" : "xl:col-span-4"}><CalendarToolbar {...props} />{props.mode === "year" && <YearView setMonth={props.setMonth} setMode={props.setMode} />}{props.mode === "month" && <MonthView {...props} />}{props.mode === "day" && <DayView {...props} sessions={props.sessionsFor(props.selectedDate)} proposals={props.proposalsFor(props.selectedDate)} />}</Panel>{props.isCoach && <QuickLibrary {...props} />}</div>; }
 function CalendarToolbar({ athleteActive, mode, setMode, year, setYear, month, setMonth }) { return <div className="mb-5 space-y-5"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><h2 className="text-2xl font-semibold">{athleteActive.calendarName}</h2><p className="text-sm text-zinc-400">Séances programmées et propositions de l’athlète.</p></div><div className="grid grid-cols-3 gap-2 sm:flex">{[["year", "Année"], ["month", "Mois"], ["day", "Jour"]].map(([key, label]) => <button key={key} onClick={() => setMode(key)} className={`rounded-xl px-3 py-3 text-sm font-semibold sm:px-4 sm:py-2 ${mode === key ? "bg-white text-black" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}>{label}</button>)}</div></div><div className="flex flex-wrap gap-3"><Select value={year} onChange={(event) => setYear(+event.target.value)} className="w-auto">{CALENDAR_YEARS.map((yearItem) => <option key={yearItem}>{yearItem}</option>)}</Select><Select value={month}
  onChange={(event) => setMonth(+event.target.value)} className="w-auto">{MONTHS.map((monthItem, index) => <option key={monthItem} value={index}>{monthItem}</option>)}</Select></div></div>; }
