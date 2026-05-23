@@ -48,7 +48,17 @@ import {
 } from "@/lib/platformDefaults";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useMemo, useState } from "react";
-
+import {
+  Badge,
+  Btn,
+  ColorSelect,
+  Empty,
+  Field,
+  Input,
+  Panel,
+  Select,
+  Textarea,
+} from "@/components/ui/ui";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
@@ -78,16 +88,6 @@ function proposalToSession(proposal) {
 }
 function proposalStyle(status) { return status === "Programmée" ? "bg-white text-black" : "bg-zinc-500 text-white"; }
 function availableYears(sessions, preferredYear = new Date().getFullYear()) { const currentYear = new Date().getFullYear(); const years = new Set([currentYear - 5, currentYear, currentYear + 25, Number(preferredYear)]); CALENDAR_YEARS.forEach((year) => years.add(year)); sessions.forEach((session) => years.add(parseLocalDate(session.date).getFullYear())); return [...years].sort((a, b) => b - a); }
-function Field({ label, children }) { return <label className="block"><span className="mb-1 block text-xs font-medium text-zinc-400">{label}</span>{children}</label>; }
-function Input({ className = "", ...props }) { return <input {...props} className={`w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`} />; }
-function Textarea({ className = "", ...props }) { return <textarea {...props} className={`w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`} />; }
-function Select({ children, className = "", ...props }) { return <select {...props} className={`w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`}>{children}</select>; }
-function Panel({ children, className = "" }) { return <section className={`rounded-3xl border border-zinc-800 bg-zinc-900 p-3 shadow-xl sm:p-5 ${className}`}>{children}</section>; }
-function Badge({ children, className = "" }) { return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${className}`}>{children}</span>; }
-function Btn({ children, variant = "secondary", className = "", ...props }) { const base = "rounded-xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed sm:py-2 sm:text-base"; const styles = { primary: "bg-white text-black hover:opacity-90", secondary: "border border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700", danger: "bg-red-500 text-white hover:bg-red-600" }; return <button {...props} className={`${base} ${styles[variant]} ${className}`}>{children}</button>; }
-function Empty({ text }) { return <div className="rounded-2xl border border-dashed border-zinc-600 bg-zinc-800 p-8 text-center text-zinc-500">{text}</div>; }
-function ColorSelect(props) { return <Select {...props}>{COLORS.map(([label, value]) => <option key={value} value={value}>{label}</option>)}</Select>; }
-
 export default function CoachingPlatformMockup() {
   const now = new Date();
   const [view, setView] = useState("calendar");
