@@ -26,25 +26,31 @@ import {
   weeksOfYear,
   zoneWatts,
 } from "@/lib/trainingUtils";
+import {
+  athlete,
+  blankFeedback,
+  blankNonDone,
+  blankWorkout,
+  CALENDAR_YEARS,
+  COLORS,
+  DAYS,
+  defaultAthletes,
+  defaultCategories,
+  defaultLibrary,
+  defaultSubcategories,
+  MONTHS,
+  repeatBlock,
+  simpleBlock,
+  statusLabel,
+  statusStyle,
+  weekLabels,
+  ZONES,
+} from "@/lib/platformDefaults";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useMemo, useState } from "react";
 
-const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const ZONES = ["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7"];
-const COLORS = [["Bleu", "bg-blue-500"], ["Vert", "bg-emerald-500"], ["Orange", "bg-orange-500"], ["Violet", "bg-purple-500"], ["Rose", "bg-rose-500"], ["Rouge", "bg-red-500"], ["Jaune", "bg-yellow-500"], ["Cyan", "bg-cyan-500"], ["Gris", "bg-zinc-500"]];
-const CALENDAR_YEARS = Array.from({ length: 31 }, (_, index) => new Date().getFullYear() - 5 + index);
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
-function item(id: string, name: string, color: string) {
-  return { id, name, color };
-}
-function athlete(id, name, weight = "", power5 = "", power12 = "", power20 = "") { return { id, name, calendarName: `Calendrier de ${name}`, inviteToken: `invite-${id}`, email: "", age: "", height: "", weight, sport: "Vélo", shortGoal: "", mediumGoal: "", longGoal: "", context: "", power5, power12, power20 }; }
-function simpleBlock(name = "", duration = "", zone = "Z2", instruction = "") { return { type: "simple", name, duration, zone, instruction, repeatItems: [] }; }
-function repeatBlock(name = "Bloc répétition") { return { type: "repeat", name, duration: "5 x (4 min / 3 min)", zone: "Z4", instruction: "", repeatItems: [{ name: "Effort", duration: "4 min", zone: "Z5", instruction: "Tenir la puissance cible." }, { name: "Récupération", duration: "3 min", zone: "Z1", instruction: "Pédalage souple." }] }; }
-function blankWorkout() { return { category: "Route", subcategory: "Endurance", title: "", totalDuration: "", expectedRpe: "", description: "", blocks: [simpleBlock("Échauffement", "", "Z1"), repeatBlock(), simpleBlock("Retour au calme", "", "Z1")] }; }
-function blankFeedback() { return { actualTime: "", rpe: "", motivation: "", pleasure: "", comment: "", validated: false }; }
-function blankNonDone() { return { validated: false, reason: "", fatigue: "", pain: "", comment: "" }; }
 function calendarSession(workout, date) {
   return {
     ...workout,
@@ -72,15 +78,6 @@ function proposalToSession(proposal) {
 }
 function proposalStyle(status) { return status === "Programmée" ? "bg-white text-black" : "bg-zinc-500 text-white"; }
 function availableYears(sessions, preferredYear = new Date().getFullYear()) { const currentYear = new Date().getFullYear(); const years = new Set([currentYear - 5, currentYear, currentYear + 25, Number(preferredYear)]); CALENDAR_YEARS.forEach((year) => years.add(year)); sessions.forEach((session) => years.add(parseLocalDate(session.date).getFullYear())); return [...years].sort((a, b) => b - a); }
-
-const defaultCategories = [item("cat-route", "Route", "bg-blue-500"), item("cat-vtt", "VTT", "bg-emerald-500"), item("cat-cx", "Cyclo-cross", "bg-orange-500"), item("cat-home", "Home-trainer", "bg-purple-500"), item("cat-run", "Course à pied", "bg-rose-500"), item("cat-ppg", "Préparation physique", "bg-zinc-500")];
-const defaultSubcategories = [item("sub-endurance", "Endurance", "bg-blue-500"), item("sub-seuil", "Seuil", "bg-yellow-500"), item("sub-pma", "PMA", "bg-red-500"), item("sub-sprint", "Sprint", "bg-rose-500"), item("sub-force", "Force", "bg-orange-500"), item("sub-velocite", "Vélocité", "bg-cyan-500"), item("sub-technique", "Technique", "bg-emerald-500"), item("sub-recuperation", "Récupération", "bg-emerald-500"), item("sub-mobilite", "Mobilité", "bg-purple-500"), item("sub-renfo", "Renforcement", "bg-zinc-500")];
-const defaultAthletes = [athlete("athlete-1", "Athlète 1", "70", "420", "360", "330"), athlete("athlete-2", "Athlète 2", "65"), athlete("athlete-3", "Athlète 3")];
-const defaultLibrary = [{ id: "workout-1", category: "Route", subcategory: "Endurance", title: "Endurance fondamentale progressive", totalDuration: "1h30", expectedRpe: "4/10", description: "Séance d’endurance avec progression légère en fin de sortie.", blocks: [simpleBlock("Échauffement", "20 min", "Z1", "Pédalage facile."), simpleBlock("Corps de séance", "55 min", "Z2", "Rester stable."), simpleBlock("Fin de séance", "15 min", "Z3", "Progressif sans se mettre dans le rouge.")] }];
-const statusStyle = { planned: "bg-white text-black", awaitingAction: "bg-yellow-400 text-black", done: "bg-emerald-500 text-white", notDoneJustified: "bg-zinc-700 text-white" };
-const statusLabel = { planned: "Programmée", awaitingAction: "Action attendue", done: "Réalisée", notDoneJustified: "Non faite justifiée" };
-const weekLabels = [{ name: "Aucun", color: "" }, { name: "Off", color: "bg-zinc-700 text-white border-zinc-500" }, { name: "Maintien", color: "bg-blue-500 text-white border-blue-400" }, { name: "Récup", color: "bg-emerald-500 text-white border-emerald-400" }, { name: "Charge", color: "bg-yellow-500 text-black border-yellow-400" }, { name: "Grosse charge", color: "bg-red-500 text-white border-red-400" }, { name: "Affûtage", color: "bg-rose-500 text-white border-rose-400" }, { name: "Affûtage / Course", color: "bg-purple-500 text-white border-purple-400" }];
-
 function Field({ label, children }) { return <label className="block"><span className="mb-1 block text-xs font-medium text-zinc-400">{label}</span>{children}</label>; }
 function Input({ className = "", ...props }) { return <input {...props} className={`w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`} />; }
 function Textarea({ className = "", ...props }) { return <textarea {...props} className={`w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`} />; }
