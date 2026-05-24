@@ -60,12 +60,13 @@ import {
   Textarea,
 } from "@/components/ui/ui";
 import AuthPage from "@/components/auth/AuthPage";
-import CalendarPage from "@/components/calendar/CalendarPage";
+
 import Header from "@/components/layout/Header";
 import CalendarToolbar from "@/components/calendar/CalendarToolbar";
 import YearView from "@/components/calendar/YearView";
 import MonthView from "@/components/calendar/MonthView";
 import { proposalStyle } from "@/lib/proposalUtils";
+import AthleteSelector from "@/components/athlete/AthleteSelector";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
