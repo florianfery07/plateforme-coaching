@@ -49,11 +49,8 @@ import {
   Badge,
   Btn,
   Empty,
-  Field,
-  Input,
   Panel,
   Select,
-  Textarea,
 } from "@/components/ui/ui";
 import AuthPage from "@/components/auth/AuthPage";
 
@@ -68,11 +65,10 @@ import StatCard from "@/components/athlete/StatCard";
 import WeeklyLoadChart from "@/components/athlete/WeeklyLoadChart";
 import WeekPicker from "@/components/athlete/WeekPicker";
 import WeekDetail from "@/components/athlete/WeekDetail";
-import Stats from "@/components/athlete/Stats";
-import CP from "@/components/athlete/CP";
 import ManagementPage from "@/components/athlete/ManagementPage";
 import CreatePage from "@/components/library/CreatePage";
 import LibraryPage from "@/components/library/LibraryPage";
+import AthletePage from "@/components/athlete/AthletePage";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
@@ -983,96 +979,6 @@ const table = isCategory
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
-}
-
-function AthletePage({ athleteActive, activeId, calendarYear, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }) {
-  const a = athleteActive;
-
-  return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-      <Panel className="h-fit">
-        <h2 className="mb-2 text-2xl font-semibold">Fiche de {a.name}</h2>
-
-        <div className="space-y-4">
-          {[
-            ["Nom", "name"],
-            ["Nom du calendrier", "calendarName"],
-            ["Email", "email"],
-            ["Âge", "age"],
-            ["Taille", "height"],
-            ["Poids", "weight"],
-          ].map(([label, key]) => (
-            <Field key={key} label={label}>
-              <Input
-                value={a[key]}
-                onChange={(event) => updateAthlete(key, event.target.value)}
-              />
-            </Field>
-          ))}
-        </div>
-      </Panel>
-
-      <section className="space-y-6 xl:col-span-2">
-        <Panel>
-          <h2 className="mb-4 text-2xl font-semibold">Objectifs et contexte</h2>
-
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {[
-              ["Court terme", "shortGoal"],
-              ["Moyen terme", "mediumGoal"],
-              ["Long terme", "longGoal"],
-            ].map(([label, key]) => (
-              <Field key={key} label={label}>
-                <Textarea
-                  value={a[key]}
-                  onChange={(event) => updateAthlete(key, event.target.value)}
-                  rows={4}
-                />
-              </Field>
-            ))}
-          </div>
-
-          <Field label="Contexte">
-            <Textarea
-              value={a.context}
-              onChange={(event) => updateAthlete("context", event.target.value)}
-              rows={5}
-            />
-          </Field>
-        </Panel>
-
-        <Stats
-  stats={stats}
-  training={training}
-  sessions={activeSessions}
-  athleteId={activeId}
-  calendarYear={calendarYear}
-  weekColors={weekColors}
-  setWeekColors={setWeekColors}
-  weekNotes={weekNotes}
-  setWeekNotes={setWeekNotes}
-/>
-
-        <CP athlete={a} updateAthlete={updateAthlete} cpData={cpData} />
-
-        <Panel>
-          <h2 className="mb-2 text-2xl font-semibold">Invitation individuelle</h2>
-
-          <p className="text-sm text-zinc-400">
-            Lien prévu : https://myrideplan.vercel.app/?invite={a.inviteToken}
-          </p>
-
-          <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-sm">
-            <div className="text-zinc-400">Code invitation</div>
-
-            <div className="mt-1 font-mono text-lg font-bold">
-              {a.inviteToken}
-            </div>
-          </div>
-        </Panel>
-      </section>
-    </div>
-  );
 }
 
 function DevChecks() { const future = calendarSession(defaultLibrary[0], addDays(new Date(), 2)); const awaiting = calendarSession(defaultLibrary[0], new Date()); const readyOnly = { ...awaiting, feedback: { ...awaiting.feedback, actualTime: "1h30", rpe: "7", motivation: "8", pleasure: "4", comment: "RAS" } }; const completed = { ...readyOnly, feedback: { ...readyOnly.feedback, validated: true } }; const justified = { ...awaiting, nonDone: { validated: true, reason: "Malade" } }; const checks = [["CP", Boolean(criticalPower(420, 360, 330, 70)?.cp)], ["Zone 7", criticalPower(420, 360, 330, 70)?.zones.length === 7], ["Temps converti", durationHours("1h30") === 1.5], ["Calendrier", monthDays(2026, 0).length >= 31], ["Proposition blanche", proposalStyle("Programmée") === "bg-white text-black"], ["Futur blanc", sessionStatus(future) === "planned"], ["Retour incomplet jaune", sessionStatus(awaiting) === "awaitingAction"], ["Retour complet non validé jaune", sessionStatus(readyOnly) === "awaitingAction"], ["Retour validé vert", sessionStatus(completed) === "done"], ["Non faite gris", sessionStatus(justified) === "notDoneJustified"], ["Stats semaines réelles", [52, 53].includes(trainingStats([completed], new Date().getFullYear()).weeks.length)], ["Années stats", availableYears([completed], 2029).includes(2029)], ["Années futures", availableYears([], 2045).includes(2045)], ["Stats temps", trainingStats([completed], new Date().getFullYear()).totals.time === 1.5], ["Stats synchronisées", trainingStats([completed], weekInfo(completed.date).year).done === 1], ["Stats calendrier 2029", trainingStats([{ ...completed, date: "2029-02-20" }], 2029).done === 1], ["Stats semaine 8", trainingStats([{ ...completed, date: "2029-02-20" }], 2029).weeks.find((week) => week.week === "S8")?.sessions === 1], ["Détail semaine complet", trainingStats([{ ...completed, date: "2029-04-18" }], 2029).weeks.find((week) => week.week === weekInfo("2029-04-18").label)?.time === 1.5], ["Liste séances semaine", trainingStats([{ ...completed, date: "2029-04-18" }], 2029).weeks.find((week) => week.week === weekInfo("2029-04-18").label)?.sessionsList?.length === 1], ["Couleurs semaines", weekLabels.length >= 8], ["Date locale", dateKey(new Date(2026, 0, 1)) === "2026-01-01"], ["Parse date locale", parseLocalDate("2029-02-20").getMonth() === 1], ["Semaine ISO", weekInfo(new Date(2026, 0, 1)).label === "S1"], ["Clé couleur athlete", `${"athlete-1"}-${2026}-${"S1"}` === "athlete-1-2026-S1"], ["Dates semaines réelles", trainingStats([completed], 2026).weeks[0].range === "29/12 - 04/01"], ["Semaine calendrier", weekInfo(new Date("2029-02-20")).label === "S8"], ["21 mai semaine 21", weekInfoForYear("2026-05-21", 2026).label === "S21"], ["21 mai dans plage", findWeekForDate("2026-05-21", 2026).range === "18/05 - 24/05"], ["Semaine 20 mai", trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.sessions === 1], ["Temps semaine 20", trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.time === 1.5], ["Liste semaine 20", trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.sessionsList?.[0]?.id === completed.id], ["RPE semaine 20", trainingAverage(trainingStats([{ ...completed, date: "2026-05-11" }], 2026).weeks.find((week) => week.week === "S20")?.rpeSum, 1) === "7.0"], ["21 mai compté S21", trainingStats([{ ...completed, date: "2026-05-21" }], 2026).weeks.find((week) => week.week === "S21")?.sessions === 1], ["21 mai pas S20", trainingStats([{ ...completed, date: "2026-05-21" }], 2026).weeks.find((week) => week.week === "S20")?.sessions === 0], ["Token invitation", athlete("test", "Test").inviteToken === "invite-test"], ["Proposition session", proposalToSession({ id: "p1", type: "Course", title: "Test", date: "2026-05-21", message: "OK" }).sourceProposalId === "p1"]]; return <Panel className="text-sm text-zinc-400"><b className="text-white">Tests intégrés</b><div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-4">{checks.map(([label, ok]) => <div key={label}>{label} : {ok ? "OK" : "Erreur"}</div>)}</div></Panel>; }
