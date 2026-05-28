@@ -71,6 +71,8 @@ import Block from "@/components/calendar/Block";
 import WorkoutBlock from "@/components/calendar/WorkoutBlock";
 import QuickCreate from "@/components/calendar/QuickCreate";
 import CalendarPageOld from "@/components/calendar/CalendarPageOld";
+import StatCard from "@/components/athlete/StatCard";
+import WeeklyLoadChart from "@/components/athlete/WeeklyLoadChart";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
@@ -1210,120 +1212,7 @@ function Stats({ training, sessions, athleteId, calendarYear, weekColors, setWee
 </Panel>
 );
 }
-function StatCard({ label, value }) { return <div className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-center"><div className="text-xs text-zinc-400">{label}</div><div className="text-2xl font-bold">{value}</div></div>; }
-function WeeklyLoadChart({ weeks }) {
-  const activeWeeks = weeks.filter((week) => week.sessions > 0);
 
-  if (!activeWeeks.length) {
-    return (
-      <div className="mt-6 rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-sm text-zinc-400">
-        Pas encore assez de données pour afficher un graphique d’évolution.
-      </div>
-    );
-  }
-
-  const rows = activeWeeks.map((week) => {
-    const greenLoad = (week.sessionsList || []).reduce((sum, session) => {
-      const rpe = Number(session.feedback?.rpe || 0);
-      if (rpe < 1 || rpe > 4) return sum;
-      return sum + durationHours(session.feedback?.actualTime) * Math.pow(rpe, 2);
-    }, 0);
-
-    const yellowLoad = (week.sessionsList || []).reduce((sum, session) => {
-      const rpe = Number(session.feedback?.rpe || 0);
-      if (rpe < 5 || rpe > 8) return sum;
-      return sum + durationHours(session.feedback?.actualTime) * Math.pow(rpe, 2);
-    }, 0);
-
-    const redLoad = (week.sessionsList || []).reduce((sum, session) => {
-      const rpe = Number(session.feedback?.rpe || 0);
-      if (rpe < 9 || rpe > 10) return sum;
-      return sum + durationHours(session.feedback?.actualTime) * Math.pow(rpe, 2);
-    }, 0);
-
-    const load = greenLoad + yellowLoad + redLoad;
-
-    return {
-      week: week.week,
-      time: week.time,
-      load,
-      greenLoad,
-      yellowLoad,
-      redLoad,
-    };
-  });
-
-  const maxTime = Math.max(...rows.map((row) => row.time), 1);
-
-  return (
-    <div className="mt-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold">Évolution hebdomadaire</h3>
-        <p className="text-sm text-zinc-400">
-          Temps total et répartition de charge par intensité : durée × RPE², calculée séance par séance.
-        </p>
-      </div>
-
-      <div className="space-y-5">
-        {rows.map((row) => (
-          <div key={row.week} className="space-y-2">
-            <div className="flex justify-between text-xs text-zinc-400">
-              <span>{row.week}</span>
-              <span>
-                {row.time.toFixed(1)} h • charge {row.load.toFixed(1)}
-              </span>
-            </div>
-
-            <div className="h-3 overflow-hidden rounded-full bg-zinc-900">
-              <div
-                className="h-full rounded-full bg-white"
-                style={{ width: `${Math.max(6, (row.time / maxTime) * 100)}%` }}
-              />
-            </div>
-
-            <div className="h-8 overflow-hidden rounded-full bg-zinc-900">
-              <div className="flex h-full w-full">
-                {row.greenLoad > 0 && (
-                  <div
-                    className="flex h-full items-center justify-center bg-emerald-500 text-[10px] font-bold text-white"
-                    style={{ width: `${(row.greenLoad / row.load) * 100}%` }}
-                  >
-                    {Math.round((row.greenLoad / row.load) * 100)}%
-                  </div>
-                )}
-
-                {row.yellowLoad > 0 && (
-                  <div
-                    className="flex h-full items-center justify-center bg-yellow-400 text-[10px] font-bold text-black"
-                    style={{ width: `${(row.yellowLoad / row.load) * 100}%` }}
-                  >
-                    {Math.round((row.yellowLoad / row.load) * 100)}%
-                  </div>
-                )}
-
-                {row.redLoad > 0 && (
-                  <div
-                    className="flex h-full items-center justify-center bg-red-500 text-[10px] font-bold text-white"
-                    style={{ width: `${(row.redLoad / row.load) * 100}%` }}
-                  >
-                    {Math.round((row.redLoad / row.load) * 100)}%
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-4 text-xs text-zinc-400">
-        <span>Blanc = temps total</span>
-        <span>Vert = RPE 1-4</span>
-        <span>Jaune = RPE 5-8</span>
-        <span>Rouge = RPE 9-10</span>
-      </div>
-    </div>
-  );
-}
 function WeekPicker({ weeks, selectedWeek, setSelectedWeek, selectedYear, athleteId, weekColors }) { return <div className="mt-6"><h3 className="mb-3 text-lg font-semibold">Semaines de l’année</h3><div className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-[repeat(13,minmax(0,1fr))]">{weeks.map((week) => { const tag = weekColors[`${athleteId}-${selectedYear}-${week.week}`]; const tagColor = weekLabels.find((row) => row.name === tag)?.color; const base = selectedWeek === week.week ? "border-white bg-white text-black" : week.sessions ? "border-zinc-600 bg-zinc-800 text-white" : "border-zinc-800 bg-zinc-900 text-zinc-500"; return <button key={week.week} onClick={() => setSelectedWeek(week.week)} className={`rounded-xl border px-2 py-2 text-sm font-semibold ${tagColor || base}`}><span className="block">{week.week}</span><span className="block text-[10px] font-normal opacity-80">{week.range}</span></button>; })}</div><div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-400">{weekLabels.filter((row) => row.name !== "Aucun").map((row) => <span key={row.name} className={`rounded-full border px-3 py-1 ${row.color}`}>{row.name}</span>)}</div></div>; }
 function WeekDetail({ week, selectedTag, tagWeek, athleteId, activeYear, weekNotes, setWeekNotes }) {
   const noteKey = `${athleteId}-${activeYear}-${week.week}`;
