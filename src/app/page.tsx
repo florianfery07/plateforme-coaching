@@ -70,7 +70,6 @@ import FilterSelects from "@/components/calendar/FilterSelects";
 import Block from "@/components/calendar/Block";
 import WorkoutBlock from "@/components/calendar/WorkoutBlock";
 import QuickCreate from "@/components/calendar/QuickCreate";
-import Session from "@/components/calendar/Session";
 import CalendarPageOld from "@/components/calendar/CalendarPageOld";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
