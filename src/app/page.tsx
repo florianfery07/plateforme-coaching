@@ -46,7 +46,7 @@ import {
   ZONES,
 } from "@/lib/platformDefaults";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Badge,
   Btn,
@@ -76,6 +76,7 @@ import WeekPicker from "@/components/athlete/WeekPicker";
 import WeekDetail from "@/components/athlete/WeekDetail";
 import Stats from "@/components/athlete/Stats";
 import CP from "@/components/athlete/CP";
+import Editable from "@/components/library/Editable";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
@@ -1004,109 +1005,7 @@ function LibraryPage({ categories, setCategories, subcategories, setSubcategorie
 >
   Supprimer
 </Btn></div></div>)}</div></div><details className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5"><summary className="cursor-pointer text-xl font-semibold">Gérer les catégories et sous-parties</summary><div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2"><Editable title="Catégories" items={categories} setItems={setCategories} kind="category" {...{ rename, removeItem }} /><Editable title="Sous-parties" items={subcategories} setItems={setSubcategories} kind="subcategory" {...{ rename, removeItem }} /></div></details></Panel>; }
-function Editable({ title, items, setItems, kind, rename, removeItem }) {
-  const [editing, setEditing] = useState({});
 
-  function updateDraft(row, field, value) {
-    setEditing((current) => ({
-      ...current,
-      [row.id]: {
-        name: current[row.id]?.name ?? row.name,
-        color: current[row.id]?.color ?? row.color,
-        [field]: value,
-      },
-    }));
-  }
-
-  async function validateEdit(row) {
-    const draft = editing[row.id] || row;
-    const name = draft.name.trim();
-
-    if (!name) return;
-
-    if (name !== row.name) {
-      await rename(kind, row.id, name);
-    }
-
-    if (draft.color !== row.color) {
-      const table =
-        kind === "category" ? "workout_categories" : "workout_subcategories";
-
-      await supabase
-        .from(table)
-        .update({ color: draft.color })
-        .eq("id", row.id);
-    }
-
-    setItems((current) =>
-      current.map((itemRow) =>
-        itemRow.id === row.id
-          ? { ...itemRow, name, color: draft.color }
-          : itemRow
-      )
-    );
-
-    setEditing((current) => {
-      const copy = { ...current };
-      delete copy[row.id];
-      return copy;
-    });
-  }
-
-  async function confirmRemove(row) {
-    const ok = window.confirm(`Supprimer "${row.name}" ?`);
-    if (!ok) return;
-
-    await removeItem(kind, row.name);
-  }
-
-  return (
-    <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-5">
-      <h3 className="mb-4 text-xl font-bold">{title}</h3>
-
-      <div className="space-y-2">
-        {items.map((row) => {
-          const draft = editing[row.id] || row;
-
-          return (
-            <div
-              key={row.id}
-              className="grid grid-cols-1 gap-2 rounded-2xl bg-zinc-800 p-3 md:grid-cols-5"
-            >
-              <span
-                className={`${draft.color} rounded-xl px-3 py-2 text-center text-sm font-semibold`}
-              >
-                {draft.name}
-              </span>
-
-              <Input
-                value={draft.name}
-                onChange={(event) =>
-                  updateDraft(row, "name", event.target.value)
-                }
-              />
-
-              <ColorSelect
-                value={draft.color}
-                onChange={(event) =>
-                  updateDraft(row, "color", event.target.value)
-                }
-              />
-
-              <Btn variant="primary" onClick={() => validateEdit(row)}>
-                Valider modification
-              </Btn>
-
-              <Btn variant="danger" onClick={() => confirmRemove(row)}>
-                Supprimer
-              </Btn>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 function AthletePage({ athleteActive, activeId, calendarYear, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }) {
   const a = athleteActive;
 
