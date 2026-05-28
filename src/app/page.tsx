@@ -181,10 +181,10 @@ user_id: row.user_id || "",
       subcategory: "",
       title: row.title || "Séance",
       totalDuration: row.duration || "",
-      expectedRpe: "",
-      description: "",
+      expectedRpe: row.expected_rpe || "",
+      description: row.description || "",
       date: row.date,
-      blocks: [],
+      blocks: row.blocks || [],
       feedback: {
         ...blankFeedback(),
         actualTime: feedback?.real_duration || "",
@@ -689,8 +689,8 @@ async function logout() {
       .insert(workoutData);
 
     if (error) {
-      console.error("Erreur ajout séance bibliothèque", JSON.stringify(error, null, 2));
-alert(error.message || "Erreur Supabase");
+      console.error("Erreur ajout séance bibliothèque", error);
+alert(JSON.stringify(error, null, 2));
       return;
     }
   }
@@ -713,6 +713,8 @@ alert(error.message || "Erreur Supabase");
       workout_type: session.category,
       title: session.title,
       duration: session.totalDuration,
+      expected_rpe: session.expectedRpe,
+      description: session.description,
       completed: false,
     })
     .select()
