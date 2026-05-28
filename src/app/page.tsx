@@ -38,8 +38,6 @@ import {
   defaultLibrary,
   defaultSubcategories,
   MONTHS,
-  repeatBlock,
-  simpleBlock,
   statusLabel,
   statusStyle,
   weekLabels,
@@ -64,7 +62,6 @@ import { proposalStyle } from "@/lib/proposalUtils";
 import AthleteSelector from "@/components/athlete/AthleteSelector";
 import Proposal from "@/components/calendar/Proposal";
 import AthleteProposalForm from "@/components/calendar/AthleteProposalForm";
-import FilterSelects from "@/components/calendar/FilterSelects";
 import Block from "@/components/calendar/Block";
 import CalendarPageOld from "@/components/calendar/CalendarPageOld";
 import StatCard from "@/components/athlete/StatCard";
@@ -73,9 +70,9 @@ import WeekPicker from "@/components/athlete/WeekPicker";
 import WeekDetail from "@/components/athlete/WeekDetail";
 import Stats from "@/components/athlete/Stats";
 import CP from "@/components/athlete/CP";
-import Editable from "@/components/library/Editable";
 import ManagementPage from "@/components/athlete/ManagementPage";
 import CreatePage from "@/components/library/CreatePage";
+import LibraryPage from "@/components/library/LibraryPage";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
@@ -987,21 +984,6 @@ const table = isCategory
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
 }
-
-function LibraryPage({ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }) { return <Panel><h2 className="mb-2 text-2xl font-semibold">Ma bibliothèque générale de séances</h2><p className="mb-5 text-sm text-zinc-400">Ici, pas de sélection d’athlète : seulement mes séances et mes réglages.</p><div className="mb-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5"><div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h3 className="text-xl font-semibold">Mes séances créées</h3><p className="text-sm text-zinc-400">Filtre par catégorie et sous-partie.</p></div><FilterSelects {...{ categories, subcategories, filter, setFilter }} /></div><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">{!filteredLibrary.length && <Empty text="Aucune séance." />}{filteredLibrary.map((workout) => <div key={workout.id} className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4"><h4 className="text-lg font-bold">{workout.title}</h4><p className="text-sm text-zinc-400">{workout.totalDuration || "Durée libre"} • {workout.blocks.length} bloc(s)</p><div className="mt-4 flex gap-2"><Btn variant="primary" className="flex-1" onClick={() => editWorkout(workout)}>Modifier</Btn><Btn
-  variant="danger"
-  className="flex-1"
-  onClick={async () => {
-    await supabase
-      .from("workout_library")
-      .delete()
-      .eq("id", workout.id);
-
-    setLibrary(library.filter((row) => row.id !== workout.id));
-  }}
->
-  Supprimer
-</Btn></div></div>)}</div></div><details className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5"><summary className="cursor-pointer text-xl font-semibold">Gérer les catégories et sous-parties</summary><div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2"><Editable title="Catégories" items={categories} setItems={setCategories} kind="category" {...{ rename, removeItem }} /><Editable title="Sous-parties" items={subcategories} setItems={setSubcategories} kind="subcategory" {...{ rename, removeItem }} /></div></details></Panel>; }
 
 function AthletePage({ athleteActive, activeId, calendarYear, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }) {
   const a = athleteActive;
