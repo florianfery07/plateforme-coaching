@@ -717,6 +717,7 @@ alert(JSON.stringify(error, null, 2));
       duration: session.totalDuration,
       expected_rpe: session.expectedRpe,
       description: session.description,
+      blocks: session.blocks,
       completed: false,
     })
     .select()
@@ -773,10 +774,12 @@ setView("calendar");
 if (field === "validated" && value === true) {
   await supabase
     .from("calendar_workouts")
-    .update({ completed: true })
+    .update({
+      completed: true,
+      non_done: false,
+    })
     .eq("id", sessionId);
 }
-
 await loadAllData();
 }
   async function updateNonDone(sessionId, field, value) {
@@ -975,7 +978,7 @@ const table = isCategory
     {view === "calendar" && <CalendarPageOld {...{ athleteActive, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, updateFeedback, updateNonDone, updateSession, setProposals, programProposal, addAthleteProposal, isCoach }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
-    {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, availableYears }} />}
+    {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
