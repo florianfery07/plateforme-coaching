@@ -11,6 +11,8 @@ import {
   weekInfoForYear,
 } from "@/lib/trainingUtils";
 
+import { CALENDAR_YEARS } from "@/lib/platformDefaults";
+
 import { Btn, Panel, Select } from "@/components/ui/ui";
 
 import StatCard from "@/components/athlete/StatCard";
@@ -18,6 +20,23 @@ import WeeklyLoadChart from "@/components/athlete/WeeklyLoadChart";
 import WeekPicker from "@/components/athlete/WeekPicker";
 import WeekDetail from "@/components/athlete/WeekDetail";
 
+function getAvailableYears(sessions, preferredYear = new Date().getFullYear()) {
+  const currentYear = new Date().getFullYear();
+  const years = new Set([
+    currentYear - 5,
+    currentYear,
+    currentYear + 25,
+    Number(preferredYear),
+  ]);
+
+  CALENDAR_YEARS.forEach((year) => years.add(year));
+
+  sessions.forEach((session) =>
+    years.add(parseLocalDate(session.date).getFullYear())
+  );
+
+  return [...years].sort((a, b) => b - a);
+}
 export default function Stats({
   training,
   sessions,
@@ -27,12 +46,11 @@ export default function Stats({
   setWeekColors,
   weekNotes,
   setWeekNotes,
-  availableYears,
 }) {
-  const years = availableYears(
-    sessions,
-    calendarYear
-  );
+  const years = getAvailableYears(
+  sessions,
+  calendarYear
+);
 
   const latestDone = [...sessions]
     .filter((session) =>
