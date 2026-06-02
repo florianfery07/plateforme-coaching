@@ -426,8 +426,10 @@ useEffect(() => {
   setNewAthlete("");
 } 
 async function loginCoach(email, password) {
+  const cleanEmail = email.trim().toLowerCase();
+
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: cleanEmail,
     password,
   });
 
@@ -436,13 +438,19 @@ async function loginCoach(email, password) {
     return false;
   }
 
-  const { data: athlete } = await supabase
+  const { data: athleteByUserId } = await supabase
     .from("athletes")
     .select("id")
     .eq("user_id", data.user.id)
     .maybeSingle();
 
-  if (athlete) {
+  const { data: athleteByEmail } = await supabase
+    .from("athletes")
+    .select("id")
+    .eq("email", cleanEmail)
+    .maybeSingle();
+
+  if (athleteByUserId || athleteByEmail) {
     await supabase.auth.signOut();
     console.error("Ce compte est un compte athlète, pas coach.");
     return false;
@@ -454,8 +462,10 @@ async function loginCoach(email, password) {
 }
 
 async function loginAthlete(email, password) {
+  const cleanEmail = email.trim().toLowerCase();
+
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: cleanEmail,
     password,
   });
 
@@ -464,7 +474,7 @@ async function loginAthlete(email, password) {
     return false;
   }
 
-  const { data: athlete, error: athleteError } = await supabase
+  let { data: athlete, error: athleteError } = await supabase
     .from("athletes")
     .select("*")
     .eq("user_id", data.user.id)
@@ -474,6 +484,42 @@ async function loginAthlete(email, password) {
     console.error("Erreur récupération athlète", athleteError);
     await supabase.auth.signOut();
     return false;
+  }
+
+  if (!athlete) {
+    const { data: athleteByEmail, error: emailError } = await supabase
+      .from("athletes")
+      .select("*")
+      .eq("email", cleanEmail)
+      .maybeSingle();
+
+    if (emailError) {
+      console.error("Erreur récupération athlète par email", emailError);
+      await supabase.auth.signOut();
+      return false;
+    }
+
+    if (athleteByEmail) {
+      const { error: linkError } = await supabase
+        .from("athletes")
+        .update({
+          user_id: data.user.id,
+          email: cleanEmail,
+        })
+        .eq("id", athleteByEmail.id);
+
+      if (linkError) {
+        console.error("Erreur liaison athlète par email", linkError);
+        await supabase.auth.signOut();
+        return false;
+      }
+
+      athlete = {
+        ...athleteByEmail,
+        user_id: data.user.id,
+        email: cleanEmail,
+      };
+    }
   }
 
   if (!athlete) {
@@ -532,13 +578,17 @@ async function acceptInvite(inviteToken, email, password) {
     };
   }
 
-  const { error: updateError } = await supabase
-    .from("athletes")
-    .update({
-      user_id: data.user.id,
-      email,
-    })
-    .eq("id", athleteToLink.id);
+  const { error: updateError } = await supabase.rpc(
+  "link_athlete_invite",
+  {
+    athlete_id: athleteToLink.id,
+    athlete_email: email.trim().toLowerCase(),
+    auth_user_id: data.user.id,
+  }
+);
+console.log("RPC ERROR", updateError);
+console.log("USER ID", data.user.id);
+console.log("TOKEN", inviteToken);
 
   if (updateError) {
     return {
