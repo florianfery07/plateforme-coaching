@@ -586,9 +586,6 @@ async function acceptInvite(inviteToken, email, password) {
     auth_user_id: data.user.id,
   }
 );
-console.log("RPC ERROR", updateError);
-console.log("USER ID", data.user.id);
-console.log("TOKEN", inviteToken);
 
   if (updateError) {
     return {
