@@ -228,7 +228,7 @@ if (libraryData) {
     libraryData.map((row) => ({
       id: row.id,
       category: row.category || "Route",
-      subcategory: row.subcategory || "Endurance",
+      subcategory: row.subcategory || "",
       title: row.title || "",
       totalDuration: row.total_duration || "",
       expectedRpe: row.expected_rpe || "",

@@ -78,8 +78,12 @@ export default function CreatePage({
             value={draft.subcategory}
             onChange={(event) => updateDraft("subcategory", event.target.value)}
           >
-            {subcategories.map((subcategory) => (
-              <option key={subcategory.id}>{subcategory.name}</option>
+            <option value="">Aucune sous-partie</option>
+
+           {subcategories.map((subcategory) => (
+           <option key={subcategory.id} value={subcategory.name}>
+            {subcategory.name}
+            </option>
             ))}
           </Select>
         </Field>

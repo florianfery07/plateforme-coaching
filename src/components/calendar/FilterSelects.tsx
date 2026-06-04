@@ -28,8 +28,12 @@ export default function FilterSelects({
           setFilter({ ...filter, subcategory: event.target.value })
         }
       >
+        <option value="">Aucune sous-partie</option>
+
         {subcategories.map((subcategory) => (
-          <option key={subcategory.id}>{subcategory.name}</option>
+          <option key={subcategory.id} value={subcategory.name}>
+            {subcategory.name}
+          </option>
         ))}
       </Select>
     </div>

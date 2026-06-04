@@ -42,7 +42,9 @@ export default function Session({
       <div className="flex flex-col gap-4 md:flex-row md:justify-between">
         <div>
           <div className="text-sm text-zinc-400">
-            {session.category} • {session.subcategory}
+            {session.subcategory
+            ? `${session.category} • ${session.subcategory}`
+            : session.category}
           </div>
 
           <h4 className="text-xl font-bold sm:text-2xl">
