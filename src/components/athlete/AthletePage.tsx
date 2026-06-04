@@ -59,6 +59,7 @@ export default function AthletePage({
             <AthleteProfilePage
               athlete={a}
               updateAthlete={updateAthlete}
+              cpData={cpData}
             />
           </section>
         </div>
@@ -67,11 +68,8 @@ export default function AthletePage({
       {tab === "stats" && (
         <div className="grid grid-cols-1 gap-6">
           <AthleteStatsPage
-            athlete={a}
             activeId={activeId}
             calendarYear={calendarYear}
-            updateAthlete={updateAthlete}
-            cpData={cpData}
             stats={stats}
             training={training}
             activeSessions={activeSessions}

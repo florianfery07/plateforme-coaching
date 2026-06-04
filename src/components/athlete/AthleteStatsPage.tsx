@@ -2,14 +2,10 @@
 "use client";
 
 import Stats from "@/components/athlete/Stats";
-import CP from "@/components/athlete/CP";
 
 export default function AthleteStatsPage({
-  athlete,
   activeId,
   calendarYear,
-  updateAthlete,
-  cpData,
   stats,
   training,
   activeSessions,
@@ -30,12 +26,6 @@ export default function AthleteStatsPage({
         setWeekColors={setWeekColors}
         weekNotes={weekNotes}
         setWeekNotes={setWeekNotes}
-      />
-
-      <CP
-        athlete={athlete}
-        updateAthlete={updateAthlete}
-        cpData={cpData}
       />
     </section>
   );

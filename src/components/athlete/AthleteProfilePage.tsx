@@ -8,9 +8,12 @@ import {
   Textarea,
 } from "@/components/ui/ui";
 
+import CP from "@/components/athlete/CP";
+
 export default function AthleteProfilePage({
   athlete,
   updateAthlete,
+  cpData,
 }) {
   const a = athlete;
 
@@ -69,6 +72,12 @@ export default function AthleteProfilePage({
           />
         </Field>
       </Panel>
+
+      <CP
+        athlete={a}
+        updateAthlete={updateAthlete}
+        cpData={cpData}
+      />
 
       <Panel>
         <h2 className="mb-2 text-2xl font-semibold">
