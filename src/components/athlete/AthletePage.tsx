@@ -1,9 +1,8 @@
 // @ts-nocheck
 "use client";
 
-import Stats from "@/components/athlete/Stats";
-import CP from "@/components/athlete/CP";
 import AthleteProfilePage from "@/components/athlete/AthleteProfilePage";
+import AthleteStatsPage from "@/components/athlete/AthleteStatsPage";
 
 export default function AthletePage({
   athleteActive,
@@ -30,25 +29,20 @@ export default function AthletePage({
         />
       </section>
 
-      <section className="space-y-6 xl:col-span-2">
-        <Stats
-          stats={stats}
-          training={training}
-          sessions={activeSessions}
-          athleteId={activeId}
-          calendarYear={calendarYear}
-          weekColors={weekColors}
-          setWeekColors={setWeekColors}
-          weekNotes={weekNotes}
-          setWeekNotes={setWeekNotes}
-        />
-
-        <CP
-          athlete={a}
-          updateAthlete={updateAthlete}
-          cpData={cpData}
-        />
-      </section>
+      <AthleteStatsPage
+        athlete={a}
+        activeId={activeId}
+        calendarYear={calendarYear}
+        updateAthlete={updateAthlete}
+        cpData={cpData}
+        stats={stats}
+        training={training}
+        activeSessions={activeSessions}
+        weekColors={weekColors}
+        setWeekColors={setWeekColors}
+        weekNotes={weekNotes}
+        setWeekNotes={setWeekNotes}
+      />
     </div>
   );
 }
