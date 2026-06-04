@@ -176,6 +176,7 @@ export const statusStyle = {
   awaitingAction: "bg-yellow-400 text-black",
   done: "bg-emerald-500 text-white",
   notDoneJustified: "bg-zinc-700 text-white",
+  rest: "bg-blue-500 text-white",
 };
 
 export const statusLabel = {
@@ -183,6 +184,7 @@ export const statusLabel = {
   awaitingAction: "Action attendue",
   done: "Réalisée",
   notDoneJustified: "Non faite justifiée",
+  rest: "Repos",
 };
 
 export const weekLabels = [

@@ -291,6 +291,8 @@ export function zoneWatts(zoneId, cpData) {
 }
 
 export function sessionStatus(session) {
+  if (session.category === "Repos") return "rest";
+
   const future = dayStart(session.date) > dayStart(new Date());
   const justified = Boolean(session.nonDone?.validated && session.nonDone?.reason);
 

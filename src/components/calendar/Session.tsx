@@ -25,6 +25,7 @@ export default function Session({
 }) {
   const status = sessionStatus(session);
   const ready = feedbackReady(session.feedback);
+  const isRest = session.category === "Repos";
 
   const changeFeedback = (field, value) =>
     updateFeedback(session.id, field, value);
@@ -36,7 +37,35 @@ export default function Session({
     updateSession((items) =>
       items.map((item) => (item.id === session.id ? fn(item) : item))
     );
+   if (isRest) {
+  return (
+    <article className="rounded-3xl border border-blue-500 bg-blue-950 p-3 sm:p-5">
+      <div>
+        <div className="text-sm text-blue-200">
+          Repos
+        </div>
 
+        <h4 className="text-xl font-bold sm:text-2xl">
+          Repos
+        </h4>
+      </div>
+
+      <div className="mt-4 rounded-2xl bg-zinc-900 p-4 text-zinc-200">
+        <p className="font-semibold">
+          Journée de récupération.
+        </p>
+
+        <p className="mt-3">
+          Aucune séance prévue.
+        </p>
+
+        <p>
+          Aucune action demandée.
+        </p>
+      </div>
+    </article>
+  );
+}
   return (
     <article className="rounded-3xl border border-zinc-700 bg-zinc-800 p-3 sm:p-5">
       <div className="flex flex-col gap-4 md:flex-row md:justify-between">
