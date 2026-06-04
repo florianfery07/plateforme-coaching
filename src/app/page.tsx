@@ -351,7 +351,12 @@ useEffect(() => {
   const days = useMemo(() => monthDays(year, month), [year, month]);
   const activeSessions = sessions[activeId] || [];
   const activeProposals = proposals.filter((proposal) => proposal.athleteId === activeId);
-  const filteredLibrary = library.filter((workout) => workout.category === filter.category && workout.subcategory === filter.subcategory);
+  const filteredLibrary = library.filter((workout) => {
+  const categoryOk = !filter.category || workout.category === filter.category;
+  const subcategoryOk = !filter.subcategory || workout.subcategory === filter.subcategory;
+
+  return categoryOk && subcategoryOk;
+});
   const done = activeSessions.filter((session) => feedbackDone(session.feedback));
   const stats = { planned: activeSessions.length, completed: done.length, rpe: avg(done, "rpe"), motivation: avg(done, "motivation"), pleasure: avg(done, "pleasure") };
   const training = trainingStats(activeSessions, year);
