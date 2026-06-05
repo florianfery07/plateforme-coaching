@@ -51,7 +51,11 @@ export default function MonthView({
                     {daySessions.slice(0, 2).map((session) => (
                       <div
                         key={session.id}
-                        className={`${statusStyle[sessionStatus(session)]} truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}
+                        className={`${
+  session.category?.toLowerCase() === "repos"
+    ? "bg-blue-500 text-white"
+    : statusStyle[sessionStatus(session)]
+} truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}
                       >
                         {session.title}
                       </div>
