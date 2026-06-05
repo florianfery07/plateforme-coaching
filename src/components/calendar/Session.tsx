@@ -25,7 +25,8 @@ export default function Session({
 }) {
   const status = sessionStatus(session);
   const ready = feedbackReady(session.feedback);
-  const isRest = session.category === "Repos";
+  const isRest =
+  session.category?.toLowerCase() === "repos";
 
   const changeFeedback = (field, value) =>
     updateFeedback(session.id, field, value);
