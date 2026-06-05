@@ -41,14 +41,33 @@ export default function Session({
    if (isRest) {
   return (
     <article className="rounded-3xl border border-blue-500 bg-blue-950 p-3 sm:p-5">
-      <div>
-        <div className="text-sm text-blue-200">
-          Repos
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm text-blue-200">
+            Repos
+          </div>
+
+          <h4 className="text-xl font-bold sm:text-2xl">
+            Repos
+          </h4>
         </div>
 
-        <h4 className="text-xl font-bold sm:text-2xl">
-          Repos
-        </h4>
+        {isCoach && (
+          <Btn
+            onClick={async () => {
+              await supabase
+                .from("calendar_workouts")
+                .delete()
+                .eq("id", session.id);
+
+              updateSession((items) =>
+                items.filter((item) => item.id !== session.id)
+              );
+            }}
+          >
+            Retirer
+          </Btn>
+        )}
       </div>
 
       <div className="mt-4 rounded-2xl bg-zinc-900 p-4 text-zinc-200">

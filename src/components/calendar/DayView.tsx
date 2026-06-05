@@ -13,6 +13,7 @@ export default function DayView({
   sessions,
   proposals,
   cpData,
+  addRestDay,
   updateFeedback,
   updateNonDone,
   updateSession,
@@ -39,7 +40,17 @@ export default function DayView({
           </p>
         </div>
 
-        <Btn onClick={() => setMode("month")}>Retour mois</Btn>
+        <div className="flex flex-wrap gap-2">
+  {isCoach && (
+    <Btn onClick={() => addRestDay(selectedDate)}>
+      Marquer repos
+    </Btn>
+  )}
+
+  <Btn onClick={() => setMode("month")}>
+    Retour mois
+  </Btn>
+</div>
       </div>
 
       {sessions.length ? (

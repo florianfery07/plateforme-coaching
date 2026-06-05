@@ -786,6 +786,33 @@ alert(JSON.stringify(error, null, 2));
 setMode("day");
 setView("calendar");
 }
+async function addRestDay(date = selectedDate) {
+  const { error } = await supabase
+    .from("calendar_workouts")
+    .insert({
+      athlete_id: activeId,
+      date: dateKey(date),
+      workout_type: "Repos",
+      subcategory: "",
+      title: "Repos",
+      duration: "",
+      expected_rpe: "",
+      description: "Journée de récupération.",
+      blocks: [],
+      completed: true,
+      non_done: false,
+    });
+
+  if (error) {
+    console.error("Erreur ajout repos", error);
+    return;
+  }
+
+  await loadAllData();
+
+  setMode("day");
+  setView("calendar");
+}
   async function updateFeedback(sessionId, field, value) {
   const session = activeSessions.find((item) => item.id === sessionId);
   if (!session) return;
