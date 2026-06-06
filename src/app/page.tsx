@@ -969,9 +969,9 @@ if (field === "validated" && value === true) {
 
   if (error) {
     console.error(
-  "Erreur ajout catégorie",
-  JSON.stringify(error, null, 2)
-);
+      "Erreur ajout catégorie",
+      JSON.stringify(error, null, 2)
+    );
     return;
   }
 
@@ -983,14 +983,25 @@ if (field === "validated" && value === true) {
     setNewSub({ name: "", color: "bg-yellow-500" });
   }
 }
-  async function rename(kind, oldName, newName) {
+
+async function rename(kind, oldName, newName) {
   const name = newName.trim();
-  if (!name || name === oldName) return;
+
+  if (!name) return;
 
   const isCategory = kind === "category";
+
   const table = isCategory
     ? "workout_categories"
     : "workout_subcategories";
+
+  const currentItem = (isCategory ? categories : subcategories).find(
+    (row) => row.id === oldName
+  );
+
+  const previousName = currentItem?.name;
+
+  if (!previousName || previousName === name) return;
 
   const { error } = await supabase
     .from(table)
@@ -1002,23 +1013,39 @@ if (field === "validated" && value === true) {
     return;
   }
 
-  const setter = isCategory ? setCategories : setSubcategories;
+  const libraryField = isCategory ? "category" : "subcategory";
 
-  setter((items) =>
-    items.map((row) => (row.name === oldName ? { ...row, name } : row))
+  const { error: libraryError } = await supabase
+    .from("workout_library")
+    .update({ [libraryField]: name })
+    .eq(libraryField, previousName);
+
+  if (libraryError) {
+    console.error("Erreur mise à jour séances bibliothèque", libraryError);
+    return;
+  }
+
+  setFilter((current) =>
+    isCategory
+      ? {
+          ...current,
+          category: name,
+        }
+      : {
+          ...current,
+          subcategory: name,
+        }
   );
 
-  setLibrary((items) =>
-    items.map((workout) =>
-      workout[kind] === oldName ? { ...workout, [kind]: name } : workout
-    )
-  );
+  await loadAllData();
 }
-  async function removeItem(kind, name) {
-const isCategory = kind === "category";
-const table = isCategory
-  ? "workout_categories"
-  : "workout_subcategories";
+
+async function removeItem(kind, name) {
+  const isCategory = kind === "category";
+
+  const table = isCategory
+    ? "workout_categories"
+    : "workout_subcategories";
 
   const { error } = await supabase
     .from(table)
@@ -1031,9 +1058,10 @@ const table = isCategory
   }
 
   const setter = isCategory ? setCategories : setSubcategories;
+
   setter((items) => items.filter((row) => row.name !== name));
 
-    setFilter((current) =>
+  setFilter((current) =>
     isCategory
       ? {
           ...current,
@@ -1046,7 +1074,6 @@ const table = isCategory
         }
   );
 }
-
   const sessionsFor = (date) => activeSessions.filter((session) => session.date === dateKey(date));
   const proposalsFor = (date) => activeProposals.filter((proposal) => proposal.date === dateKey(date));
  const programProposal = async (proposal) => {
