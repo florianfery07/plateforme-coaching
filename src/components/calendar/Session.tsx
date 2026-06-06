@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/ui";
 
 import Block from "@/components/calendar/Block";
+import RpeHelp from "@/components/calendar/RpeHelp";
 
 export default function Session({
   session,
@@ -183,6 +184,7 @@ export default function Session({
             Le temps réel, le RPE global, le RPE spécifique, la motivation,
             le plaisir et le commentaire valident la séance.
           </p>
+          <RpeHelp />
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
