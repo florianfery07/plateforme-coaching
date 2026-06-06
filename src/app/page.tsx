@@ -13,6 +13,7 @@ import {
   findWeekForDate,
   monthDays,
   parseLocalDate,
+  sessionLoadParts,
   sessionStatus,
   trainingAverage,
   trainingStats,
