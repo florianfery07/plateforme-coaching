@@ -261,7 +261,7 @@ export default function Stats({
       </div>
 
       <WeeklyLoadChart
-        weeks={yearTraining.weeks}
+      week={week}
       />
 
       <WeekPicker

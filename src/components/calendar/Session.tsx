@@ -103,12 +103,11 @@ export default function Session({
           <p className="text-zinc-300">
             Durée : {session.totalDuration || "—"} • RPE global attendu :{" "}
            {session.expectedRpeGlobal || session.expectedRpe || "—"}
-           {session.expectedSpecificDuration || session.expectedRpeSpecific ? (
-            <>
-           {" "}• Spécifique : {session.expectedSpecificDuration || "—"} à RPE{" "}
-           {session.expectedRpeSpecific || "—"}
-            </>
-           ) : null}
+           {session.expectedRpeSpecific ? (
+           <>
+           {" "}• RPE spécifique attendu : {session.expectedRpeSpecific}
+           </>
+          ) : null}
           </p>
         </div>
 
