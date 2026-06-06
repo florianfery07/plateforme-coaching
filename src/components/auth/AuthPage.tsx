@@ -239,7 +239,7 @@ export default function AuthPage({
             />
 
             <button
-              className="min-h-12 w-full rounded-2xl bg-zinc-800 px-4 text-base font-bold text-white"
+              className="min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white"
               type="submit"
             >
               Se connecter athlète

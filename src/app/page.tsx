@@ -183,14 +183,19 @@ user_id: row.user_id || "",
       subcategory: row.subcategory || "",
       title: row.title || "Séance",
       totalDuration: row.duration || "",
-      expectedRpe: row.expected_rpe || "",
+      expectedRpe: row.expected_rpe_global || row.expected_rpe || "",
+      expectedRpeGlobal: row.expected_rpe_global || row.expected_rpe || "",
+      expectedSpecificDuration: row.expected_specific_duration || "",
+      expectedRpeSpecific: row.expected_rpe_specific || "",
       description: row.description || "",
       date: row.date,
       blocks: row.blocks || [],
       feedback: {
         ...blankFeedback(),
         actualTime: feedback?.real_duration || "",
-        rpe: feedback?.rpe ? String(feedback.rpe) : "",
+        rpe: feedback?.rpe_global ? String(feedback.rpe_global) : feedback?.rpe ? String(feedback.rpe) : "",
+        rpeGlobal: feedback?.rpe_global ? String(feedback.rpe_global) : feedback?.rpe ? String(feedback.rpe) : "",
+        rpeSpecific: feedback?.rpe_specific ? String(feedback.rpe_specific) : "",
         motivation: feedback?.motivation ? String(feedback.motivation) : "",
         pleasure: feedback?.pleasure ? String(feedback.pleasure) : "",
         comment: feedback?.comment || "",
@@ -231,7 +236,10 @@ if (libraryData) {
       subcategory: row.subcategory || "",
       title: row.title || "",
       totalDuration: row.total_duration || "",
-      expectedRpe: row.expected_rpe || "",
+      expectedRpe: row.expected_rpe_global || row.expected_rpe || "",
+      expectedRpeGlobal: row.expected_rpe_global || row.expected_rpe || "",
+      expectedSpecificDuration: row.expected_specific_duration || "",
+      expectedRpeSpecific: row.expected_rpe_specific || "",
       description: row.description || "",
       blocks: row.blocks || [],
     }))
@@ -714,18 +722,25 @@ async function logout() {
 
   await loadAllData();
 } 
+function cleanRpe(value) {
+  const match = String(value || "").replace(",", ".").match(/[0-9.]+/);
+  return match ? Number(match[0]) : null;
+}
   async function saveWorkout() {
   if (!draft.title.trim()) return;
 
   const workoutData = {
-    category: draft.category,
-    subcategory: draft.subcategory,
-    title: draft.title,
-    total_duration: draft.totalDuration,
-    expected_rpe: draft.expectedRpe,
-    description: draft.description,
-    blocks: draft.blocks,
-  };
+  category: draft.category,
+  subcategory: draft.subcategory,
+  title: draft.title,
+  total_duration: draft.totalDuration,
+  expected_rpe: cleanRpe(draft.expectedRpeGlobal || draft.expectedRpe),
+  expected_rpe_global: cleanRpe(draft.expectedRpeGlobal || draft.expectedRpe),
+  expected_specific_duration: draft.expectedSpecificDuration || "",
+  expected_rpe_specific: cleanRpe(draft.expectedRpeSpecific),
+  description: draft.description,
+  blocks: draft.blocks,
+};
 
   if (editingId) {
     const { error } = await supabase
@@ -768,7 +783,10 @@ alert(JSON.stringify(error, null, 2));
       subcategory: session.subcategory,
       title: session.title,
       duration: session.totalDuration,
-      expected_rpe: session.expectedRpe,
+      expected_rpe: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
+      expected_rpe_global: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
+      expected_specific_duration: session.expectedSpecificDuration || "",
+      expected_rpe_specific: cleanRpe(session.expectedRpeSpecific),
       description: session.description,
       blocks: session.blocks,
       completed: false,
@@ -839,7 +857,9 @@ async function addRestDay(date = selectedDate) {
     .upsert(
       {
         workout_id: sessionId,
-        rpe: updatedFeedback.rpe ? Number(updatedFeedback.rpe) : null,
+        rpe: cleanRpe(updatedFeedback.rpeGlobal || updatedFeedback.rpe),
+        rpe_global: cleanRpe(updatedFeedback.rpeGlobal || updatedFeedback.rpe),
+        rpe_specific: cleanRpe(updatedFeedback.rpeSpecific),
         motivation: updatedFeedback.motivation ? Number(updatedFeedback.motivation) : null,
         pleasure: updatedFeedback.pleasure ? Number(updatedFeedback.pleasure) : null,
         comment: updatedFeedback.comment || "",
@@ -859,8 +879,9 @@ if (field === "validated" && value === true) {
       non_done: false,
     })
     .eq("id", sessionId);
+
+  await loadAllData();
 }
-await loadAllData();
 }
   async function updateNonDone(sessionId, field, value) {
   const session = activeSessions.find((item) => item.id === sessionId);

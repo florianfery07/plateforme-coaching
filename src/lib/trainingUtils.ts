@@ -22,6 +22,41 @@ export function durationHours(value) {
   return hours + (minutes ? minutes / 60 : 0);
 }
 
+export function rpeNumber(value) {
+  return Number(String(value || "").replace("/10", "").replace(",", ".").match(/[0-9.]+/)?.[0] || 0);
+}
+
+export function rpeColorBucket(rpe) {
+  const value = rpeNumber(rpe);
+
+  if (value >= 9) return "red";
+  if (value >= 5) return "yellow";
+  if (value >= 1) return "green";
+
+  return "none";
+}
+
+export function sessionLoadParts(session) {
+  const duration = durationHours(session.feedback?.actualTime);
+  const rpeGlobal = rpeNumber(session.feedback?.rpeGlobal || session.feedback?.rpe);
+  const rpeSpecific = rpeNumber(session.feedback?.rpeSpecific);
+  const specificDuration = durationHours(session.expectedSpecificDuration);
+
+  const globalLoad = duration * Math.pow(rpeGlobal, 2);
+
+  const specificBonus =
+    specificDuration *
+    Math.max(0, Math.pow(rpeSpecific, 2) - Math.pow(rpeGlobal, 2));
+
+  return {
+    globalLoad,
+    specificBonus,
+    totalLoad: globalLoad + specificBonus,
+    globalBucket: rpeColorBucket(rpeGlobal),
+    specificBucket: rpeColorBucket(rpeSpecific),
+  };
+}
+
 export function parseLocalDate(value) {
   if (value instanceof Date) {
     return new Date(value.getFullYear(), value.getMonth(), value.getDate());
@@ -158,7 +193,8 @@ export function weekRange(year, index) {
 export function feedbackReady(feedback = {}) {
   return Boolean(
     feedback.actualTime &&
-      feedback.rpe &&
+      (feedback.rpeGlobal || feedback.rpe) &&
+      feedback.rpeSpecific &&
       feedback.motivation &&
       feedback.pleasure &&
       feedback.comment

@@ -60,6 +60,9 @@ export function blankWorkout() {
     title: "",
     totalDuration: "",
     expectedRpe: "",
+    expectedRpeGlobal: "",
+    expectedSpecificDuration: "",
+    expectedRpeSpecific: "",
     description: "",
     blocks: [
       simpleBlock("Échauffement", "", "Z1"),
@@ -73,6 +76,8 @@ export function blankFeedback() {
   return {
     actualTime: "",
     rpe: "",
+    rpeGlobal: "",
+    rpeSpecific: "",
     motivation: "",
     pleasure: "",
     comment: "",
@@ -162,6 +167,9 @@ export const defaultLibrary = [
     title: "Endurance fondamentale progressive",
     totalDuration: "1h30",
     expectedRpe: "4/10",
+    expectedRpeGlobal: "4/10",
+    expectedSpecificDuration: "",
+    expectedRpeSpecific: "",
     description: "Séance d’endurance avec progression légère en fin de sortie.",
     blocks: [
       simpleBlock("Échauffement", "20 min", "Z1", "Pédalage facile."),

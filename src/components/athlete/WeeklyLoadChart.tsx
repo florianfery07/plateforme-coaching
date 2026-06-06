@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { durationHours } from "@/lib/trainingUtils";
+import { sessionLoadParts } from "@/lib/trainingUtils";
 
 export default function WeeklyLoadChart({ weeks }) {
   const activeWeeks = weeks.filter(
@@ -16,63 +16,56 @@ export default function WeeklyLoadChart({ weeks }) {
     );
   }
 
-  const rows = activeWeeks.map((week) => {
-    const greenLoad = (week.sessionsList || []).reduce(
-      (sum, session) => {
-        const rpe = Number(session.feedback?.rpe || 0);
+ const rows = activeWeeks.map((week) => {
+  const loads = (week.sessionsList || []).reduce(
+    (acc, session) => {
+      const parts = sessionLoadParts(session);
 
-        if (rpe < 1 || rpe > 4) return sum;
+      if (parts.globalBucket === "green") {
+        acc.greenLoad += parts.globalLoad;
+      }
 
-        return (
-          sum +
-          durationHours(session.feedback?.actualTime) *
-            Math.pow(rpe, 2)
-        );
-      },
-      0
-    );
+      if (parts.globalBucket === "yellow") {
+        acc.yellowLoad += parts.globalLoad;
+      }
 
-    const yellowLoad = (week.sessionsList || []).reduce(
-      (sum, session) => {
-        const rpe = Number(session.feedback?.rpe || 0);
+      if (parts.globalBucket === "red") {
+        acc.redLoad += parts.globalLoad;
+      }
 
-        if (rpe < 5 || rpe > 8) return sum;
+      if (parts.specificBucket === "green") {
+        acc.greenLoad += parts.specificBonus;
+      }
 
-        return (
-          sum +
-          durationHours(session.feedback?.actualTime) *
-            Math.pow(rpe, 2)
-        );
-      },
-      0
-    );
+      if (parts.specificBucket === "yellow") {
+        acc.yellowLoad += parts.specificBonus;
+      }
 
-    const redLoad = (week.sessionsList || []).reduce(
-      (sum, session) => {
-        const rpe = Number(session.feedback?.rpe || 0);
+      if (parts.specificBucket === "red") {
+        acc.redLoad += parts.specificBonus;
+      }
 
-        if (rpe < 9 || rpe > 10) return sum;
+      return acc;
+    },
+    {
+      greenLoad: 0,
+      yellowLoad: 0,
+      redLoad: 0,
+    }
+  );
 
-        return (
-          sum +
-          durationHours(session.feedback?.actualTime) *
-            Math.pow(rpe, 2)
-        );
-      },
-      0
-    );
+  const load =
+    loads.greenLoad + loads.yellowLoad + loads.redLoad;
 
-    const load = greenLoad + yellowLoad + redLoad;
-
-    return {
-      week: week.week,
-      time: week.time,
-      load,
-      greenLoad,
-      yellowLoad,
-      redLoad,
-    };
-  });
+  return {
+    week: week.week,
+    time: week.time,
+    load,
+    greenLoad: loads.greenLoad,
+    yellowLoad: loads.yellowLoad,
+    redLoad: loads.redLoad,
+  };
+});
 
   const maxTime = Math.max(
     ...rows.map((row) => row.time),
@@ -88,7 +81,7 @@ export default function WeeklyLoadChart({ weeks }) {
 
         <p className="text-sm text-zinc-400">
           Temps total et répartition de charge par intensité :
-          durée × RPE², calculée séance par séance.
+          RPE global + bonus spécifique, calculés séance par séance.
         </p>
       </div>
 

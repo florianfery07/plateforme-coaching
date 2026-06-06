@@ -101,8 +101,14 @@ export default function Session({
           </h4>
 
           <p className="text-zinc-300">
-            Durée : {session.totalDuration || "—"} • RPE attendu :{" "}
-            {session.expectedRpe || "—"}
+            Durée : {session.totalDuration || "—"} • RPE global attendu :{" "}
+           {session.expectedRpeGlobal || session.expectedRpe || "—"}
+           {session.expectedSpecificDuration || session.expectedRpeSpecific ? (
+            <>
+           {" "}• Spécifique : {session.expectedSpecificDuration || "—"} à RPE{" "}
+           {session.expectedRpeSpecific || "—"}
+            </>
+           ) : null}
           </p>
         </div>
 
@@ -155,52 +161,63 @@ export default function Session({
           </div>
 
           <p className="mt-1 text-xs text-zinc-500">
-            Le temps réel de roulage, le RPE, la motivation,
+            Le temps réel, le RPE global, le RPE spécifique, la motivation,
             le plaisir et le commentaire valident la séance.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-          <Field label="Temps réel de roulage">
-            <Input
-              value={session.feedback?.actualTime || ""}
-              onChange={(event) =>
-                changeFeedback("actualTime", event.target.value)
-              }
-              placeholder="Ex : 1h25"
-            />
-          </Field>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
+  <Field label="Temps réel de roulage">
+    <Input
+      value={session.feedback?.actualTime || ""}
+      onChange={(event) =>
+        changeFeedback("actualTime", event.target.value)
+      }
+      placeholder="Ex : 1h25"
+    />
+  </Field>
 
-          <Field label="RPE ressenti /10">
-            <Input
-              value={session.feedback?.rpe || ""}
-              onChange={(event) =>
-                changeFeedback("rpe", event.target.value)
-              }
-              placeholder="Ex : 7"
-            />
-          </Field>
+  <Field label="RPE global ressenti /10">
+    <Input
+      value={session.feedback?.rpeGlobal || session.feedback?.rpe || ""}
+      onChange={(event) => {
+        changeFeedback("rpeGlobal", event.target.value);
+        changeFeedback("rpe", event.target.value);
+      }}
+      placeholder="Ex : 5"
+    />
+  </Field>
 
-          <Field label="Motivation avant séance /10">
-            <Input
-              value={session.feedback?.motivation || ""}
-              onChange={(event) =>
-                changeFeedback("motivation", event.target.value)
-              }
-              placeholder="Ex : 8"
-            />
-          </Field>
+  <Field label="RPE spécifique ressenti /10">
+    <Input
+      value={session.feedback?.rpeSpecific || ""}
+      onChange={(event) =>
+        changeFeedback("rpeSpecific", event.target.value)
+      }
+      placeholder="Ex : 9"
+    />
+  </Field>
 
-          <Field label="Plaisir pris /5">
-            <Input
-              value={session.feedback?.pleasure || ""}
-              onChange={(event) =>
-                changeFeedback("pleasure", event.target.value)
-              }
-              placeholder="Ex : 4"
-            />
-          </Field>
-        </div>
+  <Field label="Motivation avant séance /10">
+    <Input
+      value={session.feedback?.motivation || ""}
+      onChange={(event) =>
+        changeFeedback("motivation", event.target.value)
+      }
+      placeholder="Ex : 8"
+    />
+  </Field>
+
+  <Field label="Plaisir pris /5">
+    <Input
+      value={session.feedback?.pleasure || ""}
+      onChange={(event) =>
+        changeFeedback("pleasure", event.target.value)
+      }
+      placeholder="Ex : 4"
+    />
+  </Field>
+</div>
 
         <div className="mt-4">
           <Field label="Commentaire libre (fatigue, douleur éventuelle, ressenti, etc.)">

@@ -8,6 +8,7 @@ import {
   feedbackDone,
   parseLocalDate,
   trainingStats,
+  sessionLoadParts,
   weekInfoForYear,
 } from "@/lib/trainingUtils";
 
@@ -108,6 +109,11 @@ export default function Stats({
 
   const yearDone =
     yearTraining.doneSessions || [];
+   
+  const totalLoad = yearDone.reduce(
+  (sum, session) => sum + sessionLoadParts(session).totalLoad,
+  0
+);
 
   const yearStats = {
     rpe: avg(yearDone, "rpe"),
@@ -147,6 +153,10 @@ export default function Stats({
         1
       )} h`,
     ],
+    [
+  "Charge totale",
+  totalLoad.toFixed(1),
+],
     [
       "RPE moyen",
       yearStats.rpe,

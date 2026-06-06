@@ -43,7 +43,11 @@ export default function CreatePage({
         repeatBlock(`Bloc répétition ${current.blocks.length + 1}`),
       ],
     }));
-
+  const rpeSelectValue = (value) => {
+  if (!value) return "";
+  const number = String(value).replace("/10", "");
+  return `${number}/10`;
+};
   return (
     <Panel>
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -102,17 +106,44 @@ export default function CreatePage({
           />
         </Field>
 
-        <Field label="RPE attendu">
-          <Select
-            value={draft.expectedRpe}
-            onChange={(event) => updateDraft("expectedRpe", event.target.value)}
-          >
-            <option value="">Choisir</option>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((number) => (
-              <option key={number}>{number}/10</option>
-            ))}
-          </Select>
-        </Field>
+        <Field label="RPE global attendu">
+  <Select
+    value={rpeSelectValue(draft.expectedRpeGlobal || draft.expectedRpe)}
+    onChange={(event) => {
+      updateDraft("expectedRpeGlobal", event.target.value);
+      updateDraft("expectedRpe", event.target.value);
+    }}
+  >
+    <option value="">Choisir</option>
+    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((number) => (
+      <option key={number}>{number}/10</option>
+    ))}
+  </Select>
+</Field>
+
+<Field label="Durée spécifique prévue">
+  <Input
+    value={draft.expectedSpecificDuration || ""}
+    onChange={(event) =>
+      updateDraft("expectedSpecificDuration", event.target.value)
+    }
+    placeholder="Ex : 10 min"
+  />
+</Field>
+
+<Field label="RPE spécifique attendu">
+  <Select
+    value={rpeSelectValue(draft.expectedRpeSpecific)}
+    onChange={(event) =>
+      updateDraft("expectedRpeSpecific", event.target.value)
+    }
+  >
+    <option value="">Choisir</option>
+    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((number) => (
+      <option key={number}>{number}/10</option>
+    ))}
+  </Select>
+</Field>
 
         <Field label="Description">
           <Textarea
