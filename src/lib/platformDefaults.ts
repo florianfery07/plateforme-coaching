@@ -29,27 +29,14 @@ export function simpleBlock(name = "", duration = "", zone = "Z2", instruction =
   return { type: "simple", name, duration, zone, instruction, repeatItems: [] };
 }
 
-export function repeatBlock(name = "Bloc répétition") {
+export function repeatBlock(name = "") {
   return {
     type: "repeat",
     name,
-    duration: "5 x (4 min / 3 min)",
+    duration: "",
     zone: "Z4",
     instruction: "",
-    repeatItems: [
-      {
-        name: "Effort",
-        duration: "4 min",
-        zone: "Z5",
-        instruction: "Tenir la puissance cible.",
-      },
-      {
-        name: "Récupération",
-        duration: "3 min",
-        zone: "Z1",
-        instruction: "Pédalage souple.",
-      },
-    ],
+    repeatItems: [],
   };
 }
 
@@ -64,11 +51,7 @@ export function blankWorkout() {
     expectedSpecificDuration: "",
     expectedRpeSpecific: "",
     description: "",
-    blocks: [
-      simpleBlock("Échauffement", "", "Z1"),
-      repeatBlock(),
-      simpleBlock("Retour au calme", "", "Z1"),
-    ],
+    blocks: [],
   };
 }
 

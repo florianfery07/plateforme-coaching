@@ -17,6 +17,7 @@ export default function WorkoutBlock({
         <Input
           value={block.name}
           onChange={(event) => updateBlock(blockIndex, "name", event.target.value)}
+          placeholder="Nom du bloc"
         />
 
         <Input
@@ -25,6 +26,7 @@ export default function WorkoutBlock({
             updateBlock(blockIndex, "duration", event.target.value)
           }
           className="md:col-span-2"
+          placeholder="Durée du bloc"
         />
 
         <Btn
@@ -59,6 +61,7 @@ export default function WorkoutBlock({
               updateBlock(blockIndex, "instruction", event.target.value)
             }
             rows={3}
+            placeholder="Consigne / description du bloc"
           />
         </>
       ) : (
@@ -108,6 +111,7 @@ export default function WorkoutBlock({
                     event.target.value
                   )
                 }
+                placeholder="Nom de l’étape"
               />
 
               <Input
@@ -120,6 +124,7 @@ export default function WorkoutBlock({
                     event.target.value
                   )
                 }
+                placeholder="Durée"
               />
 
               <Select
@@ -148,6 +153,7 @@ export default function WorkoutBlock({
                     event.target.value
                   )
                 }
+                placeholder="Consigne"
               />
 
               <Btn

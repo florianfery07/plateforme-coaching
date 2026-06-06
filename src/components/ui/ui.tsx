@@ -4,8 +4,8 @@ import { COLORS } from "@/lib/platformDefaults";
 
 export function Field({ label, children }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-zinc-400">
+    <label className="flex h-full flex-col">
+      <span className="mb-1 flex min-h-[32px] items-end text-xs font-medium text-zinc-400">
         {label}
       </span>
       {children}
