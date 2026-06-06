@@ -1033,7 +1033,18 @@ const table = isCategory
   const setter = isCategory ? setCategories : setSubcategories;
   setter((items) => items.filter((row) => row.name !== name));
 
-  setLibrary((items) => items.filter((workout) => workout[kind] !== name));
+    setFilter((current) =>
+    isCategory
+      ? {
+          ...current,
+          category: "",
+          subcategory: "",
+        }
+      : {
+          ...current,
+          subcategory: "",
+        }
+  );
 }
 
   const sessionsFor = (date) => activeSessions.filter((session) => session.date === dateKey(date));
