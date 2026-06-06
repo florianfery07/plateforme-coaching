@@ -32,6 +32,24 @@ export default function Session({
   const changeFeedback = (field, value) =>
     updateFeedback(session.id, field, value);
 
+  const draftFeedback = (field, value) =>
+    patch((item) => ({
+      ...item,
+      feedback: {
+        ...item.feedback,
+        [field]: value,
+        ...(field === "rpeGlobal" ? { rpe: value } : {}),
+      },
+    }));
+
+  const saveFeedback = (field, value) => {
+    updateFeedback(session.id, field, value);
+
+    if (field === "rpeGlobal") {
+      updateFeedback(session.id, "rpe", value);
+    }
+  };
+
   const changeNonDone = (field, value) =>
     updateNonDone(session.id, field, value);
 
@@ -172,8 +190,13 @@ export default function Session({
     <Input
       value={session.feedback?.actualTime || ""}
       onChange={(event) =>
-        changeFeedback("actualTime", event.target.value)
+        draftFeedback("actualTime", event.target.value)
       }
+      onBlur={(event) =>
+        saveFeedback("actualTime", event.target.value)
+      }
+      type="text"
+      inputMode="decimal"
       placeholder="Ex : 1h25"
     />
   </Field>
@@ -181,10 +204,14 @@ export default function Session({
   <Field label="RPE global ressenti /10">
     <Input
       value={session.feedback?.rpeGlobal || session.feedback?.rpe || ""}
-      onChange={(event) => {
-        changeFeedback("rpeGlobal", event.target.value);
-        changeFeedback("rpe", event.target.value);
-      }}
+      onChange={(event) =>
+        draftFeedback("rpeGlobal", event.target.value)
+      }
+      onBlur={(event) =>
+        saveFeedback("rpeGlobal", event.target.value)
+      }
+      type="text"
+      inputMode="decimal"
       placeholder="Ex : 5"
     />
   </Field>
@@ -225,8 +252,13 @@ export default function Session({
             <Textarea
               value={session.feedback?.comment || ""}
               onChange={(event) =>
-                changeFeedback("comment", event.target.value)
+                draftFeedback("comment", event.target.value)
               }
+              onBlur={(event) =>
+                saveFeedback("comment", event.target.value)
+              }
+              autoComplete="off"
+              autoCorrect="on"
               rows={8}
               placeholder="Ex : fatigue 6/10, aucune douleur, bonnes sensations..."
             />
@@ -290,7 +322,7 @@ export default function Session({
           </div>
         </div>
       )}
-      
+
       {status === "awaitingAction" && (
         <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
           <div className="mb-3 text-sm font-semibold text-zinc-300">
