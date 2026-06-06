@@ -273,7 +273,7 @@ const { data: proposalData } = await supabase
 if (proposalData) {
   setProposals(
     proposalData
-      .filter((row) => row.status !== "Refusée")
+      .filter((row) => !["Refusée", "Programmée"].includes(row.status))
       .map((row) => ({
         id: row.id,
         athleteId: row.athlete_id,
