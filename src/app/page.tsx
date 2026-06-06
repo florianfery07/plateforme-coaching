@@ -186,6 +186,7 @@ user_id: row.user_id || "",
       expectedRpe: row.expected_rpe_global || row.expected_rpe || "",
       expectedRpeGlobal: row.expected_rpe_global || row.expected_rpe || "",
       expectedSpecificDuration: row.expected_specific_duration || "",
+      adjustedSpecificDuration: row.adjusted_specific_duration || "",
       expectedRpeSpecific: row.expected_rpe_specific || "",
       description: row.description || "",
       date: row.date,
@@ -786,6 +787,7 @@ alert(JSON.stringify(error, null, 2));
       expected_rpe: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
       expected_rpe_global: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
       expected_specific_duration: session.expectedSpecificDuration || "",
+      adjusted_specific_duration: "",
       expected_rpe_specific: cleanRpe(session.expectedRpeSpecific),
       description: session.description,
       blocks: session.blocks,
@@ -830,6 +832,35 @@ async function addRestDay(date = selectedDate) {
 
   setMode("day");
   setView("calendar");
+}
+  async function updateCalendarWorkoutField(sessionId, field, value) {
+  updateSession((items) =>
+    items.map((item) =>
+      item.id === sessionId
+        ? { ...item, [field]: value }
+        : item
+    )
+  );
+
+  const fieldMap = {
+    adjustedSpecificDuration: "adjusted_specific_duration",
+  };
+
+  const supabaseField = fieldMap[field] || field;
+
+  const { error } = await supabase
+    .from("calendar_workouts")
+    .update({
+      [supabaseField]: value || null,
+    })
+    .eq("id", sessionId);
+
+  if (error) {
+  console.error("Erreur sauvegarde ajustement séance", error);
+  return;
+}
+
+await loadAllData();
 }
   async function updateFeedback(sessionId, field, value) {
   const session = activeSessions.find((item) => item.id === sessionId);
@@ -1076,7 +1107,7 @@ const table = isCategory
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
     <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={athletes} activeId={activeId} setActiveId={setActiveId} />
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, setProposals, programProposal, addAthleteProposal, isCoach }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }} />}

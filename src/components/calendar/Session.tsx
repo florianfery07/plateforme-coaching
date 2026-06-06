@@ -21,6 +21,7 @@ export default function Session({
   updateFeedback,
   updateNonDone,
   updateSession,
+  updateCalendarWorkoutField,
   isCoach,
 }) {
   const status = sessionStatus(session);
@@ -152,7 +153,36 @@ export default function Session({
           <Block key={index} block={block} cpData={cpData} />
         ))}
       </div>
+      
+    {isCoach && (
+  <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+    <div className="mb-3 text-sm font-semibold text-zinc-300">
+      Ajustement charge coach
+    </div>
 
+    <Field label="Durée spécifique retenue pour la charge">
+      <Input
+        value={session.adjustedSpecificDuration || ""}
+        onChange={(event) =>
+          updateCalendarWorkoutField(
+            session.id,
+            "adjustedSpecificDuration",
+            event.target.value
+          )
+        }
+        placeholder={
+          session.expectedSpecificDuration
+            ? `Par défaut : ${session.expectedSpecificDuration}`
+            : "Ex : 12 min"
+        }
+      />
+    </Field>
+
+    <p className="mt-2 text-xs text-zinc-500">
+      Si ce champ est vide, le calcul utilise la durée spécifique prévue.
+    </p>
+  </div>
+)}
       <div className="mt-4 rounded-2xl bg-zinc-900 p-3 sm:p-5">
         <div className="mb-3">
           <div className="text-sm font-semibold text-zinc-300">

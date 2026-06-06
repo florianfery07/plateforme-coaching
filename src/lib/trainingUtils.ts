@@ -40,7 +40,9 @@ export function sessionLoadParts(session) {
   const duration = durationHours(session.feedback?.actualTime);
   const rpeGlobal = rpeNumber(session.feedback?.rpeGlobal || session.feedback?.rpe);
   const rpeSpecific = rpeNumber(session.feedback?.rpeSpecific);
-  const specificDuration = durationHours(session.expectedSpecificDuration);
+  const specificDuration = durationHours(
+  session.adjustedSpecificDuration || session.expectedSpecificDuration
+);
 
   const globalLoad = duration * Math.pow(rpeGlobal, 2);
 
