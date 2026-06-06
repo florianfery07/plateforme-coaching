@@ -219,7 +219,7 @@ export function addTrainingValues(acc, session) {
   return {
     ...acc,
     time: acc.time + durationHours(session.feedback.actualTime),
-    rpeSum: acc.rpeSum + Number(session.feedback.rpe || 0),
+    rpeSum: acc.rpeSum + Number(session.feedback.rpeGlobal || session.feedback.rpe || 0),
     motivationSum: acc.motivationSum + Number(session.feedback.motivation || 0),
     pleasureSum: acc.pleasureSum + Number(session.feedback.pleasure || 0),
     sessionsList: [...(acc.sessionsList || []), session],
