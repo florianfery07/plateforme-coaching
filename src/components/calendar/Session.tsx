@@ -154,35 +154,7 @@ export default function Session({
         ))}
       </div>
       
-    {isCoach && (
-  <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
-    <div className="mb-3 text-sm font-semibold text-zinc-300">
-      Ajustement charge coach
-    </div>
-
-    <Field label="Durée spécifique retenue pour la charge">
-      <Input
-        value={session.adjustedSpecificDuration || ""}
-        onChange={(event) =>
-          updateCalendarWorkoutField(
-            session.id,
-            "adjustedSpecificDuration",
-            event.target.value
-          )
-        }
-        placeholder={
-          session.expectedSpecificDuration
-            ? `Par défaut : ${session.expectedSpecificDuration}`
-            : "Ex : 12 min"
-        }
-      />
-    </Field>
-
-    <p className="mt-2 text-xs text-zinc-500">
-      Si ce champ est vide, le calcul utilise la durée spécifique prévue.
-    </p>
-  </div>
-)}
+    
       <div className="mt-4 rounded-2xl bg-zinc-900 p-3 sm:p-5">
         <div className="mb-3">
           <div className="text-sm font-semibold text-zinc-300">
@@ -284,7 +256,41 @@ export default function Session({
           </Btn>
         </div>
       </div>
+      
+            {isCoach && (
+        <div className="mt-4 flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-400 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="font-semibold text-zinc-300">
+              Ajustement charge coach
+            </div>
 
+            <div>
+              Si vide, la durée spécifique prévue est utilisée.
+            </div>
+          </div>
+
+          <div className="w-full sm:w-48">
+            <Field label="Durée spécifique retenue">
+              <Input
+                value={session.adjustedSpecificDuration || ""}
+                onChange={(event) =>
+                  updateCalendarWorkoutField(
+                    session.id,
+                    "adjustedSpecificDuration",
+                    event.target.value
+                  )
+                }
+                placeholder={
+                  session.expectedSpecificDuration
+                    ? `Défaut : ${session.expectedSpecificDuration}`
+                    : "Ex : 12 min"
+                }
+              />
+            </Field>
+          </div>
+        </div>
+      )}
+      
       {status === "awaitingAction" && (
         <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
           <div className="mb-3 text-sm font-semibold text-zinc-300">
