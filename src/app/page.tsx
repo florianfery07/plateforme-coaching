@@ -1291,6 +1291,6 @@ function DevChecks() {
           </div>
         ))}
       </div>
-    </Panel>
+   </Panel>
   );
 }
