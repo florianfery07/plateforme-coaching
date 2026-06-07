@@ -75,6 +75,13 @@ export default function Session({
         {isCoach && (
           <Btn
             onClick={async () => {
+              if (
+                  !window.confirm(
+                  "Supprimer cette séance du calendrier ?"
+               )
+              ) {
+                return;
+              }
               await supabase
                 .from("calendar_workouts")
                 .delete()
@@ -144,22 +151,30 @@ export default function Session({
             </span>
           )}
 
-          {isCoach && (
-            <Btn
-              onClick={async () => {
-                await supabase
-                  .from("calendar_workouts")
-                  .delete()
-                  .eq("id", session.id);
+         {isCoach && (
+          <Btn
+           onClick={async () => {
+          if (
+            !window.confirm(
+            "Supprimer cette séance du calendrier ?"
+          )
+          ) {
+             return;
+           } 
 
-                updateSession((items) =>
-                  items.filter((item) => item.id !== session.id)
-                );
-              }}
-            >
+            await supabase
+              .from("calendar_workouts")
+              .delete()
+              .eq("id", session.id);
+
+              updateSession((items) =>
+                items.filter((item) => item.id !== session.id)
+              );
+             }}
+             >
               Retirer
             </Btn>
-          )}
+           )}
         </div>
       </div>
 
