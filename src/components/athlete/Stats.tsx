@@ -13,6 +13,7 @@ import { CALENDAR_YEARS } from "@/lib/platformDefaults";
 import { Panel } from "@/components/ui/ui";
 
 import StatCard from "@/components/athlete/StatCard";
+import AnnualLoadChart from "@/components/athlete/AnnualLoadChart";
 
 function getAvailableYears(sessions, preferredYear = new Date().getFullYear()) {
   const currentYear = new Date().getFullYear();
@@ -88,6 +89,8 @@ export default function Stats({
           />
         ))}
       </div>
+
+      <AnnualLoadChart weeks={yearTraining.weeks} />
     </Panel>
   );
 }
