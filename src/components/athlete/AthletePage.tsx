@@ -49,7 +49,7 @@ export default function AthletePage({
                 : "bg-zinc-800 text-zinc-300"
             }`}
           >
-            Statistiques
+            Statistiques annuelles
           </button>
           <button
            type="button"
