@@ -1173,7 +1173,7 @@ async function removeItem(kind, name) {
     {view === "calendar" && <CalendarPageOld {...{ athleteActive, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
-    {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes }} />}
+    {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, categories, subcategories }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;

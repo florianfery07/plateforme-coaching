@@ -13,6 +13,8 @@ export default function AthleteStatsPage({
   setWeekColors,
   weekNotes,
   setWeekNotes,
+  categories,
+  subcategories,
 }) {
   return (
     <section className="space-y-6 xl:col-span-2">
@@ -26,6 +28,8 @@ export default function AthleteStatsPage({
         setWeekColors={setWeekColors}
         weekNotes={weekNotes}
         setWeekNotes={setWeekNotes}
+        categories={categories}
+        subcategories={subcategories}
       />
     </section>
   );

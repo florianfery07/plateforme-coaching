@@ -20,6 +20,8 @@ export default function AthletePage({
   setWeekColors,
   weekNotes,
   setWeekNotes,
+  categories,
+  subcategories,
 }) {
   const a = athleteActive;
   const [tab, setTab] = useState("profile");
@@ -89,6 +91,8 @@ export default function AthletePage({
             setWeekColors={setWeekColors}
             weekNotes={weekNotes}
             setWeekNotes={setWeekNotes}
+            categories={categories}
+            subcategories={subcategories}
           />
         </div>
       )}
@@ -101,6 +105,8 @@ export default function AthletePage({
        setWeekColors={setWeekColors}
        weekNotes={weekNotes}
        setWeekNotes={setWeekNotes}
+       categories={categories}
+       subcategories={subcategories}
       />
      )}
     </div>
