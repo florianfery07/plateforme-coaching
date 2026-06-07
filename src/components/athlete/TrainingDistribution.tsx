@@ -234,9 +234,6 @@ export default function TrainingDistribution({
   subcategories,
 }) {
 
-  console.log("CATEGORIES", categories);
-  console.log("SUBCATEGORIES", subcategories);
-
   const categoryRows = buildDistribution(sessions, "category", categories);
   const subcategoryRows = buildDistribution(
     sessions,
