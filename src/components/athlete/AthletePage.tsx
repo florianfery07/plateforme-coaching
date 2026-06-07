@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import AthleteProfilePage from "@/components/athlete/AthleteProfilePage";
 import AthleteStatsPage from "@/components/athlete/AthleteStatsPage";
+import WeeklyReviewPage from "@/components/athlete/WeeklyReviewPage";
 
 export default function AthletePage({
   athleteActive,
@@ -26,7 +27,7 @@ export default function AthletePage({
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-3">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => setTab("profile")}
@@ -50,6 +51,17 @@ export default function AthletePage({
           >
             Statistiques
           </button>
+          <button
+           type="button"
+           onClick={() => setTab("weekly")}
+           className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+              tab === "weekly"
+               ? "bg-white text-zinc-950"
+               : "bg-zinc-800 text-zinc-300"
+             }`}
+            >
+           Suivi hebdo
+         </button>
         </div>
       </div>
 
@@ -80,6 +92,17 @@ export default function AthletePage({
           />
         </div>
       )}
+      {tab === "weekly" && (
+      <WeeklyReviewPage
+       sessions={activeSessions}
+       athleteId={activeId}
+       calendarYear={calendarYear}
+       weekColors={weekColors}
+       setWeekColors={setWeekColors}
+       weekNotes={weekNotes}
+       setWeekNotes={setWeekNotes}
+      />
+     )}
     </div>
   );
 }

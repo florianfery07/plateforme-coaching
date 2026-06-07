@@ -54,37 +54,20 @@ export default function WeekDetail({
       [noteKey]: value,
     }));
 
-        const { error: deleteError } = await supabase
-      .from("athlete_week_notes")
-      .delete()
-      .eq("athlete_id", athleteId)
-      .eq("year", activeYear)
-      .eq("week", week.week);
-
-    if (deleteError) {
-      console.error(
-        "Erreur suppression ancienne note semaine",
-        deleteError
-      );
-
-      alert(
-        deleteError.message ||
-          "Erreur suppression ancienne note semaine"
-      );
-
-      return;
+        const { error } = await supabase
+  .from("athlete_week_notes")
+  .upsert(
+    {
+      athlete_id: athleteId,
+      year: activeYear,
+      week: week.week,
+      note: value,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "athlete_id,year,week",
     }
-
-    const { error } = await supabase
-      .from("athlete_week_notes")
-      .insert({
-        athlete_id: athleteId,
-        year: activeYear,
-        week: week.week,
-        note: value,
-        updated_at: new Date().toISOString(),
-      });
-
+  );
     if (error) {
       console.error(
         "Erreur sauvegarde note semaine",
