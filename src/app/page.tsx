@@ -1043,9 +1043,35 @@ async function rename(kind, oldName, newName) {
 async function removeItem(kind, name) {
   const isCategory = kind === "category";
 
+  const label = isCategory ? "catégorie" : "sous-partie";
+  const workoutField = isCategory ? "category" : "subcategory";
   const table = isCategory
     ? "workout_categories"
     : "workout_subcategories";
+
+  const linkedWorkouts = library.filter(
+    (workout) => workout[workoutField] === name
+  );
+
+  const ok = window.confirm(
+    linkedWorkouts.length
+      ? `Supprimer cette ${label} supprimera aussi ${linkedWorkouts.length} séance(s) de la bibliothèque. Continuer ?`
+      : `Supprimer cette ${label} ?`
+  );
+
+  if (!ok) return;
+
+  if (linkedWorkouts.length) {
+    const { error: libraryError } = await supabase
+      .from("workout_library")
+      .delete()
+      .eq(workoutField, name);
+
+    if (libraryError) {
+      console.error("Erreur suppression séances liées", libraryError);
+      return;
+    }
+  }
 
   const { error } = await supabase
     .from(table)
@@ -1056,10 +1082,6 @@ async function removeItem(kind, name) {
     console.error("Erreur suppression catégorie", error);
     return;
   }
-
-  const setter = isCategory ? setCategories : setSubcategories;
-
-  setter((items) => items.filter((row) => row.name !== name));
 
   setFilter((current) =>
     isCategory
@@ -1073,6 +1095,8 @@ async function removeItem(kind, name) {
           subcategory: "",
         }
   );
+
+  await loadAllData();
 }
   const sessionsFor = (date) => activeSessions.filter((session) => session.date === dateKey(date));
   const proposalsFor = (date) => activeProposals.filter((proposal) => proposal.date === dateKey(date));
