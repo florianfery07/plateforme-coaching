@@ -65,56 +65,126 @@ export default function Editable({
   }
 
   async function confirmRemove(row) {
-    const ok = window.confirm(`Supprimer "${row.name}" ?`);
-
-    if (!ok) return;
-
     await removeItem(kind, row.name);
+  }
+
+  function startEdit(row) {
+    setEditing((current) => ({
+      ...current,
+      [row.id]: {
+        name: row.name,
+        color: row.color,
+      },
+    }));
+  }
+
+  function cancelEdit(id) {
+    setEditing((current) => {
+      const copy = { ...current };
+      delete copy[id];
+      return copy;
+    });
   }
 
   return (
     <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-5">
-      <h3 className="mb-4 text-xl font-bold">{title}</h3>
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="text-xl font-bold">
+          {title}
+        </h3>
 
-      <div className="space-y-2">
+        <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-400">
+          {items.length}
+        </span>
+      </div>
+
+      <div className="space-y-3">
         {items.map((row) => {
-          const draft = editing[row.id] || row;
+          const draft = editing[row.id];
+          const isEditing = !!draft;
 
           return (
             <div
               key={row.id}
-              className="grid grid-cols-1 gap-2 rounded-2xl bg-zinc-800 p-3 md:grid-cols-5"
+              className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3"
             >
-              <span
-                className={`${draft.color} rounded-xl px-3 py-2 text-center text-sm font-semibold`}
-              >
-                {draft.name}
-              </span>
+              {!isEditing ? (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div
+                    className={`${row.color} min-w-[180px] rounded-xl px-4 py-3 text-center text-sm font-bold text-white`}
+                  >
+                    {row.name}
+                  </div>
 
-              <Input
-                value={draft.name}
-                onChange={(event) =>
-                  updateDraft(row, "name", event.target.value)
-                }
-              />
+                  <div className="flex gap-2">
+                    <Btn
+                      variant="primary"
+                      onClick={() => startEdit(row)}
+                    >
+                      Modifier
+                    </Btn>
 
-              <ColorSelect
-                value={draft.color}
-                onChange={(event) =>
-                  updateDraft(row, "color", event.target.value)
-                }
-              />
+                    <Btn
+                      variant="danger"
+                      onClick={() => confirmRemove(row)}
+                    >
+                      Supprimer
+                    </Btn>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Input
+                    value={draft.name}
+                    onChange={(event) =>
+                      updateDraft(
+                        row,
+                        "name",
+                        event.target.value
+                      )
+                    }
+                  />
 
-              <Btn variant="primary" onClick={() => validateEdit(row)}>
-                Valider modification
-              </Btn>
+                  <ColorSelect
+                    value={draft.color}
+                    onChange={(event) =>
+                      updateDraft(
+                        row,
+                        "color",
+                        event.target.value
+                      )
+                    }
+                  />
 
-              <Btn variant="danger" onClick={() => confirmRemove(row)}>
-                Supprimer
-              </Btn>
+                  <div className="flex flex-wrap gap-2">
+                    <Btn
+                      variant="primary"
+                      onClick={() =>
+                        validateEdit(row)
+                      }
+                    >
+                      Valider
+                    </Btn>
+
+                    <Btn
+                      onClick={() =>
+                        cancelEdit(row.id)
+                      }
+                    >
+                      Annuler
+                    </Btn>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
+
+        {!items.length && (
+          <div className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">
+            Aucun élément.
+          </div>
+        )}
       </div>
     </div>
   );
