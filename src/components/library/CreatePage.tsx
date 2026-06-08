@@ -66,7 +66,7 @@ export default function CreatePage({
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Field label="Catégorie / discipline">
+        <Field label="discipline">
           <Select
             value={draft.category}
             onChange={(event) => updateDraft("category", event.target.value)}
@@ -77,12 +77,12 @@ export default function CreatePage({
           </Select>
         </Field>
 
-        <Field label="Sous-partie / contenu">
+        <Field label="Thème">
           <Select
             value={draft.subcategory}
             onChange={(event) => updateDraft("subcategory", event.target.value)}
           >
-            <option value="">Aucune sous-partie</option>
+            <option value="">Aucun thème</option>
 
            {subcategories.map((subcategory) => (
            <option key={subcategory.id} value={subcategory.name}>

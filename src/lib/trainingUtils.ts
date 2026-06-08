@@ -58,6 +58,24 @@ export function sessionLoadParts(session) {
     specificBucket: rpeColorBucket(rpeSpecific),
   };
 }
+export function plannedSessionLoadParts(session) {
+  const duration = durationHours(session.totalDuration);
+  const rpeGlobal = rpeNumber(session.expectedRpeGlobal || session.expectedRpe);
+  const rpeSpecific = rpeNumber(session.expectedRpeSpecific);
+  const specificDuration = durationHours(session.expectedSpecificDuration);
+
+  const globalLoad = duration * Math.pow(rpeGlobal, 2);
+
+  const specificBonus =
+    specificDuration *
+    Math.max(0, Math.pow(rpeSpecific, 2) - Math.pow(rpeGlobal, 2));
+
+  return {
+    globalLoad,
+    specificBonus,
+    totalLoad: globalLoad + specificBonus,
+  };
+}
 
 export function parseLocalDate(value) {
   if (value instanceof Date) {
@@ -96,12 +114,19 @@ export function addDays(date, days) {
 export function monthDays(year, month) {
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
-  const offset = (first.getDay() + 6) % 7;
 
-  return [
-    ...Array(offset).fill(null),
-    ...Array.from({ length: last.getDate() }, (_, index) => new Date(year, month, index + 1)),
-  ];
+  const start = mondayOfWeek(first);
+  const end = addDays(mondayOfWeek(last), 6);
+
+  const days = [];
+  let current = start;
+
+  while (current <= end) {
+    days.push(current);
+    current = addDays(current, 1);
+  }
+
+  return days;
 }
 
 export function mondayOfWeek(date) {
