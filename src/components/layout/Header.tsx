@@ -8,7 +8,7 @@ export default function Header({ view, setView, auth, logout }) {
           ["athlete", "Fiche athlète"],
           ["create", "Création séance"],
           ["library", "Bibliothèque"],
-          ["management", "Gestion athlètes"],
+          ["management", "Paramètres athlètes"],
         ]
       : [["calendar", "Mon calendrier"]];
 

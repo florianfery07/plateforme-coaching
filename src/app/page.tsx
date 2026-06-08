@@ -153,6 +153,7 @@ async function loadAllData() {
       longGoal: row.long_goal || "",
       context: row.context || "",
 user_id: row.user_id || "",
+active: row.active !== false,
     }))
   : [];
 
@@ -354,6 +355,7 @@ useEffect(() => {
   }
 }, [auth]);
   const isCoach = auth?.role === "coach";
+  const visibleAthletes = athletes.filter((row) => row.active !== false);
   const athleteActive =
   athletes.find((row) => row.id === activeId) ||
   athletes[0] ||
@@ -372,10 +374,10 @@ useEffect(() => {
   const stats = { planned: activeSessions.length, completed: done.length, rpe: avg(done, "rpe"), motivation: avg(done, "motivation"), pleasure: avg(done, "pleasure") };
   const training = trainingStats(activeSessions, year);
 
-  const updateAthlete = async (field, value) => {
+  const updateAthlete = async (field, value, athleteId = activeId) => {
   setAthletes((items) =>
     items.map((a) =>
-      a.id !== activeId
+      a.id !== athleteId
         ? a
         : field === "name"
         ? {
@@ -405,7 +407,7 @@ useEffect(() => {
   const { error } = await supabase
     .from("athletes")
     .update(updates)
-    .eq("id", activeId);
+    .eq("id", athleteId);
 
   if (error) {
     console.error("Erreur sauvegarde athlète", error);
@@ -1170,12 +1172,12 @@ async function removeItem(kind, name) {
 
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
-    <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={athletes} activeId={activeId} setActiveId={setActiveId} />
+    <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} />
     {view === "calendar" && <CalendarPageOld {...{ athleteActive, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, categories, subcategories }} />}
-    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete }} />}
+    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
 }

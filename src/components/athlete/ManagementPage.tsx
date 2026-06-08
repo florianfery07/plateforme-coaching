@@ -11,6 +11,7 @@ export default function ManagementPage({
   setNewAthlete,
   addAthlete,
   deleteAthlete,
+  updateAthlete,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState(
@@ -21,6 +22,11 @@ export default function ManagementPage({
     athletes.find((athlete) => athlete.id === selectedAthleteId) ||
     athletes?.[0];
 
+  const updateSelectedAthlete = (field, value) => {
+    if (!selectedAthlete) return;
+    updateAthlete(field, value, selectedAthlete.id);
+  };
+
   return (
     <Panel>
       <h2 className="mb-2 text-2xl font-semibold">
@@ -28,7 +34,7 @@ export default function ManagementPage({
       </h2>
 
       <p className="mb-5 text-sm text-zinc-400">
-        Gérez les athlètes, leurs calendriers et les futurs réglages individuels.
+        Gérez les athlètes, leurs calendriers et leurs réglages individuels.
       </p>
 
       <div className="mb-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
@@ -68,10 +74,23 @@ export default function ManagementPage({
                     : "border-zinc-700 bg-zinc-900"
                 }`}
               >
-                <b>{athleteItem.name}</b>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <b>{athleteItem.name}</b>
+                    <div className="mt-1 text-xs text-zinc-500">
+                      {athleteItem.calendarName}
+                    </div>
+                  </div>
 
-                <div className="mt-1 text-xs text-zinc-500">
-                  {athleteItem.calendarName}
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      athleteItem.active === false
+                        ? "bg-zinc-700 text-zinc-300"
+                        : "bg-green-500/20 text-green-300"
+                    }`}
+                  >
+                    {athleteItem.active === false ? "Inactif" : "Actif"}
+                  </span>
                 </div>
               </button>
             ))}
@@ -82,29 +101,39 @@ export default function ManagementPage({
           {selectedAthlete && (
             <>
               <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-                <h3 className="mb-3 text-lg font-semibold">
+                <h3 className="mb-4 text-lg font-semibold">
                   Paramètres de {selectedAthlete.name}
                 </h3>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
-                    <div className="text-xs text-zinc-500">Nom</div>
-                    <div className="mt-1 font-semibold">
-                      {selectedAthlete.name || "Non renseigné"}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <div className="mb-2 text-xs text-zinc-500">
+                      Nom de l’athlète
                     </div>
+                    <Input
+                      value={selectedAthlete.name || ""}
+                      onChange={(event) =>
+                        updateSelectedAthlete("name", event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <div className="mb-2 text-xs text-zinc-500">
+                      Email
+                    </div>
+                    <Input
+                      value={selectedAthlete.email || ""}
+                      onChange={(event) =>
+                        updateSelectedAthlete("email", event.target.value)
+                      }
+                    />
                   </div>
 
                   <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
                     <div className="text-xs text-zinc-500">Calendrier</div>
                     <div className="mt-1 font-semibold">
                       {selectedAthlete.calendarName || "Non renseigné"}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
-                    <div className="text-xs text-zinc-500">Email</div>
-                    <div className="mt-1 font-semibold">
-                      {selectedAthlete.email || "Non renseigné"}
                     </div>
                   </div>
 
@@ -122,17 +151,39 @@ export default function ManagementPage({
                   Fonctionnalités individuelles
                 </h3>
 
-                <p className="rounded-2xl border border-dashed border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-400">
-                  Zone prévue pour activer ou désactiver plus tard certaines
-                  fonctionnalités selon l’athlète : propositions de séance,
-                  feedback RPE, motivation, plaisir, statistiques visibles,
-                  suivi hebdo, etc.
-                </p>
+                <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="font-semibold">Athlète actif</div>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Si l’athlète est désactivé, il disparaît de la sélection
+                        principale mais ses données restent conservées.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateSelectedAthlete(
+                          "active",
+                          selectedAthlete.active === false
+                        )
+                      }
+                      className={`rounded-2xl px-4 py-2 text-sm font-bold ${
+                        selectedAthlete.active === false
+                          ? "bg-zinc-700 text-zinc-200"
+                          : "bg-green-500/20 text-green-300"
+                      }`}
+                    >
+                      {selectedAthlete.active === false ? "Non" : "Oui"}
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-3xl border border-red-500/40 bg-zinc-900 p-5">
-                <h3 className="mb-3 text-lg font-semibold text-red-300">
-                  Zone danger
+              <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
+                <h3 className="mb-3 text-lg font-semibold">
+                  Suppression
                 </h3>
 
                 <Btn
