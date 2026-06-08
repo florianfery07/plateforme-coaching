@@ -16,6 +16,7 @@ import { Btn, Panel, Select } from "@/components/ui/ui";
 import WeeklyLoadChart from "@/components/athlete/WeeklyLoadChart";
 import WeekPicker from "@/components/athlete/WeekPicker";
 import WeekDetail from "@/components/athlete/WeekDetail";
+import WeekIndicators from "@/components/athlete/WeekIndicators";
 
 function getAvailableYears(sessions, preferredYear = new Date().getFullYear()) {
   const currentYear = new Date().getFullYear();
@@ -152,6 +153,7 @@ export default function WeeklyReviewPage({
       </div>
 
       <WeeklyLoadChart week={week} />
+      <WeekIndicators week={week} />
 
       <WeekPicker
         weeks={yearTraining.weeks}
