@@ -155,13 +155,11 @@ export default function WeekDetail({
 
       <div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
         <h4 className="mb-2 font-semibold">
-          Note de fin de semaine
+          Idée générale de la semaine
         </h4>
 
         <p className="mb-3 text-sm text-zinc-400">
-          Ressenti, fatigue, progression,
-          points à retenir ou ajustements pour
-          la suite.
+          Intention, ressenti, fatigue, progression ou points à retenir pour cette semaine.
         </p>
 
         <Textarea

@@ -120,7 +120,8 @@ export default function CoachingPlatformMockup() {
   const [sessions, setSessions] = useState({ "athlete-1": [], "athlete-2": [], "athlete-3": [] });
   const [proposals, setProposals] = useState([{ id: "proposal-1", athleteId: "athlete-1", type: "Course à ajouter", date: dateKey(now), title: "XCO régional", message: "J’aimerais l’ajouter au calendrier.", status: "À traiter" }]);
   const [weekColors, setWeekColors] = useState({});
-const [weekNotes, setWeekNotes] = useState({});
+  const [weekNotes, setWeekNotes] = useState({});
+  const [weekPlanning, setWeekPlanning] = useState({});
   const [auth, setAuth] = useState(null);
 
 async function loadAllData() {
@@ -311,6 +312,25 @@ if (weekNoteData) {
       weekNoteData.map((row) => [
         `${row.athlete_id}-${row.year}-${row.week}`,
         row.note || "",
+      ])
+    )
+  );
+}
+const { data: weekPlanningData } = await supabase
+  .from("athlete_week_planning")
+  .select("*");
+
+if (weekPlanningData) {
+  setWeekPlanning(
+    Object.fromEntries(
+      weekPlanningData.map((row) => [
+        `${row.athlete_id}-${row.year}-${row.week}`,
+        {
+          goal: row.goal || "Off",
+          category: row.category || "",
+          subcategory: row.subcategory || "",
+          coachComment: row.coach_comment || "",
+        },
       ])
     )
   );
@@ -1101,6 +1121,76 @@ async function removeItem(kind, name) {
 
   await loadAllData();
 }
+ async function updateWeekPlanning(year, week, field, value) {
+  const key = `${activeId}-${year}-${week}`;
+
+  const current = weekPlanning[key] || {
+    goal: "Off",
+    category: "",
+    subcategory: "",
+  };
+
+  const next = {
+    ...current,
+    [field]: value,
+  };
+
+  setWeekPlanning((items) => ({
+    ...items,
+    [key]: next,
+  }));
+
+  const { error } = await supabase
+    .from("athlete_week_planning")
+    .upsert(
+      {
+        athlete_id: activeId,
+        year,
+        week,
+        goal: next.goal || "Off",
+        category: next.category || "",
+        subcategory: next.subcategory || "",
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "athlete_id,year,week",
+      }
+    );
+
+  if (error) {
+    console.error("Erreur sauvegarde planification semaine", error);
+    alert(error.message || "Erreur sauvegarde planification semaine");
+  }
+}
+async function updateWeekNote(year, week, value) {
+  const key = `${activeId}-${year}-${week}`;
+
+  setWeekNotes((items) => ({
+    ...items,
+    [key]: value,
+  }));
+
+  const { error } = await supabase
+    .from("athlete_week_notes")
+    .upsert(
+      {
+        athlete_id: activeId,
+        year,
+        week,
+        note: value,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "athlete_id,year,week",
+      }
+    );
+
+  if (error) {
+    console.error("Erreur sauvegarde note semaine", error);
+    alert(error.message || "Erreur sauvegarde note semaine");
+  }
+}
+
   const sessionsFor = (date) => activeSessions.filter((session) => session.date === dateKey(date));
   const proposalsFor = (date) => activeProposals.filter((proposal) => proposal.date === dateKey(date));
  const programProposal = async (proposal) => {
@@ -1173,9 +1263,7 @@ async function removeItem(kind, name) {
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
     <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} />
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach }} />}{isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
-    {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
-    {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, categories, subcategories }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote }} />}{isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, categories, subcategories }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
