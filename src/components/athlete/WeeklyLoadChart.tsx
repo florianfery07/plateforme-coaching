@@ -91,9 +91,9 @@ export default function WeeklyLoadChart({ week }) {
 
       <div className="mt-4 flex flex-wrap gap-4 text-xs text-zinc-400">
         <span>Blanc = temps total semaine</span>
-        <span>Vert = RPE 1-4</span>
-        <span>Jaune = RPE 5-8</span>
-        <span>Rouge = RPE 9-10</span>
+        <span>Vert = charge facile</span>
+        <span>Jaune = charge modérée</span>
+        <span>Rouge = charge élevée</span>
       </div>
     </div>
   );
