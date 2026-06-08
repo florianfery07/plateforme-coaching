@@ -5,9 +5,9 @@ export default function Header({ view, setView, auth, logout }) {
     auth?.role === "coach"
       ? [
           ["calendar", "Calendriers"],
+          ["athlete", "Fiche athlète"],
           ["create", "Création séance"],
           ["library", "Bibliothèque"],
-          ["athlete", "Fiche athlète"],
           ["management", "Gestion athlètes"],
         ]
       : [["calendar", "Mon calendrier"]];
