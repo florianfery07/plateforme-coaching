@@ -50,7 +50,77 @@ export default function Session({
       updateFeedback(session.id, "rpe", value);
     }
   };
+function parseDurationParts(value) {
+  const text = String(value || "").toLowerCase().replace(/\s/g, "");
 
+  if (!text) {
+    return { hours: "", minutes: "" };
+  }
+
+  const hoursMatch = text.match(/(\d+)h/);
+  const minutesAfterHourMatch = text.match(/h(\d+)$/);
+  const minutesWithMinMatch = text.match(/(\d+)min/);
+
+  if (hoursMatch) {
+    return {
+      hours: hoursMatch[1],
+      minutes:
+        minutesAfterHourMatch?.[1] ||
+        minutesWithMinMatch?.[1] ||
+        "",
+    };
+  }
+
+  if (minutesWithMinMatch) {
+    return {
+      hours: "",
+      minutes: minutesWithMinMatch[1],
+    };
+  }
+
+  return {
+    hours: text.match(/^\d+$/) ? text : "",
+    minutes: "",
+  };
+}
+
+function formatDurationFromParts(hours, minutes) {
+  const cleanHours = String(hours || "").replace(",", ".").trim();
+  const cleanMinutes = String(minutes || "").trim();
+
+  if (cleanHours && cleanMinutes) {
+    return `${cleanHours}h${cleanMinutes}`;
+  }
+
+  if (cleanHours) {
+    return `${cleanHours}h`;
+  }
+
+  if (cleanMinutes) {
+    return `${cleanMinutes}min`;
+  }
+
+  return "";
+}
+
+function changeActualTimePart(part, value) {
+  const cleanValue = String(value || "").replace(/\D/g, "");
+
+  const current = parseDurationParts(session.feedback?.actualTime);
+
+  const nextHours =
+    part === "hours" ? cleanValue : current.hours;
+
+  const nextMinutes =
+    part === "minutes" ? cleanValue : current.minutes;
+
+  const formatted = formatDurationFromParts(
+    nextHours,
+    nextMinutes
+  );
+
+  draftFeedback("actualTime", formatted);
+}
   const changeNonDone = (field, value) =>
     updateNonDone(session.id, field, value);
 
@@ -204,19 +274,41 @@ export default function Session({
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
   <Field label="Temps réel de roulage">
+  <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
     <Input
-      value={session.feedback?.actualTime || ""}
-      onChange={(event) =>
-        draftFeedback("actualTime", event.target.value)
-      }
-      onBlur={(event) =>
-        saveFeedback("actualTime", event.target.value)
-      }
-      type="text"
-      inputMode="decimal"
-      placeholder="Ex : 1h25"
-    />
-  </Field>
+  value={parseDurationParts(session.feedback?.actualTime).hours}
+  onChange={(event) =>
+    changeActualTimePart("hours", event.target.value)
+  }
+  type="text"
+  inputMode="numeric"
+  placeholder="2"
+  onBlur={() =>
+  saveFeedback("actualTime", session.feedback?.actualTime || "")
+}
+/>
+
+    <span className="text-sm font-semibold text-zinc-400">
+      h
+    </span>
+
+    <Input
+  value={parseDurationParts(session.feedback?.actualTime).minutes}
+  onChange={(event) =>
+    changeActualTimePart("minutes", event.target.value)
+  }
+  type="text"
+  inputMode="numeric"
+  onBlur={() =>
+  saveFeedback("actualTime", session.feedback?.actualTime || "")
+}
+/>
+
+    <span className="text-sm font-semibold text-zinc-400">
+      min
+    </span>
+  </div>
+</Field>
 
   <Field label="RPE global ressenti /10">
     <Input
