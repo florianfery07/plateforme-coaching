@@ -18,14 +18,53 @@ export default function ManagementPage({
     athletes?.[0]?.id || null
   );
 
+  const activeAthletes = athletes.filter((athlete) => athlete.active !== false);
+  const inactiveAthletes = athletes.filter((athlete) => athlete.active === false);
+
   const selectedAthlete =
     athletes.find((athlete) => athlete.id === selectedAthleteId) ||
-    athletes?.[0];
+    activeAthletes?.[0] ||
+    inactiveAthletes?.[0];
 
   const updateSelectedAthlete = (field, value) => {
     if (!selectedAthlete) return;
     updateAthlete(field, value, selectedAthlete.id);
   };
+
+  const AthleteButton = ({ athleteItem }) => (
+    <button
+      key={athleteItem.id}
+      type="button"
+      onClick={() => {
+        setSelectedAthleteId(athleteItem.id);
+        setConfirmDelete(null);
+      }}
+      className={`w-full rounded-2xl border p-4 text-left ${
+        selectedAthlete?.id === athleteItem.id
+          ? "border-white bg-zinc-950"
+          : "border-zinc-700 bg-zinc-900"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <b>{athleteItem.name}</b>
+          <div className="mt-1 text-xs text-zinc-500">
+            {athleteItem.calendarName}
+          </div>
+        </div>
+
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-bold ${
+            athleteItem.active === false
+              ? "bg-zinc-700 text-zinc-300"
+              : "bg-green-500/20 text-green-300"
+          }`}
+        >
+          {athleteItem.active === false ? "Archivé" : "Actif"}
+        </span>
+      </div>
+    </button>
+  );
 
   return (
     <Panel>
@@ -54,46 +93,47 @@ export default function ManagementPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-          <h3 className="mb-3 text-lg font-semibold">
-            Liste des athlètes
-          </h3>
+        <div className="space-y-4">
+          <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
+            <h3 className="mb-3 text-lg font-semibold">
+              Athlètes actifs ({activeAthletes.length})
+            </h3>
 
-          <div className="space-y-3">
-            {athletes.map((athleteItem) => (
-              <button
-                key={athleteItem.id}
-                type="button"
-                onClick={() => {
-                  setSelectedAthleteId(athleteItem.id);
-                  setConfirmDelete(null);
-                }}
-                className={`w-full rounded-2xl border p-4 text-left ${
-                  selectedAthlete?.id === athleteItem.id
-                    ? "border-white bg-zinc-950"
-                    : "border-zinc-700 bg-zinc-900"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <b>{athleteItem.name}</b>
-                    <div className="mt-1 text-xs text-zinc-500">
-                      {athleteItem.calendarName}
-                    </div>
-                  </div>
+            <div className="space-y-3">
+              {activeAthletes.length === 0 && (
+                <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400">
+                  Aucun athlète actif.
+                </p>
+              )}
 
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      athleteItem.active === false
-                        ? "bg-zinc-700 text-zinc-300"
-                        : "bg-green-500/20 text-green-300"
-                    }`}
-                  >
-                    {athleteItem.active === false ? "Inactif" : "Actif"}
-                  </span>
-                </div>
-              </button>
-            ))}
+              {activeAthletes.map((athleteItem) => (
+                <AthleteButton
+                  key={athleteItem.id}
+                  athleteItem={athleteItem}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
+            <h3 className="mb-3 text-lg font-semibold">
+              Athlètes archivés ({inactiveAthletes.length})
+            </h3>
+
+            <div className="space-y-3">
+              {inactiveAthletes.length === 0 && (
+                <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400">
+                  Aucun athlète archivé.
+                </p>
+              )}
+
+              {inactiveAthletes.map((athleteItem) => (
+                <AthleteButton
+                  key={athleteItem.id}
+                  athleteItem={athleteItem}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -156,8 +196,8 @@ export default function ManagementPage({
                     <div>
                       <div className="font-semibold">Athlète actif</div>
                       <p className="mt-1 text-sm text-zinc-400">
-                        Si l’athlète est désactivé, il disparaît de la sélection
-                        principale mais ses données restent conservées.
+                        Si l’athlète est désactivé, il passe dans les athlètes
+                        archivés et disparaît de la sélection principale.
                       </p>
                     </div>
 
