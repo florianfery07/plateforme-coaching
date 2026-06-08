@@ -53,19 +53,23 @@ export default function AnnualLoadChart({ weeks }) {
   });
 
   const maxLoad = Math.max(
-    ...computedRows.map((row) => Math.max(row.total, row.acute, row.chronic)),
+    ...computedRows.map((row) =>
+      Math.max(row.total, row.acute, row.chronic)
+    ),
     1
   );
 
   const minForm = Math.min(...computedRows.map((row) => row.form), 0);
   const maxForm = Math.max(...computedRows.map((row) => row.form), 0);
+  const yTicks = 5;
 
   const width = 1100;
   const height = 360;
-  const top = 24;
+  const top = 30;
   const bottom = 46;
-  const left = 36;
-  const right = 24;
+  const left = 60;
+  const right = 60;
+
   const chartWidth = width - left - right;
   const chartHeight = height - top - bottom;
   const barGap = 4;
@@ -119,6 +123,20 @@ export default function AnnualLoadChart({ weeks }) {
           viewBox={`0 0 ${width} ${height}`}
           className="min-w-[1000px] rounded-2xl bg-zinc-900"
         >
+          <text x={14} y={18} fontSize="11" fill="#a1a1aa">
+            Charge
+          </text>
+
+          <text
+            x={width - 16}
+            y={18}
+            textAnchor="end"
+            fontSize="11"
+            fill="#60a5fa"
+          >
+            Forme
+          </text>
+
           <line
             x1={left}
             y1={top + chartHeight}
@@ -127,6 +145,55 @@ export default function AnnualLoadChart({ weeks }) {
             stroke="#52525b"
             strokeWidth="1"
           />
+
+          {Array.from({ length: yTicks + 1 }).map((_, index) => {
+            const value = (maxLoad / yTicks) * (yTicks - index);
+            const y = loadY(value);
+
+            return (
+              <g key={`load-${index}`}>
+                <line
+                  x1={left}
+                  y1={y}
+                  x2={width - right}
+                  y2={y}
+                  stroke="#27272a"
+                  strokeWidth="1"
+                />
+
+                <text
+                  x={left - 8}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="10"
+                  fill="#a1a1aa"
+                >
+                  {Math.round(value)}
+                </text>
+              </g>
+            );
+          })}
+
+          {Array.from({ length: yTicks + 1 }).map((_, index) => {
+            const value =
+              maxForm -
+              ((maxForm - minForm) / yTicks) * index;
+
+            const y = formY(value);
+
+            return (
+              <text
+                key={`form-${index}`}
+                x={width - right + 8}
+                y={y + 4}
+                textAnchor="start"
+                fontSize="10"
+                fill="#60a5fa"
+              >
+                {Math.round(value)}
+              </text>
+            );
+          })}
 
           {computedRows.map((row, index) => {
             const totalHeight = (row.total / maxLoad) * chartHeight;
@@ -209,9 +276,9 @@ export default function AnnualLoadChart({ weeks }) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-4 text-xs text-zinc-400">
-        <span className="text-emerald-400">Vert = RPE 1-4</span>
-        <span className="text-yellow-300">Jaune = RPE 5-8</span>
-        <span className="text-red-400">Rouge = RPE 9-10</span>
+        <span className="text-emerald-400">Vert = charge facile</span>
+        <span className="text-yellow-300">Jaune = charge modérée</span>
+        <span className="text-red-400">Rouge = charge élevée</span>
         <span className="text-orange-400">Orange = fatigue aiguë</span>
         <span className="text-zinc-300">Gris = charge chronique</span>
         <span className="text-blue-400">Bleu = forme estimée</span>
