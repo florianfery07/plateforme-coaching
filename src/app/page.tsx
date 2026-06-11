@@ -1218,16 +1218,71 @@ async function updateWeekNote(year, week, value) {
   );
 
   if (!alreadyExists) {
-    const session = proposalToSession(proposal);
+    const proposalType = String(proposal.type || "").trim();
+    const normalizedType = proposalType.toLowerCase();
 
-    await supabase.from("calendar_workouts").insert({
-      athlete_id: proposal.athleteId,
-      date: proposal.date,
-      workout_type: session.category,
-      title: session.title,
-      duration: session.totalDuration,
-      completed: false,
+    console.log("PROGRAM_PROPOSAL", {
+      proposal,
+      proposalType,
+      normalizedType,
     });
+
+    const isRestRequest =
+      normalizedType.includes("indisponibilité") ||
+      normalizedType.includes("repos");
+
+    if (isRestRequest) {
+      const { error: insertRestError } = await supabase
+        .from("calendar_workouts")
+        .insert({
+          athlete_id: proposal.athleteId,
+          date: proposal.date,
+          workout_type: "Repos",
+          subcategory: "",
+          title: "Repos",
+          duration: "",
+          expected_rpe: null,
+          expected_rpe_global: null,
+          expected_specific_duration: "",
+          expected_rpe_specific: null,
+          description: proposal.message || "Repos demandé par l’athlète.",
+          blocks: [],
+          completed: true,
+          non_done: false,
+        });
+
+      if (insertRestError) {
+        console.error("Erreur création repos depuis proposition", insertRestError);
+        alert(insertRestError.message || "Erreur création repos depuis proposition");
+        return;
+      }
+    } else {
+      const session = proposalToSession(proposal);
+
+      const { error: insertProposalError } = await supabase
+        .from("calendar_workouts")
+        .insert({
+          athlete_id: proposal.athleteId,
+          date: proposal.date,
+          workout_type: session.category,
+          subcategory: session.subcategory || "",
+          title: session.title,
+          duration: session.totalDuration,
+          expected_rpe: null,
+          expected_rpe_global: null,
+          expected_specific_duration: "",
+          expected_rpe_specific: null,
+          description: session.description || "",
+          blocks: [],
+          completed: false,
+        });
+
+      if (insertProposalError) {
+        console.error("Erreur création séance depuis proposition", insertProposalError);
+        alert(insertProposalError.message || "Erreur création séance depuis proposition");
+        return;
+      }
+    }
   }
 
   const { error } = await supabase
@@ -1237,6 +1292,7 @@ async function updateWeekNote(year, week, value) {
 
   if (error) {
     console.error("Erreur programmation proposition", error);
+    alert(error.message || "Erreur programmation proposition");
     return;
   }
 

@@ -8,7 +8,7 @@ export default function AthleteProposalForm({
   selectedDate,
   addAthleteProposal,
 }) {
-  const [type, setType] = useState("Disponibilité");
+  const [type, setType] = useState("Indisponibilité / demande de repos");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
 
@@ -25,7 +25,7 @@ export default function AthleteProposalForm({
 
     setTitle("");
     setMessage("");
-    setType("Disponibilité");
+    setType("Indisponibilité / demande de repos");
   }
 
   return (
@@ -41,10 +41,8 @@ export default function AthleteProposalForm({
         <Field label="Type de proposition">
           <Select value={type} onChange={(event) => setType(event.target.value)}>
             {[
-              "Disponibilité",
-              "Indisponibilité",
+              "Indisponibilité / demande de repos",
               "Course à ajouter",
-              "Demande de repos",
               "Contrainte horaire",
               "Autre",
             ].map((row) => (
