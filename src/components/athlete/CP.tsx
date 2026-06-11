@@ -1,10 +1,104 @@
 // @ts-nocheck
 "use client";
 
+import { useEffect, useState } from "react";
 import { Empty, Field, Input, Panel } from "@/components/ui/ui";
+import { supabase } from "@/lib/supabase";
 import { zoneWatts } from "@/lib/trainingUtils";
 
 export default function CP({ athlete: a, updateAthlete, cpData }) {
+  const [testHistory, setTestHistory] = useState([]);
+
+  const formatDate = (value) => {
+    if (!value) return "Date inconnue";
+    return new Date(value).toLocaleDateString("fr-FR");
+  };
+
+  async function loadTestHistory() {
+    if (!a?.id) return;
+
+    const { data, error } = await supabase
+      .from("athlete_test_history")
+      .select("*")
+      .eq("athlete_id", a.id)
+      .order("archived_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setTestHistory(data || []);
+  }
+
+  useEffect(() => {
+    loadTestHistory();
+  }, [a?.id]);
+
+  const archiveTest = async () => {
+    if (!cpData) return;
+
+    const duplicates = testHistory.filter(
+      (item) =>
+        String(item.power5 || "") === String(a.power5 || "") &&
+        String(item.power12 || "") === String(a.power12 || "") &&
+        String(item.power20 || "") === String(a.power20 || "") &&
+        String(item.weight || "") === String(a.weight || "")
+    );
+
+    if (duplicates.length) {
+      const dates = duplicates
+        .map((item) => `• ${formatDate(item.archived_at)}`)
+        .join("\n");
+
+      const ok = window.confirm(
+        `Ce test semble déjà enregistré aux dates suivantes :\n\n${dates}\n\nVoulez-vous quand même l'ajouter ?`
+      );
+
+      if (!ok) return;
+    }
+
+    const { error } = await supabase
+      .from("athlete_test_history")
+      .insert({
+        athlete_id: a.id,
+        power5: a.power5,
+        power12: a.power12,
+        power20: a.power20,
+        weight: a.weight,
+        cp: cpData.cp,
+        w_prime: cpData.wPrime,
+        watts_per_kg: cpData.wattsPerKg,
+        zones: cpData.zones,
+      });
+
+    if (error) {
+      console.error(error);
+      alert(error.message);
+      return;
+    }
+
+    await loadTestHistory();
+  };
+
+  const deleteArchivedTest = async (testId) => {
+    const ok = window.confirm("Supprimer ce test archivé ?");
+    if (!ok) return;
+
+    const { error } = await supabase
+      .from("athlete_test_history")
+      .delete()
+      .eq("id", testId);
+
+    if (error) {
+      console.error(error);
+      alert(error.message || "Erreur suppression test archivé");
+      return;
+    }
+
+    await loadTestHistory();
+  };
+
   return (
     <Panel>
       <h2 className="mb-2 text-2xl font-semibold">
@@ -55,6 +149,49 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
                   {zone.id} — {zone.name}
                 </span>
                 <b>{zoneWatts(zone.id, cpData)}</b>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={archiveTest}
+            className="mt-5 rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
+          >
+            Archiver le test
+          </button>
+
+          <div className="mt-5 space-y-3">
+            <h3 className="text-lg font-semibold">Historique des tests</h3>
+
+            {testHistory.length === 0 && (
+              <p className="text-sm text-zinc-400">
+                Aucun test archivé.
+              </p>
+            )}
+
+            {testHistory.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-bold">
+                    {formatDate(item.archived_at)}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteArchivedTest(item.id)}
+                    className="rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+
+                <div className="mt-2 text-sm text-zinc-300">
+                  5 min : {item.power5} W • 12 min : {item.power12} W • 20 min : {item.power20} W • Poids : {item.weight} • CP : {item.cp} W • W/kg : {item.watts_per_kg || "—"}
+                </div>
               </div>
             ))}
           </div>

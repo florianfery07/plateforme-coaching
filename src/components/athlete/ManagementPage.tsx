@@ -221,6 +221,32 @@ export default function ManagementPage({
                 </div>
               </div>
 
+              <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-semibold">
+                      Demande de mise à jour des objectifs
+                    </div>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      Envoie une notification à l’athlète pour qu’il mette à jour ses objectifs court, moyen et long terme.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => updateSelectedAthlete("goalUpdateRequested", true)}
+                    className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
+                  >
+                    Envoyer
+                  </button>
+                </div>
+
+                {selectedAthlete.goalUpdateRequested && (
+                  <p className="mt-3 text-xs text-amber-300">
+                    Une demande est déjà en attente pour cet athlète.
+                  </p>
+                )}
+              </div>
               <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
                 <h3 className="mb-3 text-lg font-semibold">
                   Suppression

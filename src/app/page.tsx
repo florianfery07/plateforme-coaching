@@ -153,8 +153,9 @@ async function loadAllData() {
       mediumGoal: row.medium_goal || "",
       longGoal: row.long_goal || "",
       context: row.context || "",
-user_id: row.user_id || "",
-active: row.active !== false,
+      goalUpdateRequested: Boolean(row.goal_update_requested),
+      user_id: row.user_id || "",
+      active: row.active !== false,
     }))
   : [];
 
@@ -416,6 +417,7 @@ useEffect(() => {
     shortGoal: "short_goal",
     mediumGoal: "medium_goal",
     longGoal: "long_goal",
+    goalUpdateRequested: "goal_update_requested",
   };
 
   const supabaseField = fieldMap[field] || field;
@@ -562,6 +564,12 @@ async function loginAthlete(email, password) {
 
   if (!athlete) {
     console.error("Aucun athlète lié à ce compte");
+    await supabase.auth.signOut();
+    return false;
+  }
+
+  if (athlete.active === false) {
+    console.error("Ce compte athlète est archivé.");
     await supabase.auth.signOut();
     return false;
   }

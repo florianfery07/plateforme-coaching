@@ -29,6 +29,7 @@ export default function AthleteProfilePage({
 
   const [openObservations, setOpenObservations] = useState({});
   const [observations, setObservations] = useState([]);
+  const [goalHistory, setGoalHistory] = useState([]);
 
   const toggleSection = (key) => {
     setOpenSections((prev) => ({
@@ -65,9 +66,83 @@ export default function AthleteProfilePage({
     loadObservations();
   }, [a?.id]);
 
+  async function loadGoalHistory() {
+    if (!a?.id) return;
+
+    const { data, error } = await supabase
+      .from("athlete_goal_history")
+      .select("*")
+      .eq("athlete_id", a.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erreur chargement historique objectifs", error);
+      return;
+    }
+
+    setGoalHistory(data || []);
+  }
+
+  useEffect(() => {
+    loadGoalHistory();
+  }, [a?.id]);
+
   const formatDate = (value) => {
     if (!value) return "Jamais";
     return new Date(value).toLocaleDateString("fr-FR");
+  };
+
+  const validateGoalUpdate = async () => {
+    if (!a?.id) return;
+
+    const { error } = await supabase
+      .from("athlete_goal_history")
+      .insert({
+        athlete_id: a.id,
+        short_goal: a.shortGoal || "",
+        medium_goal: a.mediumGoal || "",
+        long_goal: a.longGoal || "",
+        created_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error("Erreur archivage objectifs", error);
+      alert(error.message || "Erreur archivage objectifs");
+      return;
+    }
+
+    const { error: requestError } = await supabase
+      .from("athletes")
+      .update({ goal_update_requested: false })
+      .eq("id", a.id);
+
+    if (requestError) {
+      console.error("Erreur validation demande objectifs", requestError);
+      alert(requestError.message || "Erreur validation demande objectifs");
+      return;
+    }
+
+    await updateAthlete("goalUpdateRequested", false, a.id);
+    a.goalUpdateRequested = false;
+    await loadGoalHistory();
+  };
+
+  const deleteGoalHistory = async (historyId) => {
+    const ok = window.confirm("Supprimer cette version d’objectifs archivée ?");
+    if (!ok) return;
+
+    const { error } = await supabase
+      .from("athlete_goal_history")
+      .delete()
+      .eq("id", historyId);
+
+    if (error) {
+      console.error("Erreur suppression historique objectifs", error);
+      alert(error.message || "Erreur suppression historique objectifs");
+      return;
+    }
+
+    await loadGoalHistory();
   };
 
   const addObservation = async () => {
@@ -263,11 +338,31 @@ export default function AthleteProfilePage({
 
         {openSections.goals && (
           <>
+            {a.goalUpdateRequested && (
+              <div className="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+                <div className="font-bold text-amber-200">
+                  Mise à jour des objectifs demandée
+                </div>
+
+                <p className="mt-1 text-sm text-amber-100/80">
+                  Ton coach te demande de mettre à jour tes objectifs sportifs : court terme, moyen terme et long terme.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={validateGoalUpdate}
+                  className="mt-3 rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
+                >
+                  J’ai terminé la mise à jour
+                </button>
+              </div>
+            )}
+
             <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               {[
-                ["Court terme", "shortGoal"],
-                ["Moyen terme", "mediumGoal"],
-                ["Long terme", "longGoal"],
+                ["Court terme — saison à venir (~6 mois)", "shortGoal"],
+                ["Moyen terme — 1 à 2 ans", "mediumGoal"],
+                ["Long terme — 3 à 4 ans", "longGoal"],
               ].map(([label, key]) => (
                 <Field key={key} label={label}>
                   <Textarea
@@ -286,6 +381,69 @@ export default function AthleteProfilePage({
                 rows={5}
               />
             </Field>
+
+            <div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    Historique des objectifs
+                  </h3>
+                  <p className="text-sm text-zinc-400">
+                    Anciennes versions enregistrées quand l’athlète valide une mise à jour.
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
+                  {goalHistory.length}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {goalHistory.length === 0 && (
+                  <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400">
+                    Aucun objectif archivé pour le moment.
+                  </p>
+                )}
+
+                {goalHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="text-sm font-bold text-zinc-300">
+                        Version validée le {formatDate(item.created_at)}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => deleteGoalHistory(item.id)}
+                        className="rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                      <div>
+                        <div className="mb-1 text-zinc-500">Court terme</div>
+                        <div>{item.short_goal || "—"}</div>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 text-zinc-500">Moyen terme</div>
+                        <div>{item.medium_goal || "—"}</div>
+                      </div>
+
+                      <div>
+                        <div className="mb-1 text-zinc-500">Long terme</div>
+                        <div>{item.long_goal || "—"}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </Panel>
