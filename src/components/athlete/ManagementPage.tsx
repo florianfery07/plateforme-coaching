@@ -194,10 +194,10 @@ export default function ManagementPage({
                 <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="font-semibold">Athlète actif</div>
+                      <div className="font-semibold">Statut de l’athlète</div>
                       <p className="mt-1 text-sm text-zinc-400">
-                        Si l’athlète est désactivé, il passe dans les athlètes
-                        archivés et disparaît de la sélection principale.
+                        Actif : accès autorisé. Archivé : l’athlète disparaît
+                        de la sélection principale et sa connexion est bloquée.
                       </p>
                     </div>
 
@@ -215,7 +215,7 @@ export default function ManagementPage({
                           : "bg-green-500/20 text-green-300"
                       }`}
                     >
-                      {selectedAthlete.active === false ? "Non" : "Oui"}
+                      {selectedAthlete.active === false ? "Archivé" : "Actif"}
                     </button>
                   </div>
                 </div>
@@ -232,13 +232,23 @@ export default function ManagementPage({
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => updateSelectedAthlete("goalUpdateRequested", true)}
-                    className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
-                  >
-                    Envoyer
-                  </button>
+                  {selectedAthlete.goalUpdateRequested ? (
+                    <button
+                      type="button"
+                      onClick={() => updateSelectedAthlete("goalUpdateRequested", false)}
+                      className="rounded-2xl border border-amber-500/40 px-4 py-2 text-sm font-bold text-amber-300"
+                    >
+                      Annuler la demande
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => updateSelectedAthlete("goalUpdateRequested", true)}
+                      className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
+                    >
+                      Envoyer
+                    </button>
+                  )}
                 </div>
 
                 {selectedAthlete.goalUpdateRequested && (
@@ -265,8 +275,8 @@ export default function ManagementPage({
                   <div className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4">
                     <div className="text-sm text-zinc-300">
                       Confirmer la suppression de <b>{selectedAthlete.name}</b> ?
-                      Cette action retirera son calendrier, ses propositions et
-                      ses données de séances.
+                      Cette action supprimera définitivement son calendrier,
+                      ses séances, ses objectifs, ses historiques et ses observations.
                     </div>
 
                     <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -277,7 +287,7 @@ export default function ManagementPage({
                           setConfirmDelete(null);
                         }}
                       >
-                        Confirmer
+                        Supprimer définitivement
                       </Btn>
 
                       <Btn onClick={() => setConfirmDelete(null)}>

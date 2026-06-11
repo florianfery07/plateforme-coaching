@@ -355,6 +355,13 @@ useEffect(() => {
       .maybeSingle();
 
     if (athlete) {
+      if (athlete.active === false) {
+        console.error("Ce compte athlète est archivé.");
+        await supabase.auth.signOut();
+        setAuth(null);
+        return;
+      }
+
       setAuth({
         role: "athlete",
         athleteId: athlete.id,
@@ -569,7 +576,7 @@ async function loginAthlete(email, password) {
   }
 
   if (athlete.active === false) {
-    console.error("Ce compte athlète est archivé.");
+    console.error("Votre compte a été archivé. Contactez votre entraîneur pour le réactiver.");
     await supabase.auth.signOut();
     return false;
   }
@@ -701,6 +708,10 @@ async function logout() {
     ["athlete_proposals", "athlete_id"],
     ["athlete_week_colors", "athlete_id"],
     ["athlete_week_notes", "athlete_id"],
+    ["athlete_week_planning", "athlete_id"],
+    ["athlete_observations", "athlete_id"],
+    ["athlete_goal_history", "athlete_id"],
+    ["athlete_test_history", "athlete_id"],
   ];
 
   for (const [table, column] of tablesToClean) {
@@ -1271,7 +1282,7 @@ async function updateWeekNote(year, week, value) {
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
     <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} />
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, categories, subcategories }} />}
