@@ -27,12 +27,20 @@ export default function AthleteProfilePage({
     info: false,
   });
 
+  const [openObservations, setOpenObservations] = useState({});
   const [observations, setObservations] = useState([]);
 
   const toggleSection = (key) => {
     setOpenSections((prev) => ({
       ...prev,
       [key]: !prev[key],
+    }));
+  };
+
+  const toggleObservation = (id) => {
+    setOpenObservations((prev) => ({
+      ...prev,
+      [id]: !prev[id],
     }));
   };
 
@@ -85,6 +93,10 @@ export default function AthleteProfilePage({
     }
 
     setObservations((prev) => [data, ...prev]);
+    setOpenObservations((prev) => ({
+      ...prev,
+      [data.id]: true,
+    }));
   };
 
   const updateObservation = async (id, key, value) => {
@@ -130,6 +142,11 @@ export default function AthleteProfilePage({
     }
 
     setObservations((prev) => prev.filter((obs) => obs.id !== id));
+    setOpenObservations((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const SectionHeader = ({ sectionKey, title, count }) => (
@@ -163,7 +180,7 @@ export default function AthleteProfilePage({
         />
 
         {openSections.observations && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <button
               type="button"
               onClick={addObservation}
@@ -178,45 +195,65 @@ export default function AthleteProfilePage({
               </p>
             )}
 
-            {observations.map((obs) => (
-              <div
-                key={obs.id}
-                className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4"
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <Input
-                      value={obs.title}
-                      onChange={(event) =>
-                        updateObservation(obs.id, "title", event.target.value)
-                      }
-                      placeholder="Titre de l’observation"
-                    />
+            {observations.map((obs) => {
+              const isOpen = Boolean(openObservations[obs.id]);
 
-                    <p className="mt-2 text-xs text-zinc-500">
-                      Dernière modification : {formatDate(obs.updated_at)}
-                    </p>
-                  </div>
-
+              return (
+                <div
+                  key={obs.id}
+                  className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4"
+                >
                   <button
                     type="button"
-                    onClick={() => deleteObservation(obs.id)}
-                    className="rounded-xl border border-red-500/40 px-3 py-2 text-xs font-bold text-red-300"
+                    onClick={() => toggleObservation(obs.id)}
+                    className="flex w-full items-center justify-between gap-3 text-left"
                   >
-                    Supprimer
-                  </button>
-                </div>
+                    <div>
+                      <div className="font-bold">
+                        {obs.title || "Observation sans titre"}
+                      </div>
 
-                <Textarea
-                  value={obs.content}
-                  onChange={(event) =>
-                    updateObservation(obs.id, "content", event.target.value)
-                  }
-                  placeholder="Exemple : supporte très bien les blocs de charge, mais baisse vite en motivation quand la récupération est trop courte..."
-                  rows={4}
-                />
-              </div>
-            ))}
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Dernière modification : {formatDate(obs.updated_at)}
+                      </p>
+                    </div>
+
+                    <span className="text-sm font-bold text-zinc-400">
+                      {isOpen ? "▼" : "▶"}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="mt-4 space-y-3">
+                      <Input
+                        value={obs.title}
+                        onChange={(event) =>
+                          updateObservation(obs.id, "title", event.target.value)
+                        }
+                        placeholder="Titre de l’observation"
+                      />
+
+                      <Textarea
+                        value={obs.content}
+                        onChange={(event) =>
+                          updateObservation(obs.id, "content", event.target.value)
+                        }
+                        placeholder="Exemple : supporte très bien les blocs de charge, mais baisse vite en motivation quand la récupération est trop courte..."
+                        rows={4}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => deleteObservation(obs.id)}
+                        className="rounded-xl border border-red-500/40 px-3 py-2 text-xs font-bold text-red-300"
+                      >
+                        Supprimer cette observation
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </Panel>
