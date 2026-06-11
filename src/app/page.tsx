@@ -184,6 +184,7 @@ async function loadAllData() {
 
     grouped[row.athlete_id].push({
       id: row.id,
+      athleteSeenAt: row.athlete_seen_at || null,
       category: row.workout_type || "Séance",
       subcategory: row.subcategory || "",
       title: row.title || "Séance",
@@ -380,6 +381,8 @@ useEffect(() => {
   if (auth?.role === "athlete") {
     setActiveId(auth.athleteId);
     setView("calendar");
+    setMode("month");
+    setSelectedDate(new Date());
   }
 }, [auth]);
   const isCoach = auth?.role === "coach";
@@ -834,6 +837,7 @@ alert(JSON.stringify(error, null, 2));
       expected_rpe_specific: cleanRpe(session.expectedRpeSpecific),
       description: session.description,
       blocks: session.blocks,
+      athlete_seen_at: null,
       completed: false,
     })
     .select()
@@ -1247,6 +1251,7 @@ async function updateWeekNote(year, week, value) {
           expected_rpe_specific: null,
           description: proposal.message || "Repos demandé par l’athlète.",
           blocks: [],
+          athlete_seen_at: null,
           completed: true,
           non_done: false,
         });
@@ -1274,6 +1279,7 @@ async function updateWeekNote(year, week, value) {
           expected_rpe_specific: null,
           description: session.description || "",
           blocks: [],
+          athlete_seen_at: null,
           completed: false,
         });
 

@@ -10,7 +10,8 @@ import YearView from "@/components/calendar/YearView";
 import MonthView from "@/components/calendar/MonthView";
 import DayView from "@/components/calendar/DayView";
 import QuickLibrary from "@/components/calendar/QuickLibrary";
-import { supabase } from "@/lib/supabase";
+import AthleteGoalUpdateBanner from "@/components/calendar/AthleteGoalUpdateBanner";
+import AthleteNotificationsBanner from "@/components/calendar/AthleteNotificationsBanner";
 
 import {
   addDays,
@@ -94,132 +95,6 @@ function computeWeekLoad(weekSessions = []) {
     plannedLoad,
     realizedLoad,
   };
-}
-
-function AthleteGoalUpdateBanner({ athlete, updateAthlete }) {
-  const [visible, setVisible] = useState(Boolean(athlete?.goalUpdateRequested));
-  const [open, setOpen] = useState(false);
-
-  if (!athlete?.goalUpdateRequested || !visible) return null;
-
-  const validateGoalUpdate = async () => {
-    if (!athlete?.id) return;
-
-    const { error: historyError } = await supabase
-      .from("athlete_goal_history")
-      .insert({
-        athlete_id: athlete.id,
-        short_goal: athlete.shortGoal || "",
-        medium_goal: athlete.mediumGoal || "",
-        long_goal: athlete.longGoal || "",
-        created_at: new Date().toISOString(),
-      });
-
-    if (historyError) {
-      console.error("Erreur archivage objectifs", historyError);
-      alert(historyError.message || "Erreur archivage objectifs");
-      return;
-    }
-
-    const { error: requestError } = await supabase
-      .from("athletes")
-      .update({ goal_update_requested: false })
-      .eq("id", athlete.id);
-
-    if (requestError) {
-      console.error("Erreur validation demande objectifs", requestError);
-      alert(requestError.message || "Erreur validation demande objectifs");
-      return;
-    }
-
-    await updateAthlete("goalUpdateRequested", false, athlete.id);
-    athlete.goalUpdateRequested = false;
-    setVisible(false);
-  };
-
-  return (
-    <div className="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 text-left"
-      >
-        <div>
-          <div className="font-bold text-amber-200">
-            Mise à jour des objectifs demandée
-          </div>
-
-          <p className="mt-1 text-sm text-amber-100/80">
-            Ton coach te demande de mettre à jour tes objectifs sportifs.
-          </p>
-        </div>
-
-        <span className="text-sm font-bold text-amber-100">
-          {open ? "▼" : "▶"}
-        </span>
-      </button>
-
-      {open && (
-        <div className="mt-4">
-          <p className="text-sm text-amber-100/80">
-            Remplis les 3 champs puis valide.
-          </p>
-
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div>
-              <div className="mb-1 text-xs font-bold text-amber-100">
-                Court terme — saison à venir (~6 mois)
-              </div>
-              <Textarea
-                value={athlete.shortGoal || ""}
-                onChange={(event) =>
-                  updateAthlete("shortGoal", event.target.value, athlete.id)
-                }
-                rows={4}
-                placeholder="Ex : objectif principal de la saison à venir..."
-              />
-            </div>
-
-            <div>
-              <div className="mb-1 text-xs font-bold text-amber-100">
-                Moyen terme — 1 à 2 ans
-              </div>
-              <Textarea
-                value={athlete.mediumGoal || ""}
-                onChange={(event) =>
-                  updateAthlete("mediumGoal", event.target.value, athlete.id)
-                }
-                rows={4}
-                placeholder="Ex : progression ou niveau visé dans 1 à 2 ans..."
-              />
-            </div>
-
-            <div>
-              <div className="mb-1 text-xs font-bold text-amber-100">
-                Long terme — 3 à 4 ans
-              </div>
-              <Textarea
-                value={athlete.longGoal || ""}
-                onChange={(event) =>
-                  updateAthlete("longGoal", event.target.value, athlete.id)
-                }
-                rows={4}
-                placeholder="Ex : projet sportif à long terme..."
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={validateGoalUpdate}
-            className="mt-4 rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
-          >
-            J’ai terminé la mise à jour
-          </button>
-        </div>
-      )}
-    </div>
-  );
 }
 
 function PlanningLoadTool({
@@ -554,10 +429,16 @@ export default function CalendarPageOld(props) {
         }
       >
         {!props.isCoach && (
-          <AthleteGoalUpdateBanner
-            athlete={props.athleteActive}
-            updateAthlete={props.updateAthlete}
-          />
+          <>
+            <AthleteGoalUpdateBanner
+              athlete={props.athleteActive}
+              updateAthlete={props.updateAthlete}
+            />
+
+            <AthleteNotificationsBanner
+              sessions={props.activeSessions}
+            />
+          </>
         )}
 
         <CalendarToolbar {...props} />
