@@ -113,7 +113,7 @@ export default function CoachingPlatformMockup() {
   const [subcategories, setSubcategories] = useState(defaultSubcategories);
   const [newCat, setNewCat] = useState({ name: "", color: "bg-blue-500" });
   const [newSub, setNewSub] = useState({ name: "", color: "bg-yellow-500" });
-  const [filter, setFilter] = useState({ category: "Route", subcategory: "Endurance" });
+  const [filter, setFilter] = useState({ category: "", subcategory: "" });
   const [library, setLibrary] = useState(defaultLibrary);
   const [draft, setDraft] = useState(blankWorkout());
   const [editingId, setEditingId] = useState(null);
