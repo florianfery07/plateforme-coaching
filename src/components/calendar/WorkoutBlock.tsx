@@ -59,6 +59,29 @@ function formatDurationFromParts(hours, minutes) {
   return "";
 }
 
+function parsePercentParts(value) {
+  const numbers = String(value || "").match(/\d+(?:[.,]\d+)?/g);
+
+  return {
+    min: numbers?.[0] || "",
+    max: numbers?.[1] || "",
+  };
+}
+
+function formatPercentFromParts(min, max) {
+  const cleanMin = String(min || "")
+    .replace(",", ".")
+    .replace(/[^\d.]/g, "");
+  const cleanMax = String(max || "")
+    .replace(",", ".")
+    .replace(/[^\d.]/g, "");
+
+  if (cleanMin && cleanMax) return `${cleanMin}-${cleanMax}`;
+  if (cleanMin) return cleanMin;
+
+  return "";
+}
+
 export default function WorkoutBlock({
   block,
   blockIndex,
@@ -92,6 +115,41 @@ export default function WorkoutBlock({
       repeatIndex,
       "duration",
       formatDurationFromParts(nextHours, nextMinutes)
+    );
+  };
+
+  const updateTargetPercentPart = (part, value) => {
+    const current = parsePercentParts(block.targetPercent);
+    const cleanValue = String(value || "")
+      .replace(",", ".")
+      .replace(/[^\d.]/g, "");
+
+    const nextMin = part === "min" ? cleanValue : current.min;
+    const nextMax = part === "max" ? cleanValue : current.max;
+
+    updateBlock(
+      blockIndex,
+      "targetPercent",
+      formatPercentFromParts(nextMin, nextMax)
+    );
+  };
+
+  const updateRepeatTargetPercentPart = (repeatIndex, part, value) => {
+    const current = parsePercentParts(
+      block.repeatItems[repeatIndex]?.targetPercent
+    );
+    const cleanValue = String(value || "")
+      .replace(",", ".")
+      .replace(/[^\d.]/g, "");
+
+    const nextMin = part === "min" ? cleanValue : current.min;
+    const nextMax = part === "max" ? cleanValue : current.max;
+
+    updateRepeat(
+      blockIndex,
+      repeatIndex,
+      "targetPercent",
+      formatPercentFromParts(nextMin, nextMax)
     );
   };
 
@@ -154,13 +212,31 @@ export default function WorkoutBlock({
               ))}
             </Select>
 
-            <Input
-              value={block.targetPercent || ""}
-              onChange={(event) =>
-                updateBlock(blockIndex, "targetPercent", event.target.value)
-              }
-              placeholder="Cible % CP ex : 78-84"
-            />
+            <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
+              <Input
+                value={parsePercentParts(block.targetPercent).min}
+                onChange={(event) =>
+                  updateTargetPercentPart("min", event.target.value)
+                }
+                type="text"
+                inputMode="decimal"
+                placeholder="78"
+              />
+
+              <span className="text-sm font-semibold text-zinc-400">-</span>
+
+              <Input
+                value={parsePercentParts(block.targetPercent).max}
+                onChange={(event) =>
+                  updateTargetPercentPart("max", event.target.value)
+                }
+                type="text"
+                inputMode="decimal"
+                placeholder="84"
+              />
+
+              <span className="text-sm font-semibold text-zinc-400">% CP</span>
+            </div>
           </div>
 
           <Textarea
@@ -275,18 +351,39 @@ export default function WorkoutBlock({
                 ))}
               </Select>
 
-              <Input
-                value={repeatItem.targetPercent || ""}
-                onChange={(event) =>
-                  updateRepeat(
-                    blockIndex,
-                    repeatIndex,
-                    "targetPercent",
-                    event.target.value
-                  )
-                }
-                placeholder="% CP ex : 102-108"
-              />
+              <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
+                <Input
+                  value={parsePercentParts(repeatItem.targetPercent).min}
+                  onChange={(event) =>
+                    updateRepeatTargetPercentPart(
+                      repeatIndex,
+                      "min",
+                      event.target.value
+                    )
+                  }
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="102"
+                />
+
+                <span className="text-sm font-semibold text-zinc-400">-</span>
+
+                <Input
+                  value={parsePercentParts(repeatItem.targetPercent).max}
+                  onChange={(event) =>
+                    updateRepeatTargetPercentPart(
+                      repeatIndex,
+                      "max",
+                      event.target.value
+                    )
+                  }
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="108"
+                />
+
+                <span className="text-sm font-semibold text-zinc-400">% CP</span>
+              </div>
 
               <Input
                 value={repeatItem.instruction}
