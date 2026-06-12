@@ -82,6 +82,16 @@ function formatPercentFromParts(min, max) {
   return "";
 }
 
+function blockNameValue(block) {
+  const value = String(block.name || "");
+
+  if (/^Bloc( répétition)? \d+$/i.test(value)) {
+    return "";
+  }
+
+  return value;
+}
+
 export default function WorkoutBlock({
   block,
   blockIndex,
@@ -154,15 +164,19 @@ export default function WorkoutBlock({
   };
 
   return (
-    <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4">
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+    <div className="rounded-3xl border border-zinc-700 bg-zinc-800/80 p-4 shadow-sm">
+      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.6fr_auto_auto]">
         <Input
-          value={block.name}
+          value={blockNameValue(block)}
           onChange={(event) => updateBlock(blockIndex, "name", event.target.value)}
-          placeholder="Nom du bloc"
+          placeholder={
+            block.type === "repeat"
+              ? "Nom du bloc répétition"
+              : "Nom du bloc"
+          }
         />
 
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2 md:col-span-2">
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
           <Input
             value={parseDurationParts(block.duration).hours}
             onChange={(event) => updateDurationPart("hours", event.target.value)}
@@ -184,7 +198,30 @@ export default function WorkoutBlock({
           <span className="text-sm font-semibold text-zinc-400">min</span>
         </div>
 
+        {block.type === "repeat" && (
+          <div className="grid grid-cols-[72px_auto] items-center gap-2">
+            <Input
+              value={block.repeatCount || ""}
+              onChange={(event) =>
+                updateBlock(
+                  blockIndex,
+                  "repeatCount",
+                  String(event.target.value || "").replace(/\D/g, "")
+                )
+              }
+              type="text"
+              inputMode="numeric"
+              placeholder="5"
+            />
+
+            <span className="whitespace-nowrap text-sm font-semibold text-zinc-400">
+              répétitions
+            </span>
+          </div>
+        )}
+
         <Btn
+          className="lg:min-w-[120px]"
           onClick={() =>
             setDraft((current) => ({
               ...current,
@@ -198,7 +235,7 @@ export default function WorkoutBlock({
 
       {block.type === "simple" ? (
         <>
-          <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1.6fr]">
             <Select
               value={block.zone}
               onChange={(event) =>
@@ -250,8 +287,13 @@ export default function WorkoutBlock({
         </>
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="font-semibold">Détail des étapes</h4>
+          <div className="flex items-center justify-between rounded-2xl bg-zinc-900/70 px-3 py-2">
+            <div>
+              <h4 className="font-semibold">Détail des étapes</h4>
+              <p className="text-xs text-zinc-500">
+                Les étapes seront répétées selon le nombre indiqué en haut du bloc.
+              </p>
+            </div>
 
             <Btn
               onClick={() =>
@@ -264,7 +306,7 @@ export default function WorkoutBlock({
                           repeatItems: [
                             ...itemBlock.repeatItems,
                             {
-                              name: `Étape ${itemBlock.repeatItems.length + 1}`,
+                              name: "",
                               duration: "",
                               zone: "Z4",
                               targetPercent: "",
@@ -284,10 +326,10 @@ export default function WorkoutBlock({
           {block.repeatItems.map((repeatItem, repeatIndex) => (
             <div
               key={repeatIndex}
-              className="grid grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 md:grid-cols-6"
+              className="grid grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1.1fr_1.2fr_1.3fr_1.2fr_auto]"
             >
               <Input
-                value={repeatItem.name}
+                value={repeatItem.name || ""}
                 onChange={(event) =>
                   updateRepeat(
                     blockIndex,
@@ -296,7 +338,7 @@ export default function WorkoutBlock({
                     event.target.value
                   )
                 }
-                placeholder="Nom de l’étape"
+                placeholder={`Nom de l’étape ${repeatIndex + 1}`}
               />
 
               <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
@@ -399,6 +441,7 @@ export default function WorkoutBlock({
               />
 
               <Btn
+                className="xl:min-w-[105px]"
                 onClick={() =>
                   setDraft((current) => ({
                     ...current,
