@@ -163,9 +163,44 @@ export default function WorkoutBlock({
     );
   };
 
+  const duplicateBlock = () => {
+    setDraft((current) => {
+      const copy = JSON.parse(JSON.stringify(block));
+      const nextBlocks = [...current.blocks];
+
+      nextBlocks.splice(blockIndex + 1, 0, copy);
+
+      return {
+        ...current,
+        blocks: nextBlocks,
+      };
+    });
+  };
+
+  const duplicateRepeatItem = (repeatIndex) => {
+    setDraft((current) => ({
+      ...current,
+      blocks: current.blocks.map((itemBlock, index) => {
+        if (index !== blockIndex) return itemBlock;
+
+        const copy = JSON.parse(
+          JSON.stringify(itemBlock.repeatItems[repeatIndex])
+        );
+        const nextRepeatItems = [...itemBlock.repeatItems];
+
+        nextRepeatItems.splice(repeatIndex + 1, 0, copy);
+
+        return {
+          ...itemBlock,
+          repeatItems: nextRepeatItems,
+        };
+      }),
+    }));
+  };
+
   return (
     <div className="rounded-3xl border border-zinc-700 bg-zinc-800/80 p-4 shadow-sm">
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.6fr_auto_auto]">
+      <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(220px,1.4fr)_minmax(260px,1.5fr)_auto_auto]">
         <Input
           value={blockNameValue(block)}
           onChange={(event) => updateBlock(blockIndex, "name", event.target.value)}
@@ -198,30 +233,16 @@ export default function WorkoutBlock({
           <span className="text-sm font-semibold text-zinc-400">min</span>
         </div>
 
-        {block.type === "repeat" && (
-          <div className="grid grid-cols-[72px_auto] items-center gap-2">
-            <Input
-              value={block.repeatCount || ""}
-              onChange={(event) =>
-                updateBlock(
-                  blockIndex,
-                  "repeatCount",
-                  String(event.target.value || "").replace(/\D/g, "")
-                )
-              }
-              type="text"
-              inputMode="numeric"
-              placeholder="5"
-            />
-
-            <span className="whitespace-nowrap text-sm font-semibold text-zinc-400">
-              répétitions
-            </span>
-          </div>
-        )}
 
         <Btn
-          className="lg:min-w-[120px]"
+          className="lg:min-w-[115px]"
+          onClick={duplicateBlock}
+        >
+          Dupliquer
+        </Btn>
+
+        <Btn
+          className="lg:min-w-[115px]"
           onClick={() =>
             setDraft((current) => ({
               ...current,
@@ -232,6 +253,29 @@ export default function WorkoutBlock({
           Supprimer
         </Btn>
       </div>
+
+      {block.type === "repeat" && (
+        <div className="mb-3 flex items-center gap-2 rounded-2xl bg-zinc-900/60 px-3 py-2">
+          <span className="text-sm font-semibold text-zinc-400">
+            Nombre de répétitions
+          </span>
+
+          <Input
+            value={block.repeatCount || ""}
+            onChange={(event) =>
+              updateBlock(
+                blockIndex,
+                "repeatCount",
+                String(event.target.value || "").replace(/\D/g, "")
+              )
+            }
+            type="text"
+            inputMode="numeric"
+            placeholder="5"
+            className="w-20"
+          />
+        </div>
+      )}
 
       {block.type === "simple" ? (
         <>
@@ -326,7 +370,7 @@ export default function WorkoutBlock({
           {block.repeatItems.map((repeatItem, repeatIndex) => (
             <div
               key={repeatIndex}
-              className="grid grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1.1fr_1.2fr_1.3fr_1.2fr_auto]"
+              className="grid grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1.1fr_1.2fr_1.3fr_1.2fr_auto_auto]"
             >
               <Input
                 value={repeatItem.name || ""}
@@ -439,6 +483,13 @@ export default function WorkoutBlock({
                 }
                 placeholder="Consigne"
               />
+
+              <Btn
+                className="xl:min-w-[105px]"
+                onClick={() => duplicateRepeatItem(repeatIndex)}
+              >
+                Dupliquer
+              </Btn>
 
               <Btn
                 className="xl:min-w-[105px]"
