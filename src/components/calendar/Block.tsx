@@ -6,6 +6,34 @@ import { zoneWatts } from "@/lib/trainingUtils";
 export default function Block({ block, cpData }) {
   const repeat = block.type === "repeat";
 
+  const intensityLabel = (item) => {
+    if (item.targetPercent) {
+      const cp = Number(cpData?.value || cpData?.cp || cpData || 0);
+
+      const match = String(item.targetPercent).match(
+        /(\d+)\s*-\s*(\d+)/
+      );
+
+      if (cp && match) {
+        const minPercent = Number(match[1]);
+        const maxPercent = Number(match[2]);
+
+        const minWatts = Math.round((cp * minPercent) / 100);
+        const maxWatts = Math.round((cp * maxPercent) / 100);
+
+        return `${item.targetPercent}% CP : ${minWatts}-${maxWatts} W`;
+      }
+
+      return `${item.targetPercent}% CP`;
+    }
+
+    if (item.targetWatts) {
+      return item.targetWatts;
+    }
+
+    return `${item.zone} : ${zoneWatts(item.zone, cpData)}`;
+  };
+
   return (
     <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -18,7 +46,7 @@ export default function Block({ block, cpData }) {
 
         {!repeat && (
           <div className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-black">
-            {block.zone} : {zoneWatts(block.zone, cpData)}
+            {intensityLabel(block)}
           </div>
         )}
       </div>
@@ -44,7 +72,7 @@ export default function Block({ block, cpData }) {
               </div>
 
               <div className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-black">
-                {repeatItem.zone} : {zoneWatts(repeatItem.zone, cpData)}
+                {intensityLabel(repeatItem)}
               </div>
             </div>
           ))}

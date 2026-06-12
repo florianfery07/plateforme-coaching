@@ -4,6 +4,21 @@
 import { Btn, Input, Select, Textarea } from "@/components/ui/ui";
 import { ZONES } from "@/lib/platformDefaults";
 
+const ZONE_PERCENT_LABELS = {
+  Z1: "< 55% CP",
+  Z2: "56-75% CP",
+  Z3: "76-90% CP",
+  Z4: "91-105% CP",
+  Z5: "106-120% CP",
+  Z6: "121-150% CP",
+  Z7: "> 150% CP",
+};
+
+const zoneOptionLabel = (zone) => {
+  const percent = ZONE_PERCENT_LABELS[zone];
+  return percent ? `${zone} — ${percent}` : zone;
+};
+
 export default function WorkoutBlock({
   block,
   blockIndex,
@@ -43,17 +58,28 @@ export default function WorkoutBlock({
 
       {block.type === "simple" ? (
         <>
-          <Select
-            value={block.zone}
-            onChange={(event) =>
-              updateBlock(blockIndex, "zone", event.target.value)
-            }
-            className="mb-3 max-w-xs"
-          >
-            {ZONES.map((zone) => (
-              <option key={zone}>{zone}</option>
-            ))}
-          </Select>
+          <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Select
+              value={block.zone}
+              onChange={(event) =>
+                updateBlock(blockIndex, "zone", event.target.value)
+              }
+            >
+              {ZONES.map((zone) => (
+                <option key={zone} value={zone}>
+                  {zoneOptionLabel(zone)}
+                </option>
+              ))}
+            </Select>
+
+            <Input
+              value={block.targetPercent || ""}
+              onChange={(event) =>
+                updateBlock(blockIndex, "targetPercent", event.target.value)
+              }
+              placeholder="Cible % CP ex : 78-84"
+            />
+          </div>
 
           <Textarea
             value={block.instruction}
@@ -83,6 +109,7 @@ export default function WorkoutBlock({
                               name: `Étape ${itemBlock.repeatItems.length + 1}`,
                               duration: "",
                               zone: "Z4",
+                              targetPercent: "",
                               instruction: "",
                             },
                           ],
@@ -99,7 +126,7 @@ export default function WorkoutBlock({
           {block.repeatItems.map((repeatItem, repeatIndex) => (
             <div
               key={repeatIndex}
-              className="grid grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 md:grid-cols-5"
+              className="grid grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 md:grid-cols-6"
             >
               <Input
                 value={repeatItem.name}
@@ -139,9 +166,24 @@ export default function WorkoutBlock({
                 }
               >
                 {ZONES.map((zone) => (
-                  <option key={zone}>{zone}</option>
+                  <option key={zone} value={zone}>
+                    {zoneOptionLabel(zone)}
+                  </option>
                 ))}
               </Select>
+
+              <Input
+                value={repeatItem.targetPercent || ""}
+                onChange={(event) =>
+                  updateRepeat(
+                    blockIndex,
+                    repeatIndex,
+                    "targetPercent",
+                    event.target.value
+                  )
+                }
+                placeholder="% CP ex : 102-108"
+              />
 
               <Input
                 value={repeatItem.instruction}
