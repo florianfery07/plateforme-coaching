@@ -19,6 +19,46 @@ const zoneOptionLabel = (zone) => {
   return percent ? `${zone} — ${percent}` : zone;
 };
 
+function parseDurationParts(value) {
+  const text = String(value || "").toLowerCase().replace(/\s/g, "");
+
+  if (!text) return { hours: "", minutes: "" };
+
+  const hoursMatch = text.match(/(\d+)h/);
+  const minutesAfterHourMatch = text.match(/h(\d+)$/);
+  const minutesWithMinMatch = text.match(/(\d+)min/);
+
+  if (hoursMatch) {
+    return {
+      hours: hoursMatch[1],
+      minutes: minutesAfterHourMatch?.[1] || minutesWithMinMatch?.[1] || "",
+    };
+  }
+
+  if (minutesWithMinMatch) {
+    return {
+      hours: "",
+      minutes: minutesWithMinMatch[1],
+    };
+  }
+
+  return {
+    hours: text.match(/^\d+$/) ? text : "",
+    minutes: "",
+  };
+}
+
+function formatDurationFromParts(hours, minutes) {
+  const cleanHours = String(hours || "").replace(/\D/g, "");
+  const cleanMinutes = String(minutes || "").replace(/\D/g, "");
+
+  if (cleanHours && cleanMinutes) return `${cleanHours}h${cleanMinutes}`;
+  if (cleanHours) return `${cleanHours}h`;
+  if (cleanMinutes) return `${cleanMinutes}min`;
+
+  return "";
+}
+
 export default function WorkoutBlock({
   block,
   blockIndex,
@@ -26,6 +66,35 @@ export default function WorkoutBlock({
   updateRepeat,
   setDraft,
 }) {
+  const updateDurationPart = (part, value) => {
+    const current = parseDurationParts(block.duration);
+    const cleanValue = String(value || "").replace(/\D/g, "");
+
+    const nextHours = part === "hours" ? cleanValue : current.hours;
+    const nextMinutes = part === "minutes" ? cleanValue : current.minutes;
+
+    updateBlock(
+      blockIndex,
+      "duration",
+      formatDurationFromParts(nextHours, nextMinutes)
+    );
+  };
+
+  const updateRepeatDurationPart = (repeatIndex, part, value) => {
+    const current = parseDurationParts(block.repeatItems[repeatIndex]?.duration);
+    const cleanValue = String(value || "").replace(/\D/g, "");
+
+    const nextHours = part === "hours" ? cleanValue : current.hours;
+    const nextMinutes = part === "minutes" ? cleanValue : current.minutes;
+
+    updateRepeat(
+      blockIndex,
+      repeatIndex,
+      "duration",
+      formatDurationFromParts(nextHours, nextMinutes)
+    );
+  };
+
   return (
     <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4">
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
@@ -35,14 +104,27 @@ export default function WorkoutBlock({
           placeholder="Nom du bloc"
         />
 
-        <Input
-          value={block.duration}
-          onChange={(event) =>
-            updateBlock(blockIndex, "duration", event.target.value)
-          }
-          className="md:col-span-2"
-          placeholder="Durée du bloc"
-        />
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2 md:col-span-2">
+          <Input
+            value={parseDurationParts(block.duration).hours}
+            onChange={(event) => updateDurationPart("hours", event.target.value)}
+            type="text"
+            inputMode="numeric"
+            placeholder="1"
+          />
+
+          <span className="text-sm font-semibold text-zinc-400">h</span>
+
+          <Input
+            value={parseDurationParts(block.duration).minutes}
+            onChange={(event) => updateDurationPart("minutes", event.target.value)}
+            type="text"
+            inputMode="numeric"
+            placeholder="30"
+          />
+
+          <span className="text-sm font-semibold text-zinc-400">min</span>
+        </div>
 
         <Btn
           onClick={() =>
@@ -141,18 +223,39 @@ export default function WorkoutBlock({
                 placeholder="Nom de l’étape"
               />
 
-              <Input
-                value={repeatItem.duration}
-                onChange={(event) =>
-                  updateRepeat(
-                    blockIndex,
-                    repeatIndex,
-                    "duration",
-                    event.target.value
-                  )
-                }
-                placeholder="Durée"
-              />
+              <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
+                <Input
+                  value={parseDurationParts(repeatItem.duration).hours}
+                  onChange={(event) =>
+                    updateRepeatDurationPart(
+                      repeatIndex,
+                      "hours",
+                      event.target.value
+                    )
+                  }
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                />
+
+                <span className="text-sm font-semibold text-zinc-400">h</span>
+
+                <Input
+                  value={parseDurationParts(repeatItem.duration).minutes}
+                  onChange={(event) =>
+                    updateRepeatDurationPart(
+                      repeatIndex,
+                      "minutes",
+                      event.target.value
+                    )
+                  }
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="5"
+                />
+
+                <span className="text-sm font-semibold text-zinc-400">min</span>
+              </div>
 
               <Select
                 value={repeatItem.zone}

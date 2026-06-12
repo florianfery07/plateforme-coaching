@@ -44,10 +44,90 @@ export default function CreatePage({
       ],
     }));
   const rpeSelectValue = (value) => {
-  if (!value) return "";
-  const number = String(value).replace("/10", "");
-  return `${number}/10`;
-};
+    if (!value) return "";
+    const number = String(value).replace("/10", "");
+    return `${number}/10`;
+  };
+
+  const parseDurationParts = (value) => {
+    const text = String(value || "").toLowerCase().replace(/\s/g, "");
+
+    if (!text) {
+      return { hours: "", minutes: "" };
+    }
+
+    const hoursMatch = text.match(/(\d+)h/);
+    const minutesAfterHourMatch = text.match(/h(\d+)$/);
+    const minutesWithMinMatch = text.match(/(\d+)min/);
+
+    if (hoursMatch) {
+      return {
+        hours: hoursMatch[1],
+        minutes:
+          minutesAfterHourMatch?.[1] ||
+          minutesWithMinMatch?.[1] ||
+          "",
+      };
+    }
+
+    if (minutesWithMinMatch) {
+      return {
+        hours: "",
+        minutes: minutesWithMinMatch[1],
+      };
+    }
+
+    return {
+      hours: text.match(/^\d+$/) ? text : "",
+      minutes: "",
+    };
+  };
+
+  const formatDurationFromParts = (hours, minutes) => {
+    const cleanHours = String(hours || "").replace(/\D/g, "");
+    const cleanMinutes = String(minutes || "").replace(/\D/g, "");
+
+    if (cleanHours && cleanMinutes) {
+      return `${cleanHours}h${cleanMinutes}`;
+    }
+
+    if (cleanHours) {
+      return `${cleanHours}h`;
+    }
+
+    if (cleanMinutes) {
+      return `${cleanMinutes}min`;
+    }
+
+    return "";
+  };
+
+  const updateTotalDurationPart = (part, value) => {
+    const current = parseDurationParts(draft.totalDuration);
+    const cleanValue = String(value || "").replace(/\D/g, "");
+
+    const nextHours = part === "hours" ? cleanValue : current.hours;
+    const nextMinutes = part === "minutes" ? cleanValue : current.minutes;
+
+    updateDraft(
+      "totalDuration",
+      formatDurationFromParts(nextHours, nextMinutes)
+    );
+  };
+
+  const updateSpecificDurationPart = (part, value) => {
+    const current = parseDurationParts(draft.expectedSpecificDuration);
+    const cleanValue = String(value || "").replace(/\D/g, "");
+
+    const nextHours = part === "hours" ? cleanValue : current.hours;
+    const nextMinutes = part === "minutes" ? cleanValue : current.minutes;
+
+    updateDraft(
+      "expectedSpecificDuration",
+      formatDurationFromParts(nextHours, nextMinutes)
+    );
+  };
+
   return (
     <Panel>
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -100,10 +180,35 @@ export default function CreatePage({
         </Field>
 
         <Field label="Durée totale">
-          <Input
-            value={draft.totalDuration}
-            onChange={(event) => updateDraft("totalDuration", event.target.value)}
-          />
+          <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
+            <Input
+              value={parseDurationParts(draft.totalDuration).hours}
+              onChange={(event) =>
+                updateTotalDurationPart("hours", event.target.value)
+              }
+              type="text"
+              inputMode="numeric"
+              placeholder="1"
+            />
+
+            <span className="text-sm font-semibold text-zinc-400">
+              h
+            </span>
+
+            <Input
+              value={parseDurationParts(draft.totalDuration).minutes}
+              onChange={(event) =>
+                updateTotalDurationPart("minutes", event.target.value)
+              }
+              type="text"
+              inputMode="numeric"
+              placeholder="30"
+            />
+
+            <span className="text-sm font-semibold text-zinc-400">
+              min
+            </span>
+          </div>
         </Field>
 
         <Field label="RPE global attendu">
@@ -122,13 +227,35 @@ export default function CreatePage({
 </Field>
 
 <Field label="Durée spécifique prévue">
-  <Input
-    value={draft.expectedSpecificDuration || ""}
-    onChange={(event) =>
-      updateDraft("expectedSpecificDuration", event.target.value)
-    }
-    placeholder="Ex : 10 min"
-  />
+  <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
+    <Input
+      value={parseDurationParts(draft.expectedSpecificDuration).hours}
+      onChange={(event) =>
+        updateSpecificDurationPart("hours", event.target.value)
+      }
+      type="text"
+      inputMode="numeric"
+      placeholder="0"
+    />
+
+    <span className="text-sm font-semibold text-zinc-400">
+      h
+    </span>
+
+    <Input
+      value={parseDurationParts(draft.expectedSpecificDuration).minutes}
+      onChange={(event) =>
+        updateSpecificDurationPart("minutes", event.target.value)
+      }
+      type="text"
+      inputMode="numeric"
+      placeholder="10"
+    />
+
+    <span className="text-sm font-semibold text-zinc-400">
+      min
+    </span>
+  </div>
 </Field>
 
 <Field label="RPE spécifique attendu">
