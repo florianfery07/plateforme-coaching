@@ -12,6 +12,7 @@ import DayView from "@/components/calendar/DayView";
 import QuickLibrary from "@/components/calendar/QuickLibrary";
 import AthleteGoalUpdateBanner from "@/components/calendar/AthleteGoalUpdateBanner";
 import AthleteNotificationsBanner from "@/components/calendar/AthleteNotificationsBanner";
+import AthleteBehaviorAnalysis from "@/components/calendar/AthleteBehaviorAnalysis";
 
 import {
   addDays,
@@ -139,8 +140,6 @@ function PlanningLoadTool({
 
       if (!planning) return;
       if (planning.goal !== currentPlanning.goal) return;
-      if (currentPlanning.category && planning.category !== currentPlanning.category) return;
-      if (currentPlanning.subcategory && planning.subcategory !== currentPlanning.subcategory) return;
       if (weekKey === selectedKey) return;
 
       grouped[weekKey] ||= [];
@@ -168,8 +167,6 @@ function PlanningLoadTool({
     sessions,
     weekPlanning,
     currentPlanning.goal,
-    currentPlanning.category,
-    currentPlanning.subcategory,
     selectedKey,
   ]);
 
@@ -219,7 +216,7 @@ function PlanningLoadTool({
 
       {open && (
         <div className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
               <div className="mb-1 text-xs text-zinc-400">
                 Objectif semaine
@@ -239,31 +236,6 @@ function PlanningLoadTool({
                 {WEEK_GOALS.map((goal) => (
                   <option key={goal} value={goal}>
                     {goal}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            <div>
-              <div className="mb-1 text-xs text-zinc-400">
-                Discipline
-              </div>
-
-              <Select
-                value={currentPlanning.category}
-                onChange={(event) =>
-                  updateWeekPlanning(
-                    selectedYear,
-                    info.label,
-                    "category",
-                    event.target.value
-                  )
-                }
-              >
-                <option value="">Toutes</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.name}>
-                    {category.name}
                   </option>
                 ))}
               </Select>
@@ -362,6 +334,8 @@ function PlanningLoadTool({
               {comparisonLabel}
             </div>
           </div>
+
+          <AthleteBehaviorAnalysis sessions={sessions} />
         </div>
       )}
     </div>
