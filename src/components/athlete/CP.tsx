@@ -2,17 +2,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Empty, Field, Input, Panel } from "@/components/ui/ui";
+import { Empty, Field, Input, Panel, Select } from "@/components/ui/ui";
 import { supabase } from "@/lib/supabase";
 import { zoneWatts } from "@/lib/trainingUtils";
 
 export default function CP({ athlete: a, updateAthlete, cpData }) {
   const [testHistory, setTestHistory] = useState([]);
+  const currentYear = new Date().getFullYear();
+  const [testHistoryYear, setTestHistoryYear] = useState(currentYear);
 
   const formatDate = (value) => {
     if (!value) return "Date inconnue";
     return new Date(value).toLocaleDateString("fr-FR");
   };
+
+  const testHistoryYears = [
+    ...new Set([
+      currentYear + 1,
+      currentYear,
+      currentYear - 1,
+      currentYear - 2,
+      currentYear - 3,
+      currentYear - 4,
+      currentYear - 5,
+      ...testHistory.map((item) =>
+        new Date(item.archived_at).getFullYear()
+      ),
+    ]),
+  ].sort((a, b) => b - a);
+
+  const filteredTestHistory = testHistory.filter(
+    (item) =>
+      new Date(item.archived_at).getFullYear() === Number(testHistoryYear)
+  );
 
   async function loadTestHistory() {
     if (!a?.id) return;
@@ -162,15 +184,37 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
           </button>
 
           <div className="mt-5 space-y-3">
-            <h3 className="text-lg font-semibold">Historique des tests</h3>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-lg font-semibold">Historique des tests</h3>
 
-            {testHistory.length === 0 && (
+              <div className="flex items-center gap-2">
+                <Select
+                  value={testHistoryYear}
+                  onChange={(event) =>
+                    setTestHistoryYear(Number(event.target.value))
+                  }
+                  className="w-32"
+                >
+                  {testHistoryYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </Select>
+
+                <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
+                  {filteredTestHistory.length}
+                </span>
+              </div>
+            </div>
+
+            {filteredTestHistory.length === 0 && (
               <p className="text-sm text-zinc-400">
                 Aucun test archivé.
               </p>
             )}
 
-            {testHistory.map((item) => (
+            {filteredTestHistory.map((item) => (
               <div
                 key={item.id}
                 className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4"

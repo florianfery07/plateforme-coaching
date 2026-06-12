@@ -7,6 +7,7 @@ import {
   Field,
   Input,
   Panel,
+  Select,
   Textarea,
 } from "@/components/ui/ui";
 
@@ -30,6 +31,8 @@ export default function AthleteProfilePage({
   const [openObservations, setOpenObservations] = useState({});
   const [observations, setObservations] = useState([]);
   const [goalHistory, setGoalHistory] = useState([]);
+  const currentYear = new Date().getFullYear();
+  const [goalHistoryYear, setGoalHistoryYear] = useState(currentYear);
 
   const toggleSection = (key) => {
     setOpenSections((prev) => ({
@@ -91,6 +94,26 @@ export default function AthleteProfilePage({
     if (!value) return "Jamais";
     return new Date(value).toLocaleDateString("fr-FR");
   };
+
+  const goalHistoryYears = [
+    ...new Set([
+      currentYear + 1,
+      currentYear,
+      currentYear - 1,
+      currentYear - 2,
+      currentYear - 3,
+      currentYear - 4,
+      currentYear - 5,
+      ...goalHistory.map((item) =>
+        new Date(item.created_at).getFullYear()
+      ),
+    ]),
+  ].sort((a, b) => b - a);
+
+  const filteredGoalHistory = goalHistory.filter(
+    (item) =>
+      new Date(item.created_at).getFullYear() === Number(goalHistoryYear)
+  );
 
   const validateGoalUpdate = async () => {
     if (!a?.id) return;
@@ -393,19 +416,35 @@ export default function AthleteProfilePage({
                   </p>
                 </div>
 
-                <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
-                  {goalHistory.length}
-                </span>
+                <div className="flex items-center gap-2">
+  <Select
+    value={goalHistoryYear}
+    onChange={(event) =>
+      setGoalHistoryYear(Number(event.target.value))
+    }
+    className="w-32"
+  >
+    {goalHistoryYears.map((year) => (
+      <option key={year} value={year}>
+        {year}
+      </option>
+    ))}
+  </Select>
+
+  <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
+    {filteredGoalHistory.length}
+  </span>
+</div>
               </div>
 
               <div className="space-y-3">
-                {goalHistory.length === 0 && (
+                {filteredGoalHistory.length === 0 && (
                   <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400">
                     Aucun objectif archivé pour le moment.
                   </p>
                 )}
 
-                {goalHistory.map((item) => (
+                {filteredGoalHistory.map((item) => (
                   <div
                     key={item.id}
                     className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4"

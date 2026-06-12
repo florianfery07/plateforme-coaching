@@ -10,11 +10,12 @@ import {
 } from "@/lib/trainingUtils";
 
 import { CALENDAR_YEARS } from "@/lib/platformDefaults";
-import { Panel } from "@/components/ui/ui";
+import { Panel, Select } from "@/components/ui/ui";
 
 import StatCard from "@/components/athlete/StatCard";
 import AnnualLoadChart from "@/components/athlete/AnnualLoadChart";
 import TrainingDistribution from "@/components/athlete/TrainingDistribution";
+import { useEffect, useState } from "react";
 
 function getAvailableYears(sessions, preferredYear = new Date().getFullYear()) {
   const currentYear = new Date().getFullYear();
@@ -43,9 +44,19 @@ export default function Stats({
 }) {
   const years = getAvailableYears(sessions, calendarYear);
 
-  const activeYear = years.includes(Number(calendarYear))
-    ? Number(calendarYear)
-    : years[0];
+const [selectedYear, setSelectedYear] = useState(
+  years.includes(Number(calendarYear)) ? Number(calendarYear) : years[0]
+);
+
+useEffect(() => {
+  if (years.includes(Number(calendarYear))) {
+    setSelectedYear(Number(calendarYear));
+  }
+}, [calendarYear]);
+
+const activeYear = years.includes(Number(selectedYear))
+  ? Number(selectedYear)
+  : years[0];
 
   const yearTraining = trainingStats(sessions, activeYear);
   const yearDone = yearTraining.doneSessions || [];
@@ -73,15 +84,31 @@ export default function Stats({
 
   return (
     <Panel>
-      <div className="mb-5">
-        <h2 className="text-2xl font-semibold">
-          Statistiques annuelles
-        </h2>
+     <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+  <div>
+    <h2 className="text-2xl font-semibold">
+      Statistiques annuelles
+    </h2>
 
-        <p className="mt-1 text-sm text-zinc-400">
-          Totaux réalisés sur l'année sélectionnée.
-        </p>
-      </div>
+    <p className="mt-1 text-sm text-zinc-400">
+      Totaux réalisés sur l'année sélectionnée.
+    </p>
+  </div>
+
+  <Select
+    value={activeYear}
+    onChange={(event) =>
+      setSelectedYear(Number(event.target.value))
+    }
+    className="md:w-40"
+  >
+    {years.map((year) => (
+      <option key={year} value={year}>
+        {year}
+      </option>
+    ))}
+  </Select>
+</div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">
         {cards.map(([label, value]) => (
