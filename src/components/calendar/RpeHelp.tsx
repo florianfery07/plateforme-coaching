@@ -66,24 +66,23 @@ export default function RpeHelp() {
             </div>
 
             <div>
-              Évaluez la difficulté de l'ensemble de la séance. Le RPE global doit
-              refléter le ressenti de la séance complète.
+              Évaluez vos sensations sur l'ensemble de la séance, surtout pendant les périodes faciles et hors intervalles : échauffement, récupération entre les efforts, endurance, retour au calme. Les efforts intenses ne doivent pas faire monter fortement le RPE global : leur difficulté est déjà exprimée dans le RPE spécifique.
             </div>
           </div>
 
           <table className="w-full border-collapse text-left">
             <tbody>
               {[
-                ["1", "Très facile. Sortie récupération."],
-                ["2", "Facile. Aucune fatigue particulière."],
-                ["3", "Endurance confortable. Je termine frais."],
-                ["4", "Bonne séance d'endurance. Un peu fatigué mais capable de m'entraîner normalement demain."],
-                ["5", "Séance engagée. J'ai réellement travaillé."],
-                ["6", "Séance difficile. La récupération va compter."],
-                ["7", "Très bonne séance de travail. Fatigue importante mais normale."],
-                ["8", "Très difficile. Grosse sollicitation physique."],
-                ["9", "Exceptionnellement difficile. Proche de mes limites."],
-                ["10", "Maximum du jour. Impossible d'aller plus loin."],
+                ["1", "Très facile hors intervalles. Je me sens très frais sur les parties faciles."],
+                ["2", "Facile. Les périodes faciles restent très confortables."],
+                ["3", "Confortable. Je roule facilement entre les efforts."],
+                ["4", "Légère fatigue générale, mais les parties faciles restent bien maîtrisées."],
+                ["5", "Fatigue normale. Les récupérations et portions faciles demandent un peu d'attention."],
+                ["6", "Fatigue présente. Les parties faciles ne sont plus totalement confortables."],
+                ["7", "Fatigue marquée. Même hors efforts intenses, je sens une vraie lourdeur."],
+                ["8", "Très fatigué globalement. Les récupérations ou portions faciles deviennent difficiles."],
+                ["9", "Très forte fatigue générale. J'ai du mal à rester fluide hors intervalles."],
+                ["10", "Extrêmement difficile même hors efforts intenses. Les parties faciles ne passent presque plus."],
               ].map(([score, text]) => (
                 <tr key={score} className="border-t border-zinc-800">
                   <td className="w-12 py-2 font-bold text-white">{score}</td>
@@ -103,24 +102,23 @@ export default function RpeHelp() {
             </div>
 
             <div>
-              Évaluez uniquement la difficulté des passages spécifiques :
-              intervalles, PMA, seuil, course, spéciale, sprint, etc.
+              Évaluez uniquement la difficulté des efforts ciblés : intervalles, PMA, seuil, course, spéciale, sprint, relances, etc. Ici, on note la difficulté des passages intenses, pas la fatigue globale de la séance.
             </div>
           </div>
 
           <table className="w-full border-collapse text-left">
             <tbody>
               {[
-                ["1", "Très facile. Aucune difficulté particulière."],
-                ["2", "Facile. Effort léger et confortable."],
-                ["3", "Modéré. Je dois me concentrer mais reste très à l'aise."],
-                ["4", "Soutenu. L'effort est présent mais reste confortable."],
-                ["5", "Difficile. Je dois produire un vrai effort."],
-                ["6", "Difficile. Engagement important mais maîtrisé."],
-                ["7", "Très difficile. Forte concentration nécessaire pour réussir."],
-                ["8", "Effort très engagé. Je dois serrer les dents mais ça reste maîtrisé."],
-                ["9", "Quasi maximal. Presque toutes mes capacités utilisées."],
-                ["10", "Maximum absolu. Je n'aurais pas pu faire mieux aujourd'hui."],
+                ["1", "Efforts ciblés très faciles. Aucune contrainte particulière."],
+                ["2", "Efforts faciles. Je reste très confortable."],
+                ["3", "Efforts modérés. Je dois être attentif mais reste à l'aise."],
+                ["4", "Efforts soutenus. Je travaille, mais je garde de la marge."],
+                ["5", "Efforts difficiles. Je dois vraiment m'appliquer."],
+                ["6", "Efforts difficiles et exigeants, mais encore bien maîtrisés."],
+                ["7", "Efforts très difficiles. Forte concentration nécessaire pour tenir la cible."],
+                ["8", "Efforts très engagés. Je serre les dents mais je reste dans le contrôle."],
+                ["9", "Efforts quasi maximaux. Très peu de marge restante."],
+                ["10", "Efforts maximaux. Je n'aurais pas pu produire plus sur ces passages."],
               ].map(([score, text]) => (
                 <tr key={score} className="border-t border-zinc-800">
                   <td className="w-12 py-2 font-bold text-white">{score}</td>
