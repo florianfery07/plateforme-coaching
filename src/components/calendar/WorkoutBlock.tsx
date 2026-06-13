@@ -177,6 +177,27 @@ export default function WorkoutBlock({
     });
   };
 
+  const moveBlock = (direction) => {
+    setDraft((current) => {
+      const nextBlocks = [...current.blocks];
+      const targetIndex = blockIndex + direction;
+
+      if (targetIndex < 0 || targetIndex >= nextBlocks.length) {
+        return current;
+      }
+
+      [nextBlocks[blockIndex], nextBlocks[targetIndex]] = [
+        nextBlocks[targetIndex],
+        nextBlocks[blockIndex],
+      ];
+
+      return {
+        ...current,
+        blocks: nextBlocks,
+      };
+    });
+  };
+
   const duplicateRepeatItem = (repeatIndex) => {
     setDraft((current) => ({
       ...current,
@@ -198,8 +219,53 @@ export default function WorkoutBlock({
     }));
   };
 
+  const moveRepeatItem = (repeatIndex, direction) => {
+    setDraft((current) => ({
+      ...current,
+      blocks: current.blocks.map((itemBlock, index) => {
+        if (index !== blockIndex) return itemBlock;
+
+        const nextRepeatItems = [...itemBlock.repeatItems];
+        const targetIndex = repeatIndex + direction;
+
+        if (targetIndex < 0 || targetIndex >= nextRepeatItems.length) {
+          return itemBlock;
+        }
+
+        [nextRepeatItems[repeatIndex], nextRepeatItems[targetIndex]] = [
+          nextRepeatItems[targetIndex],
+          nextRepeatItems[repeatIndex],
+        ];
+
+        return {
+          ...itemBlock,
+          repeatItems: nextRepeatItems,
+        };
+      }),
+    }));
+  };
+
   return (
-    <div className="rounded-3xl border border-zinc-700 bg-zinc-800/80 p-4 shadow-sm">
+    <div className="flex gap-2">
+      <div className="flex flex-col gap-1 pt-4">
+        <button
+          type="button"
+          onClick={() => moveBlock(-1)}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+        >
+          ↑
+        </button>
+
+        <button
+          type="button"
+          onClick={() => moveBlock(1)}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+        >
+          ↓
+        </button>
+      </div>
+
+      <div className="flex-1 rounded-3xl border border-zinc-700 bg-zinc-800/80 p-4 shadow-sm">
       <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(220px,1.4fr)_minmax(260px,1.5fr)_auto_auto]">
         <Input
           value={blockNameValue(block)}
@@ -368,10 +434,26 @@ export default function WorkoutBlock({
           </div>
 
           {block.repeatItems.map((repeatItem, repeatIndex) => (
-            <div
-              key={repeatIndex}
-              className="grid grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1.1fr_1.2fr_1.3fr_1.2fr_auto_auto]"
-            >
+            <div key={repeatIndex} className="flex gap-2">
+              <div className="flex flex-col gap-1 pt-1">
+                <button
+                  type="button"
+                  onClick={() => moveRepeatItem(repeatIndex, -1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+                >
+                  ↑
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => moveRepeatItem(repeatIndex, 1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+                >
+                  ↓
+                </button>
+              </div>
+
+              <div className="grid flex-1 grid-cols-1 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:grid-cols-2 xl:grid-cols-[1.1fr_1.1fr_1.2fr_1.3fr_1.2fr_auto_auto]">
               <Input
                 value={repeatItem.name || ""}
                 onChange={(event) =>
@@ -490,7 +572,6 @@ export default function WorkoutBlock({
               >
                 Dupliquer
               </Btn>
-
               <Btn
                 className="xl:min-w-[105px]"
                 onClick={() =>
@@ -511,10 +592,12 @@ export default function WorkoutBlock({
               >
                 Supprimer
               </Btn>
+              </div>
             </div>
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
