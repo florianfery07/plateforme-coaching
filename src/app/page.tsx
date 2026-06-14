@@ -370,8 +370,8 @@ useEffect(() => {
       return;
     }
 
-    await supabase.auth.signOut();
-    setAuth(null);
+    setAuth({ role: "coach" });
+await loadAllData();
   }
 
   restoreSession();
