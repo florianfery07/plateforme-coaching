@@ -774,6 +774,10 @@ function cleanRpe(value) {
   return match ? Number(match[0]) : null;
 }
   async function saveWorkout() {
+  if (!draft.category) {
+  alert("Choisis une discipline avant d'enregistrer.");
+  return;
+}
   if (!draft.title.trim()) return;
 
   const workoutData = {
@@ -788,6 +792,8 @@ function cleanRpe(value) {
   description: draft.description,
   blocks: draft.blocks,
 };
+
+  console.log("SAVE_WORKOUT", workoutData);
 
   if (editingId) {
     const { error } = await supabase

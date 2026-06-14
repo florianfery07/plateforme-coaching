@@ -148,11 +148,14 @@ export default function CreatePage({
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Field label="discipline">
           <Select
-            value={draft.category}
+            value={draft.category || ""}
             onChange={(event) => updateDraft("category", event.target.value)}
           >
+            <option value="">Choisir une discipline</option>
             {categories.map((category) => (
-              <option key={category.id}>{category.name}</option>
+              <option key={category.id} value={category.name}>
+                {category.name}
+              </option>
             ))}
           </Select>
         </Field>

@@ -42,8 +42,8 @@ export function repeatBlock(name = "") {
 
 export function blankWorkout() {
   return {
-    category: "Route",
-    subcategory: "Endurance",
+    category: "",
+    subcategory: "",
     title: "",
     totalDuration: "",
     expectedRpe: "",
