@@ -29,7 +29,7 @@ export function rpeNumber(value) {
 export function rpeColorBucket(rpe) {
   const value = rpeNumber(rpe);
 
-  if (value >= 9) return "red";
+  if (value >= 8) return "red";
   if (value >= 5) return "yellow";
   if (value >= 1) return "green";
 
