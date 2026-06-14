@@ -910,57 +910,82 @@ async function addRestDay(date = selectedDate) {
 await loadAllData();
 }
   async function updateFeedback(sessionId, field, value) {
-  const session = activeSessions.find((item) => item.id === sessionId);
-  if (!session) return;
+    const session = activeSessions.find((item) => item.id === sessionId);
 
-  const updatedFeedback = {
-    ...session.feedback,
-    [field]: value,
-    validated:
-  field === "validated"
-    ? value
-    : session.feedback?.validated || false,
-  };
+    if (!session) {
+      console.error("Séance introuvable pour sauvegarde feedback", {
+        sessionId,
+        activeId,
+        activeSessions,
+      });
+      alert("Erreur : séance introuvable. Recharge la page puis réessaie.");
+      return;
+    }
 
-  updateSession((items) =>
-    items.map((item) =>
-      item.id === sessionId
-        ? { ...item, feedback: updatedFeedback }
-        : item
-    )
-  );
+    const updatedFeedback = {
+      ...session.feedback,
+      [field]: value,
+      validated:
+        field === "validated"
+          ? value
+          : session.feedback?.validated || false,
+    };
 
-  const { error } = await supabase
-    .from("workout_feedbacks")
-    .upsert(
-      {
-        workout_id: sessionId,
-        rpe: cleanRpe(updatedFeedback.rpeGlobal || updatedFeedback.rpe),
-        rpe_global: cleanRpe(updatedFeedback.rpeGlobal || updatedFeedback.rpe),
-        rpe_specific: cleanRpe(updatedFeedback.rpeSpecific),
-        motivation: updatedFeedback.motivation ? Number(updatedFeedback.motivation) : null,
-        pleasure: updatedFeedback.pleasure ? Number(updatedFeedback.pleasure) : null,
-        comment: updatedFeedback.comment || "",
-        real_duration: updatedFeedback.actualTime || "",
-      },
-      { onConflict: "workout_id" }
+    updateSession((items) =>
+      items.map((item) =>
+        item.id === sessionId
+          ? { ...item, feedback: updatedFeedback }
+          : item
+      )
     );
 
-  if (error) {
-    console.error("Erreur sauvegarde feedback", error);
-  }
-if (field === "validated" && value === true) {
-  await supabase
-    .from("calendar_workouts")
-    .update({
-      completed: true,
-      non_done: false,
-    })
-    .eq("id", sessionId);
+    const feedbackPayload = {
+      workout_id: sessionId,
+      rpe: cleanRpe(updatedFeedback.rpeGlobal || updatedFeedback.rpe),
+      rpe_global: cleanRpe(updatedFeedback.rpeGlobal || updatedFeedback.rpe),
+      rpe_specific: cleanRpe(updatedFeedback.rpeSpecific),
+      motivation: updatedFeedback.motivation ? Number(updatedFeedback.motivation) : null,
+      pleasure: updatedFeedback.pleasure ? Number(updatedFeedback.pleasure) : null,
+      comment: updatedFeedback.comment || "",
+      real_duration: updatedFeedback.actualTime || "",
+    };
 
-  await loadAllData();
-}
-}
+    const { error: feedbackError } = await supabase
+      .from("workout_feedbacks")
+      .upsert(feedbackPayload, { onConflict: "workout_id" });
+
+    if (feedbackError) {
+      console.error("Erreur sauvegarde feedback", {
+        feedbackError,
+        feedbackPayload,
+      });
+      alert(feedbackError.message || "Erreur sauvegarde du retour athlète.");
+      await loadAllData();
+      return;
+    }
+
+    if (field === "validated" && value === true) {
+      const { error: completedError } = await supabase
+        .from("calendar_workouts")
+        .update({
+          completed: true,
+          non_done: false,
+        })
+        .eq("id", sessionId);
+
+      if (completedError) {
+        console.error("Erreur validation séance réalisée", {
+          completedError,
+          sessionId,
+        });
+        alert(completedError.message || "Erreur validation de la séance réalisée.");
+        await loadAllData();
+        return;
+      }
+    }
+
+    await loadAllData();
+  }
   async function updateNonDone(sessionId, field, value) {
   const session = activeSessions.find((item) => item.id === sessionId);
   if (!session) return;
