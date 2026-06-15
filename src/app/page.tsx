@@ -331,6 +331,7 @@ if (weekPlanningData) {
           goal: row.goal || "Off",
           category: row.category || "",
           subcategory: row.subcategory || "",
+          status: row.status || "planned",
           coachComment: row.coach_comment || "",
         },
       ])
@@ -1182,6 +1183,7 @@ async function removeItem(kind, name) {
     goal: "Off",
     category: "",
     subcategory: "",
+    status: "planned",
   };
 
   const next = {
@@ -1204,6 +1206,7 @@ async function removeItem(kind, name) {
         goal: next.goal || "Off",
         category: next.category || "",
         subcategory: next.subcategory || "",
+        status: next.status || "planned",
         updated_at: new Date().toISOString(),
       },
       {

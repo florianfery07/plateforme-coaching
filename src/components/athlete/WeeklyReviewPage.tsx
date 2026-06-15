@@ -160,13 +160,14 @@ export default function WeeklyReviewPage({
       <WeekIndicators week={week} />
 
       <WeekPicker
-        weeks={yearTraining.weeks}
-        selectedWeek={selectedWeek}
-        setSelectedWeek={setSelectedWeek}
-        selectedYear={activeYear}
-        athleteId={athleteId}
-        weekColors={weekColors}
-      />
+  weeks={yearTraining.weeks}
+  selectedWeek={selectedWeek}
+  setSelectedWeek={setSelectedWeek}
+  selectedYear={activeYear}
+  athleteId={athleteId}
+  weekColors={weekColors}
+  weekPlanning={weekPlanning}
+/>
 
       <WeekDetail
         week={week}

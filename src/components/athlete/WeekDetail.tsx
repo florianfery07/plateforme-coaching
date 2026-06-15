@@ -37,6 +37,7 @@ export default function WeekDetail({
     goal: selectedTag || "Off",
     category: "",
     subcategory: "",
+    status: "planned",
     coachComment: "",
   };
 
@@ -110,7 +111,7 @@ export default function WeekDetail({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Objectif semaine">
             <Select
               value={currentPlanning.goal || selectedTag || "Off"}
@@ -178,6 +179,23 @@ export default function WeekDetail({
               ))}
             </Select>
           </Field>
+          <Field label="Statut">
+            <Select
+              value={currentPlanning.status || "planned"}
+              onChange={(event) =>
+                updateWeekPlanning?.(
+                  activeYear,
+                  week.week,
+                  "status",
+                  event.target.value
+                )
+              }
+              className="md:w-52"
+            >
+              <option value="planned">Prévue</option>
+              <option value="done">Réalisée</option>
+            </Select>
+          </Field>
         </div>
       </div>
 
@@ -190,6 +208,9 @@ export default function WeekDetail({
         </span>
         <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1">
           Thème : {currentPlanning.subcategory || "Tous"}
+        </span>
+        <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1">
+          Statut : {currentPlanning.status === "done" ? "Réalisée" : "Prévue"}
         </span>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
