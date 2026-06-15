@@ -44,6 +44,10 @@ export default function WeeklyReviewPage({
   setWeekColors,
   weekNotes,
   setWeekNotes,
+  weekPlanning,
+  updateWeekPlanning,
+  categories,
+  subcategories,
 }) {
   const years = getAvailableYears(sessions, calendarYear);
 
@@ -172,6 +176,10 @@ export default function WeeklyReviewPage({
         activeYear={activeYear}
         weekNotes={weekNotes}
         setWeekNotes={setWeekNotes}
+        weekPlanning={weekPlanning}
+        updateWeekPlanning={updateWeekPlanning}
+        categories={categories}
+        subcategories={subcategories}
       />
     </Panel>
   );

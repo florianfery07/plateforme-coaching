@@ -7,7 +7,11 @@ import {
   trainingAverage,
   dateKey,
 } from "@/lib/trainingUtils";
-import { weekLabels } from "@/lib/platformDefaults";
+import {
+  defaultCategories,
+  defaultSubcategories,
+  weekLabels,
+} from "@/lib/platformDefaults";
 
 import { Field, Select, Textarea } from "@/components/ui/ui";
 
@@ -21,9 +25,20 @@ export default function WeekDetail({
   activeYear,
   weekNotes,
   setWeekNotes,
+  weekPlanning,
+  updateWeekPlanning,
+  categories = defaultCategories,
+  subcategories = defaultSubcategories,
 }) {
   const noteKey = `${athleteId}-${activeYear}-${week.week}`;
   const weekNote = weekNotes[noteKey] || "";
+  const planningKey = `${athleteId}-${activeYear}-${week.week}`;
+  const currentPlanning = weekPlanning?.[planningKey] || {
+    goal: selectedTag || "Off",
+    category: "",
+    subcategory: "",
+    coachComment: "",
+  };
 
   const details = [
     ["Séances réalisées", week.sessions],
@@ -95,54 +110,88 @@ export default function WeekDetail({
           </p>
         </div>
 
-        <Field label="Couleur / type de semaine">
-          <Select
-            value={selectedTag}
-            onChange={async (event) => {
-              const value = event.target.value;
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Objectif semaine">
+            <Select
+              value={currentPlanning.goal || selectedTag || "Off"}
+              onChange={(event) => {
+                const value = event.target.value;
+                updateWeekPlanning?.(activeYear, week.week, "goal", value);
+                tagWeek(value === "Aucun" ? "Aucun" : value);
+              }}
+              className="md:w-52"
+            >
+              {weekLabels.map((row) => (
+                <option key={row.name} value={row.name}>
+                  {row.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
 
-              tagWeek(value);
-
-              if (value === "Aucun") {
-                await supabase
-                  .from("athlete_week_colors")
-                  .delete()
-                  .eq("athlete_id", athleteId)
-                  .eq("year", activeYear)
-                  .eq("week", week.week);
-
-                return;
+          <Field label="Discipline dominante">
+            <Select
+              value={currentPlanning.category || ""}
+              onChange={(event) =>
+                updateWeekPlanning?.(
+                  activeYear,
+                  week.week,
+                  "category",
+                  event.target.value
+                )
               }
+              className="md:w-52"
+            >
+              <option value="">Toutes</option>
+              {categories.map((category) => (
+                <option
+                  key={category.id || category.name}
+                  value={category.name}
+                >
+                  {category.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
 
-              await supabase
-                .from("athlete_week_colors")
-                .upsert(
-                  {
-                    athlete_id: athleteId,
-                    year: activeYear,
-                    week: week.week,
-                    color_name: value,
-                  },
-                  {
-                    onConflict:
-                      "athlete_id,year,week",
-                  }
-                );
-            }}
-            className="md:w-52"
-          >
-            {weekLabels.map((row) => (
-              <option
-                key={row.name}
-                value={row.name}
-              >
-                {row.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
+          <Field label="Thème semaine">
+            <Select
+              value={currentPlanning.subcategory || ""}
+              onChange={(event) =>
+                updateWeekPlanning?.(
+                  activeYear,
+                  week.week,
+                  "subcategory",
+                  event.target.value
+                )
+              }
+              className="md:w-52"
+            >
+              <option value="">Tous</option>
+              {subcategories.map((subcategory) => (
+                <option
+                  key={subcategory.id || subcategory.name}
+                  value={subcategory.name}
+                >
+                  {subcategory.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap gap-2 text-xs text-zinc-300">
+        <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1">
+          Objectif : {currentPlanning.goal || selectedTag || "Off"}
+        </span>
+        <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1">
+          Discipline : {currentPlanning.category || "Toutes"}
+        </span>
+        <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1">
+          Thème : {currentPlanning.subcategory || "Tous"}
+        </span>
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         {details.map(([label, value]) => (
           <StatCard
