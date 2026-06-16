@@ -5,6 +5,10 @@ import { zoneWatts } from "@/lib/trainingUtils";
 
 export default function Block({ block, cpData }) {
   const repeat = block.type === "repeat";
+  
+  const repeatCount =
+    block.repeatCount || block.repetitions || block.count || "";
+  const repeatItemsCount = block.repeatItems?.length || 0;
 
   const intensityLabel = (item) => {
     if (item.targetPercent) {
@@ -40,7 +44,9 @@ export default function Block({ block, cpData }) {
         <div>
           <div className="font-bold">{block.name}</div>
           <div className="text-sm text-zinc-400">
-            {block.duration || "Durée non renseignée"}
+            {repeat && repeatCount
+              ? `${repeatCount} répétition${Number(repeatCount) > 1 ? "s" : ""} des ${repeatItemsCount} étape${repeatItemsCount > 1 ? "s" : ""} du bloc • ${block.duration || "Durée non renseignée"}`
+              : block.duration || "Durée non renseignée"}
           </div>
         </div>
 
