@@ -12,6 +12,17 @@ export default function QuickLibrary({
   filteredLibrary,
   importWorkout,
 }) {
+  const sortedLibrary = [...filteredLibrary].sort((a, b) => {
+    const toMinutes = (value) => {
+      const text = String(value || "").toLowerCase();
+      const hours = Number(text.match(/(\d+)h/)?.[1] || 0);
+      const minutes = Number(text.match(/h(\d+)/)?.[1] || text.match(/(\d+)min/)?.[1] || 0);
+      return hours * 60 + minutes;
+    };
+
+    return toMinutes(a.totalDuration) - toMinutes(b.totalDuration);
+  });
+
   return (
     <aside className="h-fit rounded-3xl border border-zinc-800 bg-zinc-900 p-3 shadow-xl sm:p-5">
       <h2 className="mb-2 text-xl font-semibold">Bibliothèque rapide</h2>
@@ -25,7 +36,7 @@ export default function QuickLibrary({
       <div className="space-y-3">
         {!filteredLibrary.length && <Empty text="Aucune séance." />}
 
-        {filteredLibrary.map((workout) => (
+        {sortedLibrary.map((workout) => (
           <div
             key={workout.id}
             className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4"

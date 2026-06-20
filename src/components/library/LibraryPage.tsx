@@ -43,6 +43,20 @@ export default function LibraryPage({
     );
   }
 
+  const sortedLibrary = [...filteredLibrary].sort((a, b) => {
+    const durationA = a.totalDuration || "999h";
+    const durationB = b.totalDuration || "999h";
+
+    const toMinutes = (value) => {
+      const text = String(value).toLowerCase();
+      const hours = Number(text.match(/(\d+)h/)?.[1] || 0);
+      const minutes = Number(text.match(/h(\d+)/)?.[1] || text.match(/(\d+)min/)?.[1] || 0);
+      return hours * 60 + minutes;
+    };
+
+    return toMinutes(durationA) - toMinutes(durationB);
+  });
+
   return (
     <Panel>
       <div className="mb-6 flex flex-col gap-2">
@@ -82,7 +96,7 @@ export default function LibraryPage({
             <Empty text="Aucune séance." />
           )}
 
-          {filteredLibrary.map((workout) => (
+          {sortedLibrary.map((workout) => (
             <div
               key={workout.id}
               className="flex flex-col justify-between rounded-2xl border border-zinc-700 bg-zinc-900 p-4"
