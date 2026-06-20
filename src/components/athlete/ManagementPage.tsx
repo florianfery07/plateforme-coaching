@@ -250,14 +250,24 @@ export default function ManagementPage({
                   className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">{group.name}</div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 text-xs text-zinc-500">Nom du groupe</div>
+                      <Input
+                        value={group.name || ""}
+                        onChange={(event) => renameAthleteGroup(group.id, event.target.value)}
+                        onBlur={(event) => renameAthleteGroup(group.id, event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.currentTarget.blur();
+                          }
+                        }}
+                      />
+                      <div className="mt-2 text-xs text-zinc-500">
                         {memberCount} athlète{memberCount > 1 ? "s" : ""} dans ce groupe
                       </div>
                     </div>
 
-                    <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
+                    <span className="shrink-0 rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
                       Groupe
                     </span>
                   </div>
