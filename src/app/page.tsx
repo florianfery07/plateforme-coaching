@@ -57,6 +57,13 @@ import AuthPage from "@/components/auth/AuthPage";
 
 import Header from "@/components/layout/Header";
 import { proposalStyle } from "@/lib/proposalUtils";
+import {
+  createAthleteGroup,
+  loadAthleteGroups,
+  removeAthleteGroup,
+  setAthleteGroupMember,
+  updateAthleteGroupName,
+} from "@/lib/api/groups";
 import AthleteSelector from "@/components/athlete/AthleteSelector";
 import Proposal from "@/components/calendar/Proposal";
 import AthleteProposalForm from "@/components/calendar/AthleteProposalForm";
@@ -122,7 +129,10 @@ export default function CoachingPlatformMockup() {
   const [weekColors, setWeekColors] = useState({});
   const [weekNotes, setWeekNotes] = useState({});
   const [weekPlanning, setWeekPlanning] = useState({});
-  const [auth, setAuth] = useState(null);
+const [athleteGroups, setAthleteGroups] = useState([]);
+const [athleteGroupMembers, setAthleteGroupMembers] = useState([]);
+const [newGroupName, setNewGroupName] = useState("");
+const [auth, setAuth] = useState(null);
 
 async function loadAllData() {
   const { data: athletesData, error: athletesError } = await supabase
@@ -338,6 +348,13 @@ if (weekPlanningData) {
     )
   );
 }
+try {
+  const groupsResult = await loadAthleteGroups();
+  setAthleteGroups(groupsResult.groups);
+  setAthleteGroupMembers(groupsResult.members);
+} catch (error) {
+  console.error("Erreur chargement groupes", error);
+}
 }
 
 useEffect(() => {
@@ -475,7 +492,61 @@ useEffect(() => {
   setSessions((items) => ({ ...items, [newItem.id]: [] }));
   setActiveId(newItem.id);
   setNewAthlete("");
-} 
+}
+
+async function addAthleteGroup() {
+  try {
+    await createAthleteGroup(newGroupName);
+    setNewGroupName("");
+    await loadAllData();
+  } catch (error) {
+    console.error("Erreur ajout groupe", error);
+    alert(error.message || "Erreur ajout groupe");
+  }
+}
+
+async function renameAthleteGroup(groupId, name) {
+  const cleanName = String(name || "").trim();
+  if (!cleanName) return;
+
+  setAthleteGroups((items) =>
+    items.map((group) =>
+      group.id === groupId ? { ...group, name: cleanName } : group
+    )
+  );
+
+  try {
+    await updateAthleteGroupName(groupId, cleanName);
+  } catch (error) {
+    console.error("Erreur renommage groupe", error);
+    alert(error.message || "Erreur renommage groupe");
+    await loadAllData();
+  }
+}
+
+async function deleteAthleteGroup(groupId) {
+  const ok = window.confirm("Supprimer ce groupe ? Les athlètes ne seront pas supprimés.");
+  if (!ok) return;
+
+  try {
+    await removeAthleteGroup(groupId);
+    await loadAllData();
+  } catch (error) {
+    console.error("Erreur suppression groupe", error);
+    alert(error.message || "Erreur suppression groupe");
+  }
+}
+
+async function toggleAthleteGroupMember(groupId, athleteId, checked) {
+  try {
+    await setAthleteGroupMember(groupId, athleteId, checked);
+    await loadAllData();
+  } catch (error) {
+    console.error("Erreur modification membre groupe", error);
+    alert(error.message || "Erreur modification membre groupe");
+  }
+}
+
 async function loginCoach(email, password) {
   const cleanEmail = email.trim().toLowerCase();
 
@@ -716,6 +787,7 @@ async function logout() {
     ["athlete_observations", "athlete_id"],
     ["athlete_goal_history", "athlete_id"],
     ["athlete_test_history", "athlete_id"],
+    ["athlete_group_members", "athlete_id"],
   ];
 
   for (const [table, column] of tablesToClean) {
@@ -1382,7 +1454,7 @@ async function updateWeekNote(year, week, value) {
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
-    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete }} />}
+    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, athleteGroups, athleteGroupMembers, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
 }
