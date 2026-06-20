@@ -26,12 +26,12 @@ export default function CalendarToolbar({
         <div>
           <h2 className="text-2xl font-semibold">
             {planningTargetType === "group" && selectedGroup
-              ? selectedGroup.name
+              ? `Calendrier du groupe ${selectedGroup.name}`
               : athleteActive.calendarName}
           </h2>
           <p className="text-sm text-zinc-400">
             {planningTargetType === "group" && selectedGroup
-              ? `${selectedGroupMembers.length} athlète${selectedGroupMembers.length > 1 ? "s" : ""} sélectionné${selectedGroupMembers.length > 1 ? "s" : ""} dans ce groupe.`
+              ? `${selectedGroupMembers.length} athlète${selectedGroupMembers.length > 1 ? "s" : ""} recevront automatiquement chaque séance programmée sur ce calendrier.`
               : "Séances programmées et propositions de l’athlète."}
           </p>
         </div>

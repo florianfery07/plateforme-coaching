@@ -393,26 +393,7 @@ function WeekLoadSummary({ sessions, selectedDate }) {
 }
 
 export default function CalendarPageOld(props) {
-  const [planningTargetType, setPlanningTargetType] = useState("athlete");
-  const [selectedGroupId, setSelectedGroupId] = useState("");
-
-  const selectedGroup = props.athleteGroups?.find(
-    (group) => group.id === selectedGroupId
-  );
-
-  const selectedGroupMembers = props.athleteGroupMembers?.filter(
-    (member) => member.group_id === selectedGroupId
-  ) || [];
-
-  const calendarProps = {
-    ...props,
-    planningTargetType,
-    setPlanningTargetType,
-    selectedGroupId,
-    setSelectedGroupId,
-    selectedGroup,
-    selectedGroupMembers,
-  };
+  const calendarProps = props;
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-4">

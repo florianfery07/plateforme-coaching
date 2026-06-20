@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { Btn, Input, Panel } from "@/components/ui/ui";
+import { COLORS } from "@/lib/platformDefaults";
 
 export default function ManagementPage({
   athletes,
@@ -108,6 +109,32 @@ const [managementTab, setManagementTab] = useState("athletes");
 
                       <InfoCard label="Calendrier" value={selectedAthlete.calendarName || "Non renseigné"} />
                       <InfoCard label="Compte athlète" value={selectedAthlete.user_id ? "Compte lié" : "Non lié"} />
+                    </div>
+
+                    <div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+                      <div className="mb-3">
+                        <div className="font-semibold">Couleur de l’athlète</div>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          Cette couleur servira dans les calendriers de groupe pour repérer rapidement chaque athlète.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {COLORS.map(([label, color]) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => updateSelectedAthlete("color", color)}
+                            className={`h-9 w-9 rounded-full border-2 ${color} ${
+                              selectedAthlete.color === color
+                                ? "border-white ring-2 ring-white/40"
+                                : "border-zinc-700"
+                            }`}
+                            title={label}
+                            aria-label={`Choisir la couleur ${label}`}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -386,9 +413,12 @@ function AthleteList({ title, athletes, selectedAthlete, setSelectedAthleteId, s
             }`}
           >
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <b>{athleteItem.name}</b>
-                <div className="mt-1 text-xs text-zinc-500">{athleteItem.calendarName}</div>
+              <div className="flex items-center gap-3">
+                <span className={`h-3 w-3 shrink-0 rounded-full ${athleteItem.color || "bg-blue-500"}`} />
+                <div>
+                  <b>{athleteItem.name}</b>
+                  <div className="mt-1 text-xs text-zinc-500">{athleteItem.calendarName}</div>
+                </div>
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${
                 athleteItem.active === false

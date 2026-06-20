@@ -132,6 +132,8 @@ export default function CoachingPlatformMockup() {
 const [athleteGroups, setAthleteGroups] = useState([]);
 const [athleteGroupMembers, setAthleteGroupMembers] = useState([]);
 const [newGroupName, setNewGroupName] = useState("");
+const [planningTargetType, setPlanningTargetType] = useState("athlete");
+const [selectedGroupId, setSelectedGroupId] = useState("");
 const [auth, setAuth] = useState(null);
 
 async function loadAllData() {
@@ -166,6 +168,7 @@ async function loadAllData() {
       goalUpdateRequested: Boolean(row.goal_update_requested),
       user_id: row.user_id || "",
       active: row.active !== false,
+      color: row.color || "bg-blue-500",
     }))
   : [];
 
@@ -413,6 +416,11 @@ useEffect(() => {
   const days = useMemo(() => monthDays(year, month), [year, month]);
   const activeSessions = sessions[activeId] || [];
   const activeProposals = proposals.filter((proposal) => proposal.athleteId === activeId);
+  const selectedGroup = athleteGroups.find((group) => group.id === selectedGroupId);
+  const selectedGroupMembers = athleteGroupMembers.filter(
+    (member) => member.group_id === selectedGroupId
+  );
+  const selectedGroupAthleteIds = selectedGroupMembers.map((member) => member.athlete_id);
   const filteredLibrary = library.filter((workout) => {
   const categoryOk = !filter.category || workout.category === filter.category;
   const subcategoryOk = !filter.subcategory || workout.subcategory === filter.subcategory;
@@ -500,8 +508,13 @@ async function addAthleteGroup() {
     setNewGroupName("");
     await loadAllData();
   } catch (error) {
-    console.error("Erreur ajout groupe", error);
-    alert(error.message || "Erreur ajout groupe");
+    console.error("Erreur ajout groupe complète", JSON.stringify(error, null, 2));
+    console.error(error);
+    alert(
+      error?.message ||
+        JSON.stringify(error, null, 2) ||
+        "Erreur ajout groupe"
+    );
   }
 }
 
@@ -899,28 +912,42 @@ alert(JSON.stringify(error, null, 2));
   function editWorkout(workout) { setDraft(workout); setEditingId(workout.id); setView("create"); }
   async function importWorkout(workout, date = selectedDate) {
   const session = calendarSession(workout, date);
+  const targetAthleteIds =
+    planningTargetType === "group" ? selectedGroupAthleteIds : [activeId];
 
-  const { data, error } = await supabase
+  if (planningTargetType === "group") {
+    if (!selectedGroupId) {
+      alert("Choisis un groupe avant de programmer une séance collective.");
+      return;
+    }
+
+    if (!targetAthleteIds.length) {
+      alert("Ce groupe ne contient aucun athlète.");
+      return;
+    }
+  }
+
+  const payload = targetAthleteIds.map((athleteId) => ({
+    athlete_id: athleteId,
+    date: session.date,
+    workout_type: session.category,
+    subcategory: session.subcategory,
+    title: session.title,
+    duration: session.totalDuration,
+    expected_rpe: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
+    expected_rpe_global: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
+    expected_specific_duration: session.expectedSpecificDuration || "",
+    adjusted_specific_duration: "",
+    expected_rpe_specific: cleanRpe(session.expectedRpeSpecific),
+    description: session.description,
+    blocks: session.blocks,
+    athlete_seen_at: null,
+    completed: false,
+  }));
+
+  const { error } = await supabase
     .from("calendar_workouts")
-    .insert({
-      athlete_id: activeId,
-      date: session.date,
-      workout_type: session.category,
-      subcategory: session.subcategory,
-      title: session.title,
-      duration: session.totalDuration,
-      expected_rpe: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
-      expected_rpe_global: cleanRpe(session.expectedRpeGlobal || session.expectedRpe),
-      expected_specific_duration: session.expectedSpecificDuration || "",
-      adjusted_specific_duration: "",
-      expected_rpe_specific: cleanRpe(session.expectedRpeSpecific),
-      description: session.description,
-      blocks: session.blocks,
-      athlete_seen_at: null,
-      completed: false,
-    })
-    .select()
-    .single();
+    .insert(payload);
 
   if (error) {
     console.error("Erreur sauvegarde séance calendrier", error);
@@ -933,21 +960,38 @@ setMode("day");
 setView("calendar");
 }
 async function addRestDay(date = selectedDate) {
+  const targetAthleteIds =
+    planningTargetType === "group" ? selectedGroupAthleteIds : [activeId];
+
+  if (planningTargetType === "group") {
+    if (!selectedGroupId) {
+      alert("Choisis un groupe avant de programmer un repos collectif.");
+      return;
+    }
+
+    if (!targetAthleteIds.length) {
+      alert("Ce groupe ne contient aucun athlète.");
+      return;
+    }
+  }
+
+  const payload = targetAthleteIds.map((athleteId) => ({
+    athlete_id: athleteId,
+    date: dateKey(date),
+    workout_type: "Repos",
+    subcategory: "",
+    title: "Repos",
+    duration: "",
+    expected_rpe: "",
+    description: "Journée de récupération.",
+    blocks: [],
+    completed: true,
+    non_done: false,
+  }));
+
   const { error } = await supabase
     .from("calendar_workouts")
-    .insert({
-      athlete_id: activeId,
-      date: dateKey(date),
-      workout_type: "Repos",
-      subcategory: "",
-      title: "Repos",
-      duration: "",
-      expected_rpe: "",
-      description: "Journée de récupération.",
-      blocks: [],
-      completed: true,
-      non_done: false,
-    });
+    .insert(payload);
 
   if (error) {
     console.error("Erreur ajout repos", error);
@@ -1449,8 +1493,8 @@ async function updateWeekNote(year, week, value) {
 
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
-    <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} />
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete }} />}
+    <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} planningTargetType={planningTargetType} setPlanningTargetType={setPlanningTargetType} athleteGroups={athleteGroups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} />
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
