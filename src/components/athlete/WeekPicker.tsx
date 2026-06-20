@@ -20,14 +20,9 @@ export default function WeekPicker({
 
       <div className="grid grid-cols-2 gap-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-[repeat(13,minmax(0,1fr))]">
         {weeks.map((week) => {
-          const tag =
-            weekColors[
-              `${athleteId}-${selectedYear}-${week.week}`
-            ];
-          const planning =
-  weekPlanning?.[
-    `${athleteId}-${selectedYear}-${week.week}`
-  ]; 
+          const weekKey = `${athleteId}-${selectedYear}-${week.week}`;
+          const planning = weekPlanning?.[weekKey];
+          const tag = planning?.goal || "Aucun";
 
           const tagColor = weekLabels.find(
             (row) => row.name === tag
@@ -41,12 +36,11 @@ export default function WeekPicker({
               : "border-zinc-800 bg-zinc-900 text-zinc-500";
             
           const isDone = planning?.status === "done";
-
-const colorClass = tagColor || base;
-
-const finalClass = isDone
-  ? colorClass
-  : `${colorClass} bg-transparent`;
+          const colorClass = tagColor || base;
+          const plannedClass = colorClass
+            .replace(/bg-[^ ]+/g, "bg-transparent")
+            .replace("text-black", "text-white");
+          const finalClass = isDone ? colorClass : plannedClass;
 
           return (
             <button

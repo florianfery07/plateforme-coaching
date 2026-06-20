@@ -96,7 +96,8 @@ export default function WeeklyReviewPage({
     yearTraining.weeks[0];
 
   const tagKey = `${athleteId}-${activeYear}-${selectedWeek}`;
-  const selectedTag = weekColors[tagKey] || "Aucun";
+  const selectedTag =
+  weekPlanning?.[tagKey]?.goal || "Aucun";
 
   function tagWeek(value) {
     setWeekColors((items) => {

@@ -34,7 +34,7 @@ export default function WeekDetail({
   const weekNote = weekNotes[noteKey] || "";
   const planningKey = `${athleteId}-${activeYear}-${week.week}`;
   const currentPlanning = weekPlanning?.[planningKey] || {
-    goal: selectedTag || "Off",
+    goal: "Aucun",
     category: "",
     subcategory: "",
     status: "planned",
@@ -114,7 +114,7 @@ export default function WeekDetail({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Objectif semaine">
             <Select
-              value={currentPlanning.goal || selectedTag || "Off"}
+              value={currentPlanning.goal || "Aucun"}
               onChange={(event) => {
                 const value = event.target.value;
                 updateWeekPlanning?.(activeYear, week.week, "goal", value);
@@ -201,7 +201,7 @@ export default function WeekDetail({
 
       <div className="mb-4 flex flex-wrap gap-2 text-xs text-zinc-300">
         <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1">
-          Objectif : {currentPlanning.goal || selectedTag || "Off"}
+          Objectif : {currentPlanning.goal || "Aucun"}
         </span>
         <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1">
           Discipline : {currentPlanning.category || "Toutes"}
