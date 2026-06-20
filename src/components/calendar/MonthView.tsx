@@ -2,6 +2,7 @@
 
 import { DAYS, statusStyle } from "@/lib/platformDefaults";
 import {
+  dateKey,
   sessionStatus,
   weekInfo,
 } from "@/lib/trainingUtils";
@@ -14,6 +15,10 @@ export default function MonthView({
   setSelectedDate,
   setMode,
   currentMonth,
+  planningTargetType,
+  selectedGroupMembers = [],
+  athletes = [],
+  sessions = {},
 }) {
   const rows = [];
 
@@ -58,6 +63,26 @@ export default function MonthView({
                 const isOutsideMonth = date.getMonth() !== currentMonth;
                 const daySessions = sessionsFor(date);
                 const dayProposals = proposalsFor(date);
+                const key = dateKey(date);
+                const groupDayAthletes = selectedGroupMembers
+                  .map((member) => {
+                    const athlete = athletes.find(
+                      (item) => item.id === member.athlete_id
+                    );
+                    const athleteSessions = sessions[member.athlete_id] || [];
+                    const hasSession = athleteSessions.some(
+                      (session) => session.date === key
+                    );
+
+                    if (!athlete || !hasSession) return null;
+
+                    return {
+                      id: athlete.id,
+                      name: athlete.name || athlete.calendarName || "Athlète",
+                      color: athlete.color || "bg-blue-500",
+                    };
+                  })
+                  .filter(Boolean);
 
                 return (
                   <button
@@ -77,32 +102,60 @@ export default function MonthView({
                     </div>
 
                     <div className="mt-2 space-y-1">
-                      {daySessions.slice(0, 2).map((session) => (
-                        <div
-                          key={session.id}
-                          className={`${
-                            session.category?.toLowerCase() === "repos"
-                              ? "bg-blue-500 text-white"
-                              : statusStyle[sessionStatus(session)]
-                          } truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}
-                        >
-                          {session.title}
-                        </div>
-                      ))}
+                      {planningTargetType === "group" ? (
+                        <>
+                          {groupDayAthletes.slice(0, 4).map((athlete) => (
+                            <div
+                              key={athlete.id}
+                              className={`truncate rounded-md px-1 py-1 text-[10px] font-bold text-white sm:rounded-lg sm:px-2 sm:text-xs ${athlete.color}`}
+                              title={athlete.name}
+                            >
+                              {athlete.name.slice(0, 4)}
+                            </div>
+                          ))}
 
-                      {dayProposals.slice(0, 2).map((proposal) => (
-                        <div
-                          key={proposal.id}
-                          className={`${proposalStyle(proposal.status)} truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}
-                        >
-                          {proposal.title || proposal.type}
-                        </div>
-                      ))}
+                          {groupDayAthletes.length > 4 && (
+                            <div className="rounded-md bg-zinc-700 px-1 py-1 text-[10px] font-bold text-zinc-200 sm:rounded-lg sm:px-2 sm:text-xs">
+                              +{groupDayAthletes.length - 4}
+                            </div>
+                          )}
 
-                      {!daySessions.length && !dayProposals.length && (
-                        <div className="mt-4 text-xs text-zinc-500">
-                          Cliquer pour importer
-                        </div>
+                          {!groupDayAthletes.length && (
+                            <div className="mt-4 text-xs text-zinc-500">
+                              Jour libre groupe
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {daySessions.slice(0, 2).map((session) => (
+                            <div
+                              key={session.id}
+                              className={`${
+                                session.category?.toLowerCase() === "repos"
+                                  ? "bg-blue-500 text-white"
+                                  : statusStyle[sessionStatus(session)]
+                              } truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}
+                            >
+                              {session.title}
+                            </div>
+                          ))}
+
+                          {dayProposals.slice(0, 2).map((proposal) => (
+                            <div
+                              key={proposal.id}
+                              className={`${proposalStyle(proposal.status)} truncate rounded-md px-1 py-1 text-[10px] sm:rounded-lg sm:px-2 sm:text-xs`}
+                            >
+                              {proposal.title || proposal.type}
+                            </div>
+                          ))}
+
+                          {!daySessions.length && !dayProposals.length && (
+                            <div className="mt-4 text-xs text-zinc-500">
+                              Cliquer pour importer
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </button>

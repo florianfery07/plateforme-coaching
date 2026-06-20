@@ -436,8 +436,11 @@ export default function CalendarPageOld(props) {
         {props.mode === "day" && (
           <DayView
             {...calendarProps}
+            allAthleteSessions={calendarProps.sessions}
             sessions={calendarProps.sessionsFor(calendarProps.selectedDate)}
             proposals={calendarProps.proposalsFor(calendarProps.selectedDate)}
+            deleteAthleteWorkoutFromGroupDay={calendarProps.deleteAthleteWorkoutFromGroupDay}
+            deleteGroupDayWorkouts={calendarProps.deleteGroupDayWorkouts}
           />
         )}
 

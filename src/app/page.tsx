@@ -78,6 +78,10 @@ import CreatePage from "@/components/library/CreatePage";
 import LibraryPage from "@/components/library/LibraryPage";
 import AthletePage from "@/components/athlete/AthletePage";
 import DevChecks from "@/components/dev/DevChecks";
+import {
+  deleteAthleteWorkoutFromGroupDay as deleteAthleteWorkoutFromGroupDayApi,
+  deleteGroupDayWorkouts as deleteGroupDayWorkoutsApi,
+} from "@/lib/api/RroupCalendar";
 
 function id(prefix = "id") { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function calendarSession(workout, date) {
@@ -107,6 +111,39 @@ function proposalToSession(proposal) {
 }
 function availableYears(sessions, preferredYear = new Date().getFullYear()) { const currentYear = new Date().getFullYear(); const years = new Set([currentYear - 5, currentYear, currentYear + 25, Number(preferredYear)]); CALENDAR_YEARS.forEach((year) => years.add(year)); sessions.forEach((session) => years.add(parseLocalDate(session.date).getFullYear())); return [...years].sort((a, b) => b - a); }
 export default function CoachingPlatformMockup() {
+  async function deleteAthleteWorkoutFromGroupDay(referenceSession) {
+  const ok = window.confirm("Retirer cette séance uniquement pour cet athlète ?");
+  if (!ok) return;
+
+  const result = await deleteAthleteWorkoutFromGroupDayApi(referenceSession);
+
+  if (!result.success) {
+    alert(result.error || "Erreur suppression séance athlète");
+    return;
+  }
+
+  await loadAllData();
+}
+
+async function deleteGroupDayWorkouts(date = selectedDate) {
+  const ok = window.confirm(
+    "Retirer toutes les séances de tous les athlètes du groupe pour cette journée ?"
+  );
+  if (!ok) return;
+
+  const result = await deleteGroupDayWorkoutsApi({
+    date: dateKey(date),
+    groupAthleteIds: selectedGroupAthleteIds,
+    sessionsByAthlete: sessions,
+  });
+
+  if (!result.success) {
+    alert(result.error || "Erreur suppression séances groupe");
+    return;
+  }
+
+  await loadAllData();
+}
   const now = new Date();
   const [view, setView] = useState("calendar");
   const [mode, setMode] = useState("month");
@@ -959,6 +996,7 @@ alert(JSON.stringify(error, null, 2));
 setMode("day");
 setView("calendar");
 }
+
 async function addRestDay(date = selectedDate) {
   const targetAthleteIds =
     planningTargetType === "group" ? selectedGroupAthleteIds : [activeId];
@@ -1494,7 +1532,7 @@ async function updateWeekNote(year, week, value) {
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
     <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} planningTargetType={planningTargetType} setPlanningTargetType={setPlanningTargetType} athleteGroups={athleteGroups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} />
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
