@@ -21,8 +21,9 @@ export default function ManagementPage({
   deleteAthleteGroup,
   toggleAthleteGroupMember,
 }) {
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [managementTab, setManagementTab] = useState("athletes");
+ const [confirmDelete, setConfirmDelete] = useState(null);
+const [confirmGroupDelete, setConfirmGroupDelete] = useState(null);
+const [managementTab, setManagementTab] = useState("athletes");
   const [selectedAthleteId, setSelectedAthleteId] = useState(
     athletes?.[0]?.id || null
   );
@@ -268,10 +269,42 @@ export default function ManagementPage({
                       </div>
                     </div>
 
-                    <span className="shrink-0 rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
-                      Groupe
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+  <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
+    Groupe
+  </span>
+  <button
+    type="button"
+    onClick={() => setConfirmGroupDelete(group.id)}
+    className="rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300 hover:bg-red-500/10"
+  >
+    Supprimer
+  </button>
+</div>
                   </div>
+
+                  {confirmGroupDelete === group.id && (
+  <div className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4">
+    <div className="text-sm text-zinc-300">
+      Confirmer la suppression du groupe <b>{group.name}</b> ?
+    </div>
+    <p className="mt-1 text-xs text-zinc-500">
+      Les séances déjà programmées ne seront pas supprimées. Seul le groupe et ses membres seront retirés.
+    </p>
+    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+      <Btn
+        variant="danger"
+        onClick={() => {
+          deleteAthleteGroup(group.id);
+          setConfirmGroupDelete(null);
+        }}
+      >
+        Supprimer le groupe
+      </Btn>
+      <Btn onClick={() => setConfirmGroupDelete(null)}>Annuler</Btn>
+    </div>
+  </div>
+)}
 
                   <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-950 p-4">
                     <div className="mb-3 font-semibold">Membres du groupe</div>
