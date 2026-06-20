@@ -207,8 +207,29 @@ export default function ManagementPage({
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Groupes d’athlètes</h3>
             <p className="mt-1 text-sm text-zinc-400">
-              Retrouvez ici les groupes déjà créés. La création, le renommage, la suppression et les membres seront ajoutés étape par étape.
+              Créez des groupes pour préparer ensuite des séances collectives, des stages ou des entraînements par catégorie.
             </p>
+          </div>
+
+          <div className="mb-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+            <h4 className="mb-3 font-semibold">Créer un groupe</h4>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Input
+                value={newGroupName || ""}
+                onChange={(event) => setNewGroupName(event.target.value)}
+                placeholder="Ex : Cadets, Stage VTT, Groupe route"
+              />
+              <Btn
+                variant="primary"
+                onClick={() => {
+                  addAthleteGroup();
+                }}
+                disabled={!String(newGroupName || "").trim()}
+                className={!String(newGroupName || "").trim() ? "opacity-40" : ""}
+              >
+                + Créer
+              </Btn>
+            </div>
           </div>
 
           {athleteGroups.length === 0 && (
