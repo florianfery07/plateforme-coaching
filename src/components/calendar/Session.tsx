@@ -331,6 +331,8 @@ function changeActualTimePart(part, value) {
       onChange={(event) =>
         changeFeedback("rpeSpecific", event.target.value)
       }
+      type="text"
+      inputMode="decimal"
       placeholder="Ex : 9"
     />
   </Field>
@@ -341,6 +343,8 @@ function changeActualTimePart(part, value) {
       onChange={(event) =>
         changeFeedback("motivation", event.target.value)
       }
+      type="text"
+      inputMode="decimal"
       placeholder="Ex : 8"
     />
   </Field>
@@ -351,6 +355,8 @@ function changeActualTimePart(part, value) {
       onChange={(event) =>
         changeFeedback("pleasure", event.target.value)
       }
+      type="text"
+      inputMode="decimal"
       placeholder="Ex : 4"
     />
   </Field>
@@ -421,6 +427,8 @@ function changeActualTimePart(part, value) {
                     event.target.value
                   )
                 }
+                type="text"
+                inputMode="decimal"
                 placeholder={
                   session.expectedSpecificDuration
                     ? `Défaut : ${session.expectedSpecificDuration}`
@@ -467,6 +475,8 @@ function changeActualTimePart(part, value) {
                 onChange={(event) =>
                   changeNonDone("fatigue", event.target.value)
                 }
+                type="text"
+                inputMode="decimal"
               />
             </Field>
 
@@ -476,6 +486,8 @@ function changeActualTimePart(part, value) {
                 onChange={(event) =>
                   changeNonDone("pain", event.target.value)
                 }
+                type="text"
+                inputMode="decimal"
               />
             </Field>
           </div>
