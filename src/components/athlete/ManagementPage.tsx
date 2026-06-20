@@ -240,9 +240,10 @@ export default function ManagementPage({
 
           <div className="space-y-3">
             {athleteGroups.map((group) => {
-              const memberCount = athleteGroupMembers.filter(
+              const groupMembers = athleteGroupMembers.filter(
                 (member) => member.group_id === group.id
-              ).length;
+              );
+              const memberCount = groupMembers.length;
 
               return (
                 <div
@@ -270,6 +271,49 @@ export default function ManagementPage({
                     <span className="shrink-0 rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
                       Groupe
                     </span>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-950 p-4">
+                    <div className="mb-3 font-semibold">Membres du groupe</div>
+
+                    {activeAthletes.length === 0 && (
+                      <p className="text-sm text-zinc-400">
+                        Aucun athlète actif disponible.
+                      </p>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {activeAthletes.map((athlete) => {
+                        const checked = groupMembers.some(
+                          (member) => member.athlete_id === athlete.id
+                        );
+
+                        return (
+                          <label
+                            key={athlete.id}
+                            className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-sm ${
+                              checked
+                                ? "border-white bg-zinc-900 text-white"
+                                : "border-zinc-700 bg-zinc-900/60 text-zinc-300"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(event) =>
+                                toggleAthleteGroupMember(
+                                  group.id,
+                                  athlete.id,
+                                  event.target.checked
+                                )
+                              }
+                              className="h-4 w-4 accent-white"
+                            />
+                            <span className="font-medium">{athlete.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               );
