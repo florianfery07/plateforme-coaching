@@ -2,7 +2,34 @@
 "use client";
 
 import { useState } from "react";
-import { Btn } from "@/components/ui/ui";
+
+const TABS = [
+  { key: "about", label: "Comprendre", icon: "ℹ" },
+  { key: "global", label: "RPE global", icon: "📊" },
+  { key: "specific", label: "RPE spécifique", icon: "⚡" },
+  { key: "motivation", label: "Motivation", icon: "🔥" },
+  { key: "pleasure", label: "Plaisir", icon: "😊" },
+];
+
+function HelpButton({ active, icon, label, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`min-h-[44px] flex-1 rounded-2xl border px-3 py-2 text-sm font-bold transition active:scale-95 sm:flex-none sm:px-4 sm:text-base ${
+        active
+          ? "border-white bg-white text-zinc-950 shadow-lg shadow-white/10"
+          : "border-zinc-700 bg-zinc-800 text-zinc-100 hover:border-zinc-500 hover:bg-zinc-700"
+      }`}
+    >
+      <span className="flex items-center justify-center gap-2 whitespace-nowrap">
+        <span>{icon}</span>
+        <span>{label}</span>
+      </span>
+    </button>
+  );
+}
 
 export default function RpeHelp() {
   const [open, setOpen] = useState("");
@@ -12,30 +39,41 @@ export default function RpeHelp() {
 
   return (
     <div className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-3">
-      <div className="flex flex-wrap gap-1">
-        <Btn type="button" className="px-1.5 py-1 text-xs whitespace-nowrap" onClick={() => toggle("about")}>
-          ℹ Comprendre le RPE
-        </Btn>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-bold text-zinc-100">
+            Aide aux retours
+          </div>
+          <div className="text-xs text-zinc-500">
+            Appuie sur une échelle pour afficher l'explication.
+          </div>
+        </div>
 
-        <Btn type="button" className="px-1.5 py-1 text-xs whitespace-nowrap" onClick={() => toggle("global")}>
-          📊 RPE global
-        </Btn>
+        {open && (
+          <button
+            type="button"
+            onClick={() => setOpen("")}
+            className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-bold text-zinc-300 transition hover:bg-zinc-800 active:scale-95"
+          >
+            Fermer
+          </button>
+        )}
+      </div>
 
-        <Btn type="button" className="px-1.5 py-1 text-xs whitespace-nowrap" onClick={() => toggle("specific")}>
-          ⚡ RPE spécifique
-        </Btn>
-
-        <Btn type="button" className="px-1.5 py-1 text-xs whitespace-nowrap" onClick={() => toggle("motivation")}>
-          🔥 Motivation
-        </Btn>
-
-        <Btn type="button" className="px-1.5 py-1 text-xs whitespace-nowrap" onClick={() => toggle("pleasure")}>
-          😊 Plaisir
-        </Btn>
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        {TABS.map((tab) => (
+          <HelpButton
+            key={tab.key}
+            active={open === tab.key}
+            icon={tab.icon}
+            label={tab.label}
+            onClick={() => toggle(tab.key)}
+          />
+        ))}
       </div>
 
       {open === "about" && (
-        <div className="mt-3 text-sm text-zinc-300">
+        <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-300">
           <p>
             Le RPE sert à décrire le ressenti réel après une séance. Il n'existe pas
             de bonne ou de mauvaise note.
@@ -59,7 +97,7 @@ export default function RpeHelp() {
       )}
 
       {open === "global" && (
-        <div className="mt-3 overflow-x-auto text-sm">
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-sm">
           <div className="mb-3 rounded-xl border border-blue-500/30 bg-blue-950/40 p-3 text-blue-100">
             <div className="mb-1 font-semibold">
               📊 À retenir
@@ -95,7 +133,7 @@ export default function RpeHelp() {
       )}
 
       {open === "specific" && (
-        <div className="mt-3 overflow-x-auto text-sm">
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-sm">
           <div className="mb-3 rounded-xl border border-yellow-500/30 bg-yellow-950/20 p-3 text-yellow-100">
             <div className="mb-1 font-semibold">
               ⚡ À retenir
@@ -131,18 +169,14 @@ export default function RpeHelp() {
       )}
 
       {open === "motivation" && (
-        <div className="mt-3 overflow-x-auto text-sm">
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-sm">
           <div className="mb-3 rounded-xl border border-orange-500/30 bg-orange-950/20 p-3 text-orange-100">
             <div className="mb-1 font-semibold">
               🔥 À retenir
             </div>
 
             <div>
-              Évaluez votre motivation avant la séance.
-
-              Il n'existe pas de bonne ou de mauvaise note. L'objectif est simplement de décrire le plus fidèlement possible votre état d'esprit avant l'entraînement.
-
-              Soyez le plus honnête possible afin d'améliorer le suivi de votre entraînement.
+              Évaluez votre motivation avant la séance. Il n'existe pas de bonne ou de mauvaise note. L'objectif est simplement de décrire le plus fidèlement possible votre état d'esprit avant l'entraînement.
             </div>
           </div>
 
@@ -171,18 +205,14 @@ export default function RpeHelp() {
       )}
 
       {open === "pleasure" && (
-        <div className="mt-3 overflow-x-auto text-sm">
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-sm">
           <div className="mb-3 rounded-xl border border-rose-500/30 bg-rose-950/20 p-3 text-rose-100">
             <div className="mb-1 font-semibold">
               😊 À retenir
             </div>
 
             <div>
-              Évaluez le plaisir que vous avez pris pendant la séance.
-
-              Il n'existe pas de bonne ou de mauvaise note. L'objectif est simplement de décrire votre ressenti pendant l'entraînement.
-
-              Soyez le plus honnête possible afin d'améliorer le suivi de votre entraînement.
+              Évaluez le plaisir que vous avez pris pendant la séance. Il n'existe pas de bonne ou de mauvaise note. L'objectif est simplement de décrire votre ressenti pendant l'entraînement.
             </div>
           </div>
 
