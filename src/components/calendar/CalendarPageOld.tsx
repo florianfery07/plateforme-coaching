@@ -393,6 +393,27 @@ function WeekLoadSummary({ sessions, selectedDate }) {
 }
 
 export default function CalendarPageOld(props) {
+  const [planningTargetType, setPlanningTargetType] = useState("athlete");
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+
+  const selectedGroup = props.athleteGroups?.find(
+    (group) => group.id === selectedGroupId
+  );
+
+  const selectedGroupMembers = props.athleteGroupMembers?.filter(
+    (member) => member.group_id === selectedGroupId
+  ) || [];
+
+  const calendarProps = {
+    ...props,
+    planningTargetType,
+    setPlanningTargetType,
+    selectedGroupId,
+    setSelectedGroupId,
+    selectedGroup,
+    selectedGroupMembers,
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-4">
       <Panel
@@ -415,27 +436,27 @@ export default function CalendarPageOld(props) {
           </>
         )}
 
-        <CalendarToolbar {...props} />
+        <CalendarToolbar {...calendarProps} />
 
         {props.mode === "year" && (
           <YearView
-            setMonth={props.setMonth}
-            setMode={props.setMode}
+            setMonth={calendarProps.setMonth}
+            setMode={calendarProps.setMode}
           />
         )}
 
         {props.mode === "month" && (
           <MonthView
-            {...props}
-            currentMonth={props.month}
+            {...calendarProps}
+            currentMonth={calendarProps.month}
           />
         )}
 
         {props.mode === "day" && (
           <DayView
-            {...props}
-            sessions={props.sessionsFor(props.selectedDate)}
-            proposals={props.proposalsFor(props.selectedDate)}
+            {...calendarProps}
+            sessions={calendarProps.sessionsFor(calendarProps.selectedDate)}
+            proposals={calendarProps.proposalsFor(calendarProps.selectedDate)}
           />
         )}
 
@@ -462,7 +483,7 @@ export default function CalendarPageOld(props) {
       </Panel>
 
       {props.isCoach && (
-        <QuickLibrary {...props} />
+        <QuickLibrary {...calendarProps} />
       )}
     </div>
   );

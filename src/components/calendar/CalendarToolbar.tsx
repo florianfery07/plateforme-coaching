@@ -11,14 +11,28 @@ export default function CalendarToolbar({
   setYear,
   month,
   setMonth,
+  isCoach,
+  athleteGroups = [],
+  planningTargetType,
+  setPlanningTargetType,
+  selectedGroupId,
+  setSelectedGroupId,
+  selectedGroup,
+  selectedGroupMembers = [],
 }) {
   return (
     <div className="mb-5 space-y-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold">{athleteActive.calendarName}</h2>
+          <h2 className="text-2xl font-semibold">
+            {planningTargetType === "group" && selectedGroup
+              ? selectedGroup.name
+              : athleteActive.calendarName}
+          </h2>
           <p className="text-sm text-zinc-400">
-            Séances programmées et propositions de l’athlète.
+            {planningTargetType === "group" && selectedGroup
+              ? `${selectedGroupMembers.length} athlète${selectedGroupMembers.length > 1 ? "s" : ""} sélectionné${selectedGroupMembers.length > 1 ? "s" : ""} dans ce groupe.`
+              : "Séances programmées et propositions de l’athlète."}
           </p>
         </div>
 
