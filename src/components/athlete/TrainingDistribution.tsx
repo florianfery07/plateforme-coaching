@@ -1,43 +1,15 @@
 // @ts-nocheck
 "use client";
 
+import { COLOR_HEX, FALLBACK_COLOR_HEX } from "@/lib/colors";
 import { durationHours, sessionLoadParts } from "@/lib/trainingUtils";
-
-const colorMap = {
-  "bg-blue-500": "#3b82f6",
-  "bg-cyan-500": "#06b6d4",
-  "bg-indigo-500": "#6366f1",
-  "bg-emerald-500": "#10b981",
-  "bg-lime-500": "#84cc16",
-  "bg-yellow-500": "#eab308",
-  "bg-amber-500": "#f59e0b",
-  "bg-orange-500": "#f97316",
-  "bg-red-500": "#ef4444",
-  "bg-rose-500": "#f43f5e",
-  "bg-fuchsia-500": "#d946ef",
-  "bg-purple-500": "#a855f7",
-  "bg-zinc-500": "#71717a",
-};
-
-const fallbackColors = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#84cc16",
-  "#f97316",
-  "#71717a",
-];
 
 function colorForName(name, items, index) {
   const item = (items || []).find(
     (row) => row.name?.trim().toLowerCase() === name?.trim().toLowerCase()
   );
 
-  return colorMap[item?.color] || fallbackColors[index % fallbackColors.length];
+  return COLOR_HEX[item?.color] || FALLBACK_COLOR_HEX[index % FALLBACK_COLOR_HEX.length];
 }
 
 function buildDistribution(sessions, field, items) {

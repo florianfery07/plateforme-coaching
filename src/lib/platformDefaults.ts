@@ -1,5 +1,7 @@
 // @ts-nocheck
 
+import { APP_COLORS } from "@/lib/colors";
+
 export function item(id: string, name: string, color: string) {
   return { id, name, color };
 }
@@ -97,26 +99,7 @@ export const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 export const ZONES = ["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7"];
 
-export const COLORS = [
-  ["Bleu", "bg-blue-500"],
-  ["Cyan", "bg-cyan-500"],
-  ["Indigo", "bg-indigo-500"],
-
-  ["Vert", "bg-emerald-500"],
-  ["Lime", "bg-lime-500"],
-
-  ["Jaune", "bg-yellow-500"],
-  ["Ambre", "bg-amber-500"],
-  ["Orange", "bg-orange-500"],
-
-  ["Rouge", "bg-red-500"],
-
-  ["Rose", "bg-rose-500"],
-  ["Fuchsia", "bg-fuchsia-500"],
-  ["Violet", "bg-purple-500"],
-
-  ["Gris", "bg-zinc-500"],
-];
+export const COLORS = APP_COLORS;
 
 export const CALENDAR_YEARS = Array.from(
   { length: 31 },
