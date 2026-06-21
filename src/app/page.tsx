@@ -79,6 +79,7 @@ import CreatePage from "@/components/library/CreatePage";
 import LibraryPage from "@/components/library/LibraryPage";
 import AthletePage from "@/components/athlete/AthletePage";
 import AthleteStatsPage from "@/components/athlete/AthleteStatsPage";
+import AthleteGoalUpdatePanel from "@/components/athlete/AthleteGoalUpdatePanel";
 import DevChecks from "@/components/dev/DevChecks";
 import {
   deleteAthleteWorkoutFromGroupDay as deleteAthleteWorkoutFromGroupDayApi,
@@ -1540,11 +1541,47 @@ async function updateWeekNote(year, week, value) {
   ]);
 };
 
+async function validateAthleteGoalUpdate(goalValues) {
+  if (auth?.role !== "athlete" || !athleteActive?.id) return;
+
+  const shortGoal = goalValues?.shortGoal ?? athleteActive.shortGoal ?? "";
+  const mediumGoal = goalValues?.mediumGoal ?? athleteActive.mediumGoal ?? "";
+  const longGoal = goalValues?.longGoal ?? athleteActive.longGoal ?? "";
+
+  const { error: historyError } = await supabase
+    .from("athlete_goal_history")
+    .insert({
+      athlete_id: athleteActive.id,
+      short_goal: shortGoal,
+      medium_goal: mediumGoal,
+      long_goal: longGoal,
+      created_at: new Date().toISOString(),
+    });
+
+  if (historyError) {
+    console.error("Erreur archivage objectifs athlète", historyError);
+    alert(historyError.message || "Erreur lors de l’envoi des objectifs.");
+    return;
+  }
+
+  await updateAthlete("goalUpdateRequested", false, athleteActive.id);
+  await loadAllData();
+
+  alert("Objectifs envoyés au coach.");
+}
+
   if (!auth) return <AuthPage athletes={athletes} loginCoach={loginCoach} loginAthlete={loginAthlete} acceptInvite={acceptInvite} />;
 
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
     <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} planningTargetType={planningTargetType} setPlanningTargetType={setPlanningTargetType} athleteGroups={athleteGroups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} />
+    {auth?.role === "athlete" && athleteActive?.goalUpdateRequested && (
+      <AthleteGoalUpdatePanel
+        athlete={athleteActive}
+        updateAthlete={updateAthlete}
+        validateGoalUpdate={validateAthleteGoalUpdate}
+      />
+    )}
     {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
    {auth?.role === "athlete" && view === "athleteStats" && (
   <AthleteStatsPage

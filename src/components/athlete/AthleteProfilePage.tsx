@@ -357,7 +357,7 @@ export default function AthleteProfilePage({
       </Panel>
 
       <Panel>
-        <SectionHeader sectionKey="goals" title="Objectifs et contexte" />
+        <SectionHeader sectionKey="goals" title="Objectifs coach et contexte" />
 
         {openSections.goals && (
           <>
@@ -383,9 +383,9 @@ export default function AthleteProfilePage({
 
             <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               {[
-                ["Court terme — saison à venir (~6 mois)", "shortGoal"],
-                ["Moyen terme — 1 à 2 ans", "mediumGoal"],
-                ["Long terme — 3 à 4 ans", "longGoal"],
+                ["Objectif coach court terme — saison à venir (~6 mois)", "shortGoal"],
+["Objectif coach moyen terme — 1 à 2 ans", "mediumGoal"],
+["Objectif coach long terme — 3 à 4 ans", "longGoal"],
               ].map(([label, key]) => (
                 <Field key={key} label={label}>
                   <Textarea
@@ -409,10 +409,10 @@ export default function AthleteProfilePage({
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold">
-                    Historique des objectifs
+                    Objectifs envoyés par l’athlète
                   </h3>
                   <p className="text-sm text-zinc-400">
-                    Anciennes versions enregistrées quand l’athlète valide une mise à jour.
+                    Versions archivées lorsque l’athlète répond à une demande de mise à jour.
                   </p>
                 </div>
 
@@ -440,7 +440,7 @@ export default function AthleteProfilePage({
               <div className="space-y-3">
                 {filteredGoalHistory.length === 0 && (
                   <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400">
-                    Aucun objectif archivé pour le moment.
+                    Aucun objectif envoyé par l’athlète pour le moment.
                   </p>
                 )}
 
@@ -451,7 +451,7 @@ export default function AthleteProfilePage({
                   >
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div className="text-sm font-bold text-zinc-300">
-                        Version validée le {formatDate(item.created_at)}
+                        Objectifs envoyés le {formatDate(item.created_at)}
                       </div>
 
                       <button
