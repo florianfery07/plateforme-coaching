@@ -10,7 +10,10 @@ export default function Header({ view, setView, auth, logout }) {
           ["library", "Bibliothèque"],
           ["management", "Paramètres athlètes"],
         ]
-      : [["calendar", "Mon calendrier"]];
+      : [
+          ["calendar", "Mon calendrier"],
+          ["athleteStats", "Mes stats"],
+        ];
 
   return (
     <header className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">

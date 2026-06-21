@@ -78,6 +78,7 @@ import ManagementPage from "@/components/athlete/ManagementPage";
 import CreatePage from "@/components/library/CreatePage";
 import LibraryPage from "@/components/library/LibraryPage";
 import AthletePage from "@/components/athlete/AthletePage";
+import AthleteStatsPage from "@/components/athlete/AthleteStatsPage";
 import DevChecks from "@/components/dev/DevChecks";
 import {
   deleteAthleteWorkoutFromGroupDay as deleteAthleteWorkoutFromGroupDayApi,
@@ -466,6 +467,15 @@ useEffect(() => {
   return categoryOk && subcategoryOk;
 });
   const done = activeSessions.filter((session) => feedbackDone(session.feedback));
+  const notDone = activeSessions.filter((session) => session.nonDone?.validated);
+  const plannedDurationHours = activeSessions.reduce(
+    (total, session) => total + durationHours(session.totalDuration),
+    0
+  );
+  const completedDurationHours = done.reduce(
+    (total, session) => total + durationHours(session.feedback?.actualTime),
+    0
+  );
   const stats = { planned: activeSessions.length, completed: done.length, rpe: avg(done, "rpe"), motivation: avg(done, "motivation"), pleasure: avg(done, "pleasure") };
   const training = trainingStats(activeSessions, year);
 
@@ -1536,6 +1546,23 @@ async function updateWeekNote(year, week, value) {
     <Header view={view} setView={setView} auth={auth} logout={logout} />
     <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} planningTargetType={planningTargetType} setPlanningTargetType={setPlanningTargetType} athleteGroups={athleteGroups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} />
     {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
+   {auth?.role === "athlete" && view === "athleteStats" && (
+  <AthleteStatsPage
+    athlete={athleteActive}
+    activeId={activeId}
+    calendarYear={year}
+    cpData={cpData}
+    stats={stats}
+    training={training}
+    activeSessions={activeSessions}
+    weekColors={weekColors}
+    setWeekColors={setWeekColors}
+    weekNotes={weekNotes}
+    setWeekNotes={setWeekNotes}
+    categories={categories}
+    subcategories={subcategories}
+  />
+)}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
