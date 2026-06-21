@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { COLORS } from "@/lib/platformDefaults";
+import { APP_COLORS } from "@/lib/colors";
 
 export function Field({ label, children }) {
   return (
@@ -91,7 +91,7 @@ export function Empty({ text }) {
 export function ColorSelect(props) {
   return (
     <Select {...props}>
-      {COLORS.map(([label, value]) => (
+      {APP_COLORS.map(([label, value]) => (
         <option key={value} value={value}>
           {label}
         </option>

@@ -5,6 +5,7 @@ import {
   durationHours,
   sessionLoadParts,
 } from "@/lib/trainingUtils";
+import { getColorClass } from "@/lib/colors";
 
 function numberValue(value) {
   const number = Number(value);
@@ -351,7 +352,7 @@ function IndicatorCard({ title, indicator }) {
         </div>
 
         <div
-          className={`${indicator.color} shrink-0 rounded-2xl px-3 py-2 text-sm font-bold text-white`}
+          className={`${getColorClass(indicator.color)} shrink-0 rounded-2xl px-3 py-2 text-sm font-bold text-white`}
         >
           {indicator.emoji} {indicator.label}
         </div>

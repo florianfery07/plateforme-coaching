@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/ui";
+import { getColorClass } from "@/lib/colors";
 
 export default function AthleteSelector({
   visible,
@@ -51,10 +52,15 @@ export default function AthleteSelector({
           >
             <div>
               <div className="text-[11px] text-zinc-500">{planningTargetType === "group" ? "Groupe sélectionné" : "Athlète sélectionné"}</div>
-              <div className="font-semibold text-white">
-                {planningTargetType === "group"
-                 ? (activeGroup?.name || "Choisir un groupe")
-                 : (activeAthlete?.calendarName || "Choisir un athlète")}
+              <div className="flex items-center gap-2 font-semibold text-white">
+                {planningTargetType === "athlete" && activeAthlete && (
+                  <span className={`h-3 w-3 rounded-full ${getColorClass(activeAthlete.color)}`} />
+                )}
+                <span>
+                  {planningTargetType === "group"
+                   ? (activeGroup?.name || "Choisir un groupe")
+                   : (activeAthlete?.calendarName || "Choisir un athlète")}
+                </span>
               </div>
             </div>
             <span className="text-zinc-400">{open ? "▲" : "▼"}</span>
@@ -73,7 +79,10 @@ export default function AthleteSelector({
                       }}
                       className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition hover:bg-zinc-800 ${activeId === a.id ? "bg-zinc-800" : ""}`}
                     >
-                      <span>{a.calendarName}</span>
+                      <span className="flex items-center gap-2">
+                        <span className={`h-3 w-3 rounded-full ${getColorClass(a.color)}`} />
+                        <span>{a.calendarName}</span>
+                      </span>
                       {activeId === a.id && <span>✓</span>}
                     </button>
                   ))

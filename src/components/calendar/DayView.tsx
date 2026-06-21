@@ -6,6 +6,7 @@ import Session from "@/components/calendar/Session";
 import AthleteProposalForm from "@/components/calendar/AthleteProposalForm";
 import Proposal from "@/components/calendar/Proposal";
 import { dateKey } from "@/lib/trainingUtils";
+import { getColorClass } from "@/lib/colors";
 
 export default function DayView({
   athleteActive,
@@ -104,7 +105,7 @@ export default function DayView({
                     className="rounded-2xl border border-zinc-700 bg-zinc-900 p-3"
                   >
                     <div className="mb-2 flex items-center gap-2 font-semibold">
-                      <span className={`h-3 w-3 rounded-full ${athlete.color || "bg-blue-500"}`} />
+                      <span className={`h-3 w-3 rounded-full ${getColorClass(athlete.color)}`} />
                       <span>{athlete.name}</span>
                     </div>
 
@@ -158,7 +159,7 @@ export default function DayView({
                     key={athlete.id}
                     className="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
                   >
-                    <span className={`h-3 w-3 rounded-full ${athlete.color || "bg-blue-500"}`} />
+                    <span className={`h-3 w-3 rounded-full ${getColorClass(athlete.color)}`} />
                     <span>{athlete.name}</span>
                   </div>
                 ))}

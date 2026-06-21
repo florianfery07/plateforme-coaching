@@ -4,6 +4,7 @@
 import { useMemo, useState } from "react";
 import { Btn, Empty } from "@/components/ui/ui";
 import FilterSelects from "@/components/calendar/FilterSelects";
+import { getColorClass } from "@/lib/colors";
 
 export default function QuickLibrary({
   categories,
@@ -128,7 +129,7 @@ export default function QuickLibrary({
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <span className={`h-3 w-3 rounded-full ${athlete.color || "bg-blue-500"}`} />
+                    <span className={`h-3 w-3 rounded-full ${getColorClass(athlete.color)}`} />
                     <span className="font-semibold">{athlete.name}</span>
                   </span>
                   <span className="text-sm font-bold text-zinc-400">

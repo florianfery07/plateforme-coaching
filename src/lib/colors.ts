@@ -63,3 +63,22 @@ export const COLOR_HEX: Record<string, string> = {
 };
 
 export const FALLBACK_COLOR_HEX = APP_COLORS.map(([, color]) => COLOR_HEX[color]);
+
+export function getColorHex(color?: string) {
+  return COLOR_HEX[color || ""] || COLOR_HEX["bg-blue-500"];
+}
+
+export function getFallbackColorHex(index = 0) {
+  return FALLBACK_COLOR_HEX[index % FALLBACK_COLOR_HEX.length] || getColorHex();
+}
+
+export function getColorClass(color?: string) {
+  return color || "bg-blue-500";
+}
+
+export function getColorLabel(color?: string) {
+  return (
+    APP_COLORS.find(([, value]) => value === color)?.[0] ||
+    "Bleu"
+  );
+}

@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Btn, Input, Panel } from "@/components/ui/ui";
-import { COLORS } from "@/lib/platformDefaults";
+import { APP_COLORS, getColorClass } from "@/lib/colors";
 
 export default function ManagementPage({
   athletes,
@@ -120,12 +120,12 @@ const [managementTab, setManagementTab] = useState("athletes");
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {COLORS.map(([label, color]) => (
+                        {APP_COLORS.map(([label, color]) => (
                           <button
                             key={color}
                             type="button"
                             onClick={() => updateSelectedAthlete("color", color)}
-                            className={`h-9 w-9 rounded-full border-2 ${color} ${
+                            className={`h-9 w-9 rounded-full border-2 ${getColorClass(color)} ${
                               selectedAthlete.color === color
                                 ? "border-white ring-2 ring-white/40"
                                 : "border-zinc-700"
@@ -414,7 +414,7 @@ function AthleteList({ title, athletes, selectedAthlete, setSelectedAthleteId, s
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className={`h-3 w-3 shrink-0 rounded-full ${athleteItem.color || "bg-blue-500"}`} />
+                <span className={`h-3 w-3 shrink-0 rounded-full ${getColorClass(athleteItem.color)}`} />
                 <div>
                   <b>{athleteItem.name}</b>
                   <div className="mt-1 text-xs text-zinc-500">{athleteItem.calendarName}</div>

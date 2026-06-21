@@ -11,6 +11,7 @@ import {
 
 import FilterSelects from "@/components/calendar/FilterSelects";
 import Editable from "@/components/library/Editable";
+import { getColorClass } from "@/lib/colors";
 
 export default function LibraryPage({
   categories,
@@ -56,6 +57,22 @@ export default function LibraryPage({
 
     return toMinutes(durationA) - toMinutes(durationB);
   });
+
+  const colorForCategory = (name) => {
+    const item = categories.find(
+      (row) => row.name?.trim().toLowerCase() === name?.trim().toLowerCase()
+    );
+
+    return getColorClass(item?.color);
+  };
+
+  const colorForSubcategory = (name) => {
+    const item = subcategories.find(
+      (row) => row.name?.trim().toLowerCase() === name?.trim().toLowerCase()
+    );
+
+    return getColorClass(item?.color);
+  };
 
   return (
     <Panel>
@@ -104,13 +121,13 @@ export default function LibraryPage({
               <div>
                 <div className="mb-2 flex flex-wrap gap-2 text-xs">
                   {workout.category && (
-                    <span className="rounded-full bg-zinc-800 px-2 py-1 font-semibold text-zinc-300">
+                    <span className={`rounded-full px-2 py-1 font-semibold text-white ${colorForCategory(workout.category)}`}>
                       {workout.category}
                     </span>
                   )}
 
                   {workout.subcategory && (
-                    <span className="rounded-full bg-zinc-800 px-2 py-1 text-zinc-400">
+                    <span className={`rounded-full px-2 py-1 font-semibold text-white ${colorForSubcategory(workout.subcategory)}`}>
                       {workout.subcategory}
                     </span>
                   )}

@@ -7,6 +7,7 @@ import {
   weekInfo,
 } from "@/lib/trainingUtils";
 import { proposalStyle } from "@/lib/proposalUtils";
+import { getColorClass } from "@/lib/colors";
 
 export default function MonthView({
   days,
@@ -79,7 +80,7 @@ export default function MonthView({
                     return {
                       id: athlete.id,
                       name: athlete.name || athlete.calendarName || "Athlète",
-                      color: athlete.color || "bg-blue-500",
+                      color: getColorClass(athlete.color),
                     };
                   })
                   .filter(Boolean);

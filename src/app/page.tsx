@@ -44,6 +44,7 @@ import {
   weekLabels,
   ZONES,
 } from "@/lib/platformDefaults";
+import { getColorClass } from "@/lib/colors";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -155,7 +156,7 @@ async function deleteGroupDayWorkouts(date = selectedDate) {
   const [newAthlete, setNewAthlete] = useState("");
   const [categories, setCategories] = useState(defaultCategories);
   const [subcategories, setSubcategories] = useState(defaultSubcategories);
-  const [newCat, setNewCat] = useState({ name: "", color: "bg-blue-500" });
+  const [newCat, setNewCat] = useState({ name: "", color: getColorClass() });
   const [newSub, setNewSub] = useState({ name: "", color: "bg-yellow-500" });
   const [filter, setFilter] = useState({ category: "", subcategory: "" });
   const [library, setLibrary] = useState(defaultLibrary);
@@ -205,7 +206,7 @@ async function loadAllData() {
       goalUpdateRequested: Boolean(row.goal_update_requested),
       user_id: row.user_id || "",
       active: row.active !== false,
-      color: row.color || "bg-blue-500",
+      color: getColorClass(row.color),
     }))
   : [];
 
@@ -1211,7 +1212,7 @@ await loadAllData();
 
   if (isCategory) {
     setCategories((items) => [...items, inserted]);
-    setNewCat({ name: "", color: "bg-blue-500" });
+    setNewCat({ name: "", color: getColorClass() });
   } else {
     setSubcategories((items) => [...items, inserted]);
     setNewSub({ name: "", color: "bg-yellow-500" });

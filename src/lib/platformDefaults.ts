@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { APP_COLORS } from "@/lib/colors";
+import { COLORS } from "@/lib/colors";
 
 export function item(id: string, name: string, color: string) {
   return { id, name, color };
@@ -99,7 +99,6 @@ export const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 export const ZONES = ["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7"];
 
-export const COLORS = APP_COLORS;
 
 export const CALENDAR_YEARS = Array.from(
   { length: 31 },

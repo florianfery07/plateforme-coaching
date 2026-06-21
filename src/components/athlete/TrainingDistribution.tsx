@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { COLOR_HEX, FALLBACK_COLOR_HEX } from "@/lib/colors";
+import { getColorHex, getFallbackColorHex } from "@/lib/colors";
 import { durationHours, sessionLoadParts } from "@/lib/trainingUtils";
 
 function colorForName(name, items, index) {
@@ -9,7 +9,7 @@ function colorForName(name, items, index) {
     (row) => row.name?.trim().toLowerCase() === name?.trim().toLowerCase()
   );
 
-  return COLOR_HEX[item?.color] || FALLBACK_COLOR_HEX[index % FALLBACK_COLOR_HEX.length];
+  return item?.color ? getColorHex(item.color) : getFallbackColorHex(index);
 }
 
 function buildDistribution(sessions, field, items) {
