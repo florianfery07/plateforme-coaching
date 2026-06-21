@@ -947,10 +947,12 @@ alert(JSON.stringify(error, null, 2));
   setView("library");
 }
   function editWorkout(workout) { setDraft(workout); setEditingId(workout.id); setView("create"); }
-  async function importWorkout(workout, date = selectedDate) {
+  async function importWorkout(workout, date = selectedDate, selectedAthleteIds = null) {
   const session = calendarSession(workout, date);
   const targetAthleteIds =
-    planningTargetType === "group" ? selectedGroupAthleteIds : [activeId];
+    planningTargetType === "group"
+  ? selectedAthleteIds || selectedGroupAthleteIds
+  : [activeId];
 
   if (planningTargetType === "group") {
     if (!selectedGroupId) {
@@ -999,7 +1001,7 @@ setView("calendar");
 
 async function addRestDay(date = selectedDate) {
   const targetAthleteIds =
-    planningTargetType === "group" ? selectedGroupAthleteIds : [activeId];
+  planningTargetType === "group" ? selectedGroupAthleteIds : [activeId];
 
   if (planningTargetType === "group") {
     if (!selectedGroupId) {
