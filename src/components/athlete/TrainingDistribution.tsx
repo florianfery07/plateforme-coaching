@@ -244,12 +244,12 @@ export default function TrainingDistribution({
   return (
     <div className="mt-6 grid grid-cols-1 gap-6">
       <DistributionBlock
-        title="Répartition par catégorie"
+        title="Répartition par discipline"
         rows={categoryRows}
       />
 
       <DistributionBlock
-        title="Répartition par sous-partie"
+        title="Répartition par thème"
         rows={subcategoryRows}
       />
     </div>

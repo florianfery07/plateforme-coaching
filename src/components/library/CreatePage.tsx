@@ -146,7 +146,7 @@ export default function CreatePage({
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Field label="discipline">
+        <Field label="Discipline">
           <Select
             value={draft.category || ""}
             onChange={(event) => updateDraft("category", event.target.value)}

@@ -43,19 +43,19 @@ export default function QuickCreate({
   return (
     <div className="mt-8 rounded-2xl border border-zinc-700 bg-zinc-800 p-4">
       <h3 className="mb-3 text-base font-semibold">
-        Gestion catégories & sous-parties
+        Gestion des disciplines & thèmes
       </h3>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <QuickCreateCard
-          title="Ajouter une catégorie"
+          title="Ajouter une discipline"
           value={newCat}
           setValue={setNewCat}
           onAdd={() => addItem("cat")}
         />
 
         <QuickCreateCard
-          title="Ajouter une sous-partie"
+          title="Ajouter un thème"
           value={newSub}
           setValue={setNewSub}
           onAdd={() => addItem("sub")}

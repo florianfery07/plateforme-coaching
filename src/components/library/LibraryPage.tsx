@@ -160,7 +160,7 @@ export default function LibraryPage({
 
       <details className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
         <summary className="cursor-pointer text-lg font-semibold">
-          Gérer les catégories et sous-parties
+          Gérer les disciplines et thèmes
         </summary>
 
         <p className="mt-2 text-sm text-zinc-400">
@@ -169,7 +169,7 @@ export default function LibraryPage({
 
         <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
           <Editable
-            title="Catégories"
+            title="Disciplines"
             items={categories}
             setItems={setCategories}
             kind="category"
@@ -177,7 +177,7 @@ export default function LibraryPage({
           />
 
           <Editable
-            title="Sous-parties"
+            title="Thèmes"
             items={subcategories}
             setItems={setSubcategories}
             kind="subcategory"
