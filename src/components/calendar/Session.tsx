@@ -50,6 +50,23 @@ export default function Session({
       updateFeedback(session.id, "rpe", value);
     }
   };
+
+  function cleanScore(value, max) {
+    const text = String(value || "")
+      .replace(",", ".")
+      .replace(/[^0-9.]/g, "");
+
+    if (!text) return "";
+
+    const parsed = Number(text);
+
+    if (Number.isNaN(parsed)) return "";
+
+    const clamped = Math.max(0, Math.min(max, parsed));
+
+    return String(clamped);
+  }
+
 function parseDurationParts(value) {
   const text = String(value || "").toLowerCase().replace(/\s/g, "");
 
@@ -314,14 +331,16 @@ function changeActualTimePart(part, value) {
     <Input
       value={session.feedback?.rpeGlobal || session.feedback?.rpe || ""}
       onChange={(event) =>
-        draftFeedback("rpeGlobal", event.target.value)
+        draftFeedback("rpeGlobal", cleanScore(event.target.value, 10))
       }
       onBlur={(event) =>
-        saveFeedback("rpeGlobal", event.target.value)
+        saveFeedback("rpeGlobal", cleanScore(event.target.value, 10))
       }
-      type="text"
+      type="number"
       inputMode="decimal"
-      placeholder="Ex : 5"
+      min="0"
+      max="10"
+      step="0.5"
     />
   </Field>
 
@@ -329,11 +348,13 @@ function changeActualTimePart(part, value) {
     <Input
       value={session.feedback?.rpeSpecific || ""}
       onChange={(event) =>
-        changeFeedback("rpeSpecific", event.target.value)
+        changeFeedback("rpeSpecific", cleanScore(event.target.value, 10))
       }
-      type="text"
+      type="number"
       inputMode="decimal"
-      placeholder="Ex : 9"
+      min="0"
+      max="10"
+      step="0.5"
     />
   </Field>
 
@@ -341,11 +362,13 @@ function changeActualTimePart(part, value) {
     <Input
       value={session.feedback?.motivation || ""}
       onChange={(event) =>
-        changeFeedback("motivation", event.target.value)
+        changeFeedback("motivation", cleanScore(event.target.value, 10))
       }
-      type="text"
+      type="number"
       inputMode="decimal"
-      placeholder="Ex : 8"
+      min="0"
+      max="10"
+      step="1"
     />
   </Field>
 
@@ -353,11 +376,13 @@ function changeActualTimePart(part, value) {
     <Input
       value={session.feedback?.pleasure || ""}
       onChange={(event) =>
-        changeFeedback("pleasure", event.target.value)
+        changeFeedback("pleasure", cleanScore(event.target.value, 5))
       }
-      type="text"
+      type="number"
       inputMode="decimal"
-      placeholder="Ex : 4"
+      min="0"
+      max="5"
+      step="1"
     />
   </Field>
 </div>
