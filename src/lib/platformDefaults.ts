@@ -176,6 +176,6 @@ export const weekLabels = [
   { name: "Récup", color: "bg-emerald-500 text-white border-emerald-400" },
   { name: "Charge", color: "bg-yellow-500 text-black border-yellow-400" },
   { name: "Grosse charge", color: "bg-red-500 text-white border-red-400" },
-  { name: "Affûtage", color: "bg-rose-500 text-white border-rose-400" },
+  { name: "Affûtage", color: "bg-cyan-500 text-black border-cyan-400" },
   { name: "Affûtage / Course", color: "bg-purple-500 text-white border-purple-400" },
 ];
