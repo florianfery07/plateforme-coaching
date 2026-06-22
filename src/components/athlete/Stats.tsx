@@ -12,7 +12,6 @@ import {
 import { CALENDAR_YEARS } from "@/lib/platformDefaults";
 import { Panel, Select } from "@/components/ui/ui";
 
-import StatCard from "@/components/athlete/StatCard";
 import AnnualLoadChart from "@/components/athlete/AnnualLoadChart";
 import TrainingDistribution from "@/components/athlete/TrainingDistribution";
 import { useEffect, useState } from "react";
@@ -72,26 +71,16 @@ const activeYear = years.includes(Number(selectedYear))
     pleasure: avg(yearDone, "pleasure"),
   };
 
-  const cards = [
-    ["Séances prévues", yearTraining.planned],
-    ["Séances réalisées", yearTraining.done],
-    ["Temps total", `${yearTraining.totals.time.toFixed(1)} h`],
-    ["Charge totale", totalLoad.toFixed(1)],
-    ["RPE moyen", yearStats.rpe],
-    ["Motivation moyenne", yearStats.motivation],
-    ["Plaisir moyen", yearStats.pleasure],
-  ];
-
   return (
     <Panel>
      <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
   <div>
     <h2 className="text-2xl font-semibold">
-      Statistiques annuelles
+      Graphique représentatif de charge, % d’intensité et estimation de forme basée sur vos retours
     </h2>
 
     <p className="mt-1 text-sm text-zinc-400">
-      Totaux réalisés sur l'année sélectionnée.
+      Barres = charge réalisée par semaine. Courbes = fatigue aiguë, charge chronique et forme estimée.
     </p>
   </div>
 
@@ -109,16 +98,6 @@ const activeYear = years.includes(Number(selectedYear))
     ))}
   </Select>
 </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        {cards.map(([label, value]) => (
-          <StatCard
-            key={label}
-            label={label}
-            value={value}
-          />
-        ))}
-      </div>
 
       <AnnualLoadChart weeks={yearTraining.weeks} />
       <TrainingDistribution
