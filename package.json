@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "node scripts/quality-checks.mjs"
+    "check": "node scripts/quality-checks.mjs",
+    "generate:types": "node scripts/generate-database-types.mjs",
+    "generate:types:check": "node scripts/generate-database-types.mjs --check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",
