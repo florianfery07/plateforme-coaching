@@ -16,7 +16,7 @@ The registry is defined in `src/lib/features/flags.ts`.
 
 | Flag | Environment variable | Default | Stage | Purpose |
 | --- | --- | --- | --- | --- |
-| `groupsV2` | `NEXT_PUBLIC_FEATURE_GROUPS_V2` | `false` | `experimental` | Future replacement for groups. |
+| `groupsV2` | `NEXT_PUBLIC_FEATURE_GROUPS_V2` | `false` | `experimental` | L09 group-session foundation; no current component imports it. |
 | `accessControlV2` | `NEXT_PUBLIC_FEATURE_ACCESS_CONTROL_V2` | `false` | `pilot` | Pilot-only typed Auth and athlete-read verification beside legacy. |
 | `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Local-only L08b pilot for the `WeekDetail` weekly-note autosave; future mutation reliability flows. |
 

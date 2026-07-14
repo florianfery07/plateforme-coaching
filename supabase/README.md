@@ -10,7 +10,8 @@ metadata and is intentionally not part of the repository.
 - `baseline/` holds the immutable, read-only DDL export that describes the
   pre-migration remote state. It is deliberately outside `migrations/`.
 - `migrations/` holds only additive changes created after the baseline is
-  captured. It is currently empty by design.
+  captured. Each migration is future deployment input, never proof that it has
+  been applied remotely.
 - `snapshots/` holds verification exports and manifests. A snapshot is evidence
   of a comparison; it is never an executable migration.
 - `verify-baseline-layout.mjs` checks that the local layout still respects this

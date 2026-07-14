@@ -1,14 +1,11 @@
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = resolve(import.meta.dirname, "..");
 const baselinePath = resolve(root, "supabase/baseline/remote-schema.sql");
-const migrationPath = resolve(
-  root,
-  "supabase/migrations/20260714000000_access_control_v2_foundation.sql",
-);
+const migrationsDirectory = resolve(root, "supabase/migrations");
 const outputPath = resolve(root, "src/types/database.ts");
 const image = "public.ecr.aws/supabase/postgres:17.6.1.121";
 const containerName = `myrideplan-l06-${process.pid}`;
@@ -232,7 +229,11 @@ function renderDatabaseType(columns, functions, relationships, sourceHashes) {
     })
     .join("\n");
 
-  return `/*\n * GENERATED FILE. DO NOT EDIT MANUALLY.\n *\n * Source: supabase/baseline/remote-schema.sql (${sourceHashes.baseline})\n * Source: supabase/migrations/20260714000000_access_control_v2_foundation.sql (${sourceHashes.migration})\n * Regenerate: npm run generate:types\n */\n\nexport type Json =\n  | string\n  | number\n  | boolean\n  | null\n  | { [key: string]: Json | undefined }\n  | Json[];\n\nexport type Database = {\n${schemaOutput}\n};\n`;
+  const migrationSources = sourceHashes.migrations
+    .map(({ path, sha256 }) => ` * Source: ${path} (${sha256})`)
+    .join("\n");
+
+  return `/*\n * GENERATED FILE. DO NOT EDIT MANUALLY.\n *\n * Source: supabase/baseline/remote-schema.sql (${sourceHashes.baseline})\n${migrationSources}\n * Regenerate: npm run generate:types\n */\n\nexport type Json =\n  | string\n  | number\n  | boolean\n  | null\n  | { [key: string]: Json | undefined }\n  | Json[];\n\nexport type Database = {\n${schemaOutput}\n};\n`;
 }
 
 const bootstrapSql = `
@@ -262,10 +263,19 @@ $$;
 `;
 
 const baselineSql = readFileSync(baselinePath, "utf8");
-const migrationSql = readFileSync(migrationPath, "utf8");
+const migrationFiles = readdirSync(migrationsDirectory)
+  .filter((file) => file.endsWith(".sql"))
+  .sort();
+const migrations = migrationFiles.map((file) => ({
+  path: `supabase/migrations/${file}`,
+  sql: readFileSync(resolve(migrationsDirectory, file), "utf8"),
+}));
 const sourceHashes = {
   baseline: createHash("sha256").update(baselineSql).digest("hex"),
-  migration: createHash("sha256").update(migrationSql).digest("hex"),
+  migrations: migrations.map((migration) => ({
+    path: migration.path,
+    sha256: createHash("sha256").update(migration.sql).digest("hex"),
+  })),
 };
 
 try {
@@ -286,7 +296,9 @@ try {
   waitForDatabase();
   executeSql(bootstrapSql);
   executeSql(baselineSql);
-  executeSql(migrationSql);
+  for (const migration of migrations) {
+    executeSql(migration.sql);
+  }
 
   const columns = JSON.parse(
     executeSql(`

@@ -3,6 +3,7 @@
  *
  * Source: supabase/baseline/remote-schema.sql (144e1614c8ee75288ae6c8521f4f7df1f7d2b9bac3165f83c526d251db4b6342)
  * Source: supabase/migrations/20260714000000_access_control_v2_foundation.sql (a3adbe401dc3a205423d604a51ce79459d5dd3600b95d06627fc83f87c5337df)
+ * Source: supabase/migrations/20260714010000_groups_v2_foundation.sql (ecc6d5792ad0b9186749ce848bc48de2b82ab5871c0782e0efcc72c3a0132dad)
  * Regenerate: npm run generate:types
  */
 
@@ -507,6 +508,193 @@ export type Database = {
           }
         ]
       }
+      "group_session_events_v2": {
+        Row: {
+          "id": string,
+          "group_session_id": string,
+          "actor_user_id": string,
+          "event_type": string,
+          "payload": Json,
+          "created_at": string
+        }
+        Insert: {
+          "id"?: string
+          "group_session_id": string
+          "actor_user_id": string
+          "event_type": string
+          "payload"?: Json
+          "created_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "group_session_id"?: string
+          "actor_user_id"?: string
+          "event_type"?: string
+          "payload"?: Json
+          "created_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_session_events_v2_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_session_events_v2_group_session_id_fkey"
+            columns: ["group_session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions_v2"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      "group_session_participants_v2": {
+        Row: {
+          "id": string,
+          "group_session_id": string,
+          "organization_id": string,
+          "athlete_membership_id": string,
+          "assignment_status": string,
+          "assigned_at": string,
+          "removed_at": string | null,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "id"?: string
+          "group_session_id": string
+          "organization_id": string
+          "athlete_membership_id": string
+          "assignment_status"?: string
+          "assigned_at"?: string
+          "removed_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "group_session_id"?: string
+          "organization_id"?: string
+          "athlete_membership_id"?: string
+          "assignment_status"?: string
+          "assigned_at"?: string
+          "removed_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_session_participants_v2_group_session_id_organizatio_fkey"
+            columns: ["group_session_id","organization_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions_v2"
+            referencedColumns: ["id","organization_id"]
+          },
+          {
+            foreignKeyName: "group_session_participants_v2_organization_id_athlete_memb_fkey"
+            columns: ["organization_id","athlete_membership_id"]
+            isOneToOne: false
+            referencedRelation: "organization_memberships"
+            referencedColumns: ["organization_id","id"]
+          }
+        ]
+      }
+      "group_sessions_v2": {
+        Row: {
+          "id": string,
+          "organization_id": string,
+          "created_by_membership_id": string,
+          "source_group_session_id": string | null,
+          "scheduled_for": string,
+          "status": string,
+          "title": string,
+          "workout_type": string,
+          "subcategory": string,
+          "description": string,
+          "duration": string,
+          "expected_rpe": string,
+          "expected_rpe_global": number | null,
+          "expected_specific_duration": string,
+          "expected_rpe_specific": number | null,
+          "blocks": Json,
+          "version": number,
+          "cancelled_at": string | null,
+          "deleted_at": string | null,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "id"?: string
+          "organization_id": string
+          "created_by_membership_id": string
+          "source_group_session_id"?: string | null
+          "scheduled_for": string
+          "status"?: string
+          "title": string
+          "workout_type"?: string
+          "subcategory"?: string
+          "description"?: string
+          "duration"?: string
+          "expected_rpe"?: string
+          "expected_rpe_global"?: number | null
+          "expected_specific_duration"?: string
+          "expected_rpe_specific"?: number | null
+          "blocks"?: Json
+          "version"?: number
+          "cancelled_at"?: string | null
+          "deleted_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "organization_id"?: string
+          "created_by_membership_id"?: string
+          "source_group_session_id"?: string | null
+          "scheduled_for"?: string
+          "status"?: string
+          "title"?: string
+          "workout_type"?: string
+          "subcategory"?: string
+          "description"?: string
+          "duration"?: string
+          "expected_rpe"?: string
+          "expected_rpe_global"?: number | null
+          "expected_specific_duration"?: string
+          "expected_rpe_specific"?: number | null
+          "blocks"?: Json
+          "version"?: number
+          "cancelled_at"?: string | null
+          "deleted_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_sessions_v2_organization_id_created_by_membership_id_fkey"
+            columns: ["organization_id","created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "organization_memberships"
+            referencedColumns: ["organization_id","id"]
+          },
+          {
+            foreignKeyName: "group_sessions_v2_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_sessions_v2_source_group_session_id_fkey"
+            columns: ["source_group_session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions_v2"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       "profiles": {
         Row: {
           "id": string,
@@ -761,6 +949,45 @@ export type Database = {
     }
     Views: Record<string, never>
     Functions: {
+      "add_group_session_participant_v2": {
+        Args: {
+          "p_group_session_id": string
+          "p_expected_version": number
+          "p_athlete_membership_id": string
+        }
+        Returns: Json
+      }
+      "cancel_group_session_v2": {
+        Args: {
+          "p_group_session_id": string
+          "p_expected_version": number
+        }
+        Returns: Json
+      }
+      "create_group_session_v2": {
+        Args: {
+          "p_organization_id": string
+          "p_scheduled_for": string
+          "p_session_data": Json
+          "p_participant_membership_ids": string[]
+        }
+        Returns: Json
+      }
+      "delete_group_session_v2": {
+        Args: {
+          "p_group_session_id": string
+          "p_expected_version": number
+        }
+        Returns: Json
+      }
+      "duplicate_group_session_v2": {
+        Args: {
+          "p_group_session_id": string
+          "p_expected_version": number
+          "p_scheduled_for": string
+        }
+        Returns: Json
+      }
       "get_access_context_v2": {
         Args: Record<string, never>
         Returns: Json
@@ -781,6 +1008,22 @@ export type Database = {
           "auth_user_id": string
         }
         Returns: string
+      }
+      "remove_group_session_participant_v2": {
+        Args: {
+          "p_group_session_id": string
+          "p_expected_version": number
+          "p_athlete_membership_id": string
+        }
+        Returns: Json
+      }
+      "update_group_session_v2": {
+        Args: {
+          "p_group_session_id": string
+          "p_expected_version": number
+          "p_session_data": Json
+        }
+        Returns: Json
       }
     }
     Enums: Record<string, never>
