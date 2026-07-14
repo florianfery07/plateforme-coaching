@@ -1,0 +1,33 @@
+{
+  "format_version": 1,
+  "purpose": "Immutable read-only description of the remote schema before MyRidePlan migrations are introduced.",
+  "capture_status": "CAPTURED",
+  "schema_file": "remote-schema.sql",
+  "schema_sha256": "144e1614c8ee75288ae6c8521f4f7df1f7d2b9bac3165f83c526d251db4b6342",
+  "schema_bytes": 32740,
+  "schema_sha256_algorithm": "SHA-256",
+  "captured_on_utc": "2026-07-14",
+  "recorded_at_utc": "2026-07-14T15:11:36Z",
+  "data_included": false,
+  "schema_scope": ["public"],
+  "capture_command": "npx supabase db dump --linked --schema public --file supabase/baseline/remote-schema.sql",
+  "remote_project_reference": "LINKED_LOCALLY_NOT_COMMITTED",
+  "remote_changes_performed": false,
+  "public_schema_summary": {
+    "tables": 19,
+    "function_definitions": 3,
+    "rls_enabled_tables": 19,
+    "policies": 49,
+    "explicit_non_constraint_indexes": 0,
+    "triggers": 0,
+    "views": 0,
+    "data_statements_detected": 0
+  },
+  "notes": [
+    "The capture command was supplied by the authorised operator and was not rerun by this repository task.",
+    "The recorded timestamp is the L01 verification time; only the capture date was supplied by the operator.",
+    "The export covers the public schema only. Auth, Storage, extensions, platform configuration, data, and objects outside public are not represented.",
+    "This manifest is not a migration and must never be applied to a remote database.",
+    "Future additive migrations belong only in ../migrations."
+  ]
+}
