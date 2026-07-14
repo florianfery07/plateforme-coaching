@@ -18,7 +18,7 @@ The registry is defined in `src/lib/features/flags.ts`.
 | --- | --- | --- | --- | --- |
 | `groupsV2` | `NEXT_PUBLIC_FEATURE_GROUPS_V2` | `false` | `experimental` | Future replacement for groups. |
 | `accessControlV2` | `NEXT_PUBLIC_FEATURE_ACCESS_CONTROL_V2` | `false` | `pilot` | Pilot-only typed Auth and athlete-read verification beside legacy. |
-| `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Future replacement for mutation reliability flows. |
+| `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Local-only L08b pilot for the `WeekDetail` weekly-note autosave; future mutation reliability flows. |
 
 `accessControlV2` is consumed only by the L07b session-restoration pilot. It
 does not grant authorization and remains disabled by default. A flag-enabled
@@ -67,6 +67,12 @@ it to an explicit disabled value, then restart the server.
 Before a pilot, test both paths with the flag absent and explicitly enabled.
 Start with a narrow, approved pilot environment. Keep the legacy path intact
 until the replacement has its own functional, security, and migration evidence.
+
+The L08b weekly-note pilot adds one extra local guard: even when
+`reliableMutationsV2` is enabled, it runs only while `NODE_ENV=development`.
+It does not authorize a remote pilot and does not affect the calendar weekly
+note editor. Its exact procedure and rollback are in
+[the weekly-note pilot guide](pilot-reliable-weekly-note-autosave.md).
 
 ## Security Boundary
 

@@ -1,7 +1,11 @@
 // @ts-nocheck
 "use client";
 
+import { useWeekNoteAutosave } from "@/hooks/use-week-note-autosave";
+import { isReliableMutationsPilotEnabled } from "@/lib/features";
 import { supabase } from "@/lib/supabase";
+import { validateWeekNotePayload } from "@/services/week-notes";
+import { weekNoteService } from "@/services/week-notes/week-note-client-service";
 import {
   feedbackDone,
   trainingAverage,
@@ -32,6 +36,14 @@ export default function WeekDetail({
 }) {
   const noteKey = `${athleteId}-${activeYear}-${week.week}`;
   const weekNote = weekNotes[noteKey] || "";
+  const reliableWeekNotePilot =
+    isReliableMutationsPilotEnabled() &&
+    validateWeekNotePayload({
+      athleteId,
+      note: "",
+      week: week.week,
+      year: activeYear,
+    }) === null;
   const planningKey = `${athleteId}-${activeYear}-${week.week}`;
   const currentPlanning = weekPlanning?.[planningKey] || {
     goal: "Aucun",
@@ -64,7 +76,7 @@ export default function WeekDetail({
     ],
   ];
 
-  async function saveWeekNote(value) {
+  async function saveWeekNoteLegacy(value) {
     setWeekNotes((items) => ({
       ...items,
       [noteKey]: value,
@@ -95,6 +107,25 @@ export default function WeekDetail({
           "Erreur sauvegarde note semaine"
       );
     }
+  }
+
+  const weekNoteAutosave = useWeekNoteAutosave({
+    athleteId,
+    enabled: reliableWeekNotePilot,
+    legacySave: saveWeekNoteLegacy,
+    service: weekNoteService,
+    week: week.week,
+    year: activeYear,
+  });
+
+  function updateWeekNote(value) {
+    if (reliableWeekNotePilot) {
+      setWeekNotes((items) => ({
+        ...items,
+        [noteKey]: value,
+      }));
+    }
+    weekNoteAutosave.save(value);
   }
 
   return (
@@ -224,7 +255,7 @@ export default function WeekDetail({
       </div>
 
       <div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
-        <h4 className="mb-2 font-semibold">
+        <h4 id={`week-note-title-${noteKey}`} className="mb-2 font-semibold">
           Idée générale de la semaine
         </h4>
 
@@ -233,13 +264,35 @@ export default function WeekDetail({
         </p>
 
         <Textarea
+          aria-labelledby={`week-note-title-${noteKey}`}
           value={weekNote}
-          onChange={(event) =>
-            saveWeekNote(event.target.value)
-          }
+          onBlur={weekNoteAutosave.flush}
+          onChange={(event) => updateWeekNote(event.target.value)}
           rows={5}
           placeholder="Ex : bonne semaine, fatigue correcte, séance PMA difficile mais bien encaissée..."
         />
+        {reliableWeekNotePilot && (
+          <div className="mt-2 min-h-5 text-xs">
+            {weekNoteAutosave.state.state === "pending" && (
+              <p className="text-zinc-400" role="status">Enregistrement...</p>
+            )}
+            {weekNoteAutosave.state.state === "success" && (
+              <p className="text-emerald-400" role="status">Enregistre</p>
+            )}
+            {weekNoteAutosave.state.state === "error" && (
+              <div className="flex items-center gap-2 text-amber-300" role="alert">
+                <span>Echec de l&apos;enregistrement</span>
+                <button
+                  type="button"
+                  className="underline underline-offset-2"
+                  onClick={weekNoteAutosave.retry}
+                >
+                  Reessayer
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="mt-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
