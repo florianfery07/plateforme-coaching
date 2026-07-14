@@ -45,7 +45,10 @@ import {
   ZONES,
 } from "@/lib/platformDefaults";
 import { getColorClass } from "@/lib/colors";
+import { isFeatureEnabled } from "@/lib/features";
 import { supabase } from "@/lib/supabase";
+import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
+import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
@@ -410,6 +413,24 @@ useEffect(() => {
 
     if (!data.session?.user) return;
 
+    async function resolvePilotAuth(legacyAuth) {
+      const featureEnabled = isFeatureEnabled("accessControlV2");
+
+      if (!featureEnabled) {
+        return legacyAuth;
+      }
+
+      const decision = await loadPilotAuthAthleteRead(
+        supabase,
+        legacyAuth,
+        data.session.user.id,
+        featureEnabled,
+      );
+      reportPilotReadDiagnostic(decision);
+
+      return decision.auth || legacyAuth;
+    }
+
     const { data: athlete } = await supabase
       .from("athletes")
       .select("*")
@@ -424,14 +445,14 @@ useEffect(() => {
         return;
       }
 
-      setAuth({
+      setAuth(await resolvePilotAuth({
         role: "athlete",
         athleteId: athlete.id,
-      });
+      }));
       return;
     }
 
-    setAuth({ role: "coach" });
+    setAuth(await resolvePilotAuth({ role: "coach" }));
 await loadAllData();
   }
 

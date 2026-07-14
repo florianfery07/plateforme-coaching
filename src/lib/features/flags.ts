@@ -29,7 +29,7 @@ export const featureFlagRegistry = {
     owner: "Platform",
     removal:
       "Remove after access-control V2 has replaced the legacy implementation.",
-    stage: "experimental",
+    stage: "pilot",
   },
   reliableMutationsV2: {
     description: "Future progressive replacement for legacy mutation reliability flows.",

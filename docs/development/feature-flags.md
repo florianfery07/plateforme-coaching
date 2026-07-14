@@ -17,11 +17,13 @@ The registry is defined in `src/lib/features/flags.ts`.
 | Flag | Environment variable | Default | Stage | Purpose |
 | --- | --- | --- | --- | --- |
 | `groupsV2` | `NEXT_PUBLIC_FEATURE_GROUPS_V2` | `false` | `experimental` | Future replacement for groups. |
-| `accessControlV2` | `NEXT_PUBLIC_FEATURE_ACCESS_CONTROL_V2` | `false` | `experimental` | Future replacement for access-control flows. |
+| `accessControlV2` | `NEXT_PUBLIC_FEATURE_ACCESS_CONTROL_V2` | `false` | `pilot` | Pilot-only typed Auth and athlete-read verification beside legacy. |
 | `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Future replacement for mutation reliability flows. |
 
-These flags are declarations only in L03. No existing module reads them, so no
-current user path changes.
+`accessControlV2` is consumed only by the L07b session-restoration pilot. It
+does not grant authorization and remains disabled by default. A flag-enabled
+user stays on legacy unless the server returns an active V2 account with an
+active pilot assignment and the typed reads match the legacy snapshot.
 
 ## Using a Flag
 
