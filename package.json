@@ -14,7 +14,8 @@
     "generate:types": "node scripts/generate-database-types.mjs",
     "generate:types:check": "node scripts/generate-database-types.mjs --check",
     "test:groups-v2:sql": "node scripts/test-groups-v2-sql.mjs",
-    "test:groups-v2-bridge:sql": "node scripts/test-groups-v2-bridge-sql.mjs"
+    "test:groups-v2-bridge:sql": "node scripts/test-groups-v2-bridge-sql.mjs",
+    "local:groups-v2:bootstrap": "node scripts/bootstrap-groups-v2-local.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",
