@@ -5,6 +5,20 @@ import { useMemo, useState } from "react";
 import { Btn, Empty } from "@/components/ui/ui";
 import FilterSelects from "@/components/calendar/FilterSelects";
 import { getColorClass } from "@/lib/colors";
+import { isFeatureEnabled } from "@/lib/features";
+import { useReliableMutation } from "@/hooks/use-reliable-mutation";
+import { createTypedSupabaseClient } from "@/lib/supabase-typed";
+import {
+  createGroupSessionService,
+  createGroupSessionSupabaseRepository,
+  createLegacyGroupBridgeService,
+  createLegacyGroupBridgeSupabaseRepository,
+} from "@/services/groups-v2";
+
+function localDateKey(value) {
+  const date = new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
 export default function QuickLibrary({
   categories,
@@ -17,9 +31,40 @@ export default function QuickLibrary({
   selectedGroup,
   selectedGroupMembers = [],
   athletes = [],
+  selectedDate,
 }) {
   const [pendingWorkout, setPendingWorkout] = useState(null);
   const [selectedAthleteIds, setSelectedAthleteIds] = useState([]);
+  const groupsPilotEnabled = isFeatureEnabled("groupsV2") && isFeatureEnabled("accessControlV2");
+  const pilotMutation = useReliableMutation({
+    key: "groups-v2-pilot-schedule",
+    concurrency: "reject",
+    type: "groups-v2-pilot-schedule",
+    operation: async (workout) => {
+      const client = createTypedSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+      const bridge = createLegacyGroupBridgeService(createLegacyGroupBridgeSupabaseRepository(client));
+      const mapping = await bridge.resolve(selectedGroup.id);
+      if (mapping.kind === "error") return { kind: "legacy_fallback" };
+      const service = createGroupSessionService(createGroupSessionSupabaseRepository(client));
+      const result = await service.create({
+        organizationId: mapping.organizationId,
+        participantMembershipIds: mapping.athleteMembershipIds,
+        scheduledFor: localDateKey(selectedDate),
+        title: workout.title,
+        workoutType: workout.category || "",
+        subcategory: workout.subcategory || "",
+        description: workout.description || "",
+        duration: workout.totalDuration || "",
+        expectedRpe: workout.expectedRpe || "",
+        expectedRpeGlobal: workout.expectedRpeGlobal ?? null,
+        expectedSpecificDuration: workout.expectedSpecificDuration || "",
+        expectedRpeSpecific: workout.expectedRpeSpecific ?? null,
+        blocks: workout.blocks || [],
+      });
+      if (result.kind === "error") throw { kind: result.error };
+      return { kind: "success", ...result.operation, participantCount: mapping.athleteMembershipIds.length };
+    },
+  });
 
   const groupAthletes = useMemo(
     () =>
@@ -52,7 +97,7 @@ export default function QuickLibrary({
     );
   };
 
-  const confirmGroupImport = () => {
+  const confirmGroupImport = async () => {
     if (!pendingWorkout) return;
 
     if (!selectedAthleteIds.length) {
@@ -60,7 +105,14 @@ export default function QuickLibrary({
       return;
     }
 
-    importWorkout(pendingWorkout, undefined, selectedAthleteIds);
+    if (groupsPilotEnabled) {
+      const result = await pilotMutation.mutate(pendingWorkout);
+      if (result.state === "success" && result.data?.kind === "legacy_fallback") {
+        importWorkout(pendingWorkout, undefined, selectedAthleteIds);
+      }
+    } else {
+      importWorkout(pendingWorkout, undefined, selectedAthleteIds);
+    }
     setPendingWorkout(null);
     setSelectedAthleteIds([]);
   };
@@ -91,11 +143,11 @@ export default function QuickLibrary({
           <div className="mb-3">
             <h3 className="font-bold">Ajouter au groupe</h3>
             <p className="mt-1 text-sm text-zinc-400">
-              Choisis les athlètes qui recevront : {pendingWorkout.title}
+              {groupsPilotEnabled ? `Pilote Groups V2 : tous les membres validés du groupe recevront ${pendingWorkout.title}.` : `Choisis les athlètes qui recevront : ${pendingWorkout.title}`}
             </p>
           </div>
 
-          <div className="mb-3 flex flex-wrap gap-2">
+          {!groupsPilotEnabled && <div className="mb-3 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setSelectedAthleteIds(groupAthletes.map((athlete) => athlete.id))}
@@ -111,9 +163,9 @@ export default function QuickLibrary({
             >
               Tout retirer
             </button>
-          </div>
+          </div>}
 
-          <div className="space-y-2">
+          {!groupsPilotEnabled && <div className="space-y-2">
             {groupAthletes.map((athlete) => {
               const checked = selectedAthleteIds.includes(athlete.id);
 
@@ -138,11 +190,11 @@ export default function QuickLibrary({
                 </button>
               );
             })}
-          </div>
+          </div>}
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <Btn variant="primary" onClick={confirmGroupImport} className="flex-1">
-              Programmer pour {selectedAthleteIds.length}/{groupAthletes.length}
+            <Btn variant="primary" onClick={confirmGroupImport} disabled={pilotMutation.pending} className="flex-1">
+              {pilotMutation.pending ? "Programmation..." : groupsPilotEnabled ? "Programmer le groupe (V2)" : `Programmer pour ${selectedAthleteIds.length}/${groupAthletes.length}`}
             </Btn>
             <Btn
               onClick={() => {
@@ -154,6 +206,8 @@ export default function QuickLibrary({
               Annuler
             </Btn>
           </div>
+          {pilotMutation.state === "success" && <p className="mt-3 text-sm text-emerald-400">Séance V2 programmée pour {pilotMutation.lastSuccess?.participantCount} participant(s).</p>}
+          {pilotMutation.error && <p className="mt-3 text-sm text-red-400">{pilotMutation.error.message}</p>}
         </div>
       )}
 

@@ -8,7 +8,6 @@ import { resolveFeatureFlags } from "../../src/lib/features";
 const root = process.cwd();
 const activeLegacyEntrypoints = [
   "src/app/page.tsx",
-  "src/components/calendar/QuickLibrary.tsx",
   "src/components/calendar/DayView.tsx",
   "src/components/athlete/ManagementPage.tsx",
 ];
@@ -21,7 +20,7 @@ describe("groups V2 foundation isolation", () => {
     ).toBe(true);
   });
 
-  it("does not connect an active legacy entrypoint to the V2 foundation", () => {
+  it("keeps every legacy entrypoint except the approved QuickLibrary pilot isolated", () => {
     for (const path of activeLegacyEntrypoints) {
       expect(readFileSync(resolve(root, path), "utf8")).not.toContain("groups-v2");
     }
