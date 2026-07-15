@@ -1,5 +1,27 @@
 -- L09 local-only SQL evidence. No remote Supabase resource is contacted.
 
+insert into access_control.organizations (id, name) values
+  ('20000000-0000-0000-0000-000000000001', 'Groups V2 test organization')
+on conflict do nothing;
+
+insert into access_control.accounts (user_id, account_status) values
+  ('00000000-0000-0000-0000-000000000001', 'active'),
+  ('00000000-0000-0000-0000-000000000003', 'active'),
+  ('00000000-0000-0000-0000-000000000004', 'active'),
+  ('00000000-0000-0000-0000-000000000010', 'active')
+on conflict do nothing;
+
+insert into access_control.organization_memberships (id, organization_id, user_id, role, status) values
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'athlete', 'active'),
+  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000003', 'coach', 'active'),
+  ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000004', 'coach', 'active'),
+  ('30000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010', 'athlete', 'active')
+on conflict do nothing;
+
+insert into access_control.coach_athlete_access (organization_id, coach_membership_id, athlete_membership_id, access_role, status) values
+  ('20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000001', 'coach', 'active')
+on conflict do nothing;
+
 update access_control.organization_memberships
 set role = 'organization_administrator'
 where id = '30000000-0000-0000-0000-000000000004';

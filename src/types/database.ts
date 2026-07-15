@@ -4,6 +4,7 @@
  * Source: supabase/baseline/remote-schema.sql (144e1614c8ee75288ae6c8521f4f7df1f7d2b9bac3165f83c526d251db4b6342)
  * Source: supabase/migrations/20260714000000_access_control_v2_foundation.sql (a3adbe401dc3a205423d604a51ce79459d5dd3600b95d06627fc83f87c5337df)
  * Source: supabase/migrations/20260714010000_groups_v2_foundation.sql (ecc6d5792ad0b9186749ce848bc48de2b82ab5871c0782e0efcc72c3a0132dad)
+ * Source: supabase/migrations/20260715010000_groups_v2_mapping_bridge.sql (71d91feacd980283d9ee23807ee21dc6e53ff570071a5e12cd6c59d04acf9358)
  * Regenerate: npm run generate:types
  */
 
@@ -1017,6 +1018,12 @@ export type Database = {
         }
         Returns: Json
       }
+      "resolve_legacy_group_bridge_v2": {
+        Args: {
+          "p_legacy_group_id": string
+        }
+        Returns: Json
+      }
       "update_group_session_v2": {
         Args: {
           "p_group_session_id": string
@@ -1198,6 +1205,119 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      "legacy_athlete_links": {
+        Row: {
+          "legacy_athlete_id": string,
+          "organization_id": string,
+          "athlete_membership_id": string,
+          "status": string,
+          "verification_method": string,
+          "verified_by_user_id": string | null,
+          "verified_at": string,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "legacy_athlete_id": string
+          "organization_id": string
+          "athlete_membership_id": string
+          "status"?: string
+          "verification_method": string
+          "verified_by_user_id"?: string | null
+          "verified_at"?: string
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "legacy_athlete_id"?: string
+          "organization_id"?: string
+          "athlete_membership_id"?: string
+          "status"?: string
+          "verification_method"?: string
+          "verified_by_user_id"?: string | null
+          "verified_at"?: string
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legacy_athlete_links_legacy_athlete_id_fkey"
+            columns: ["legacy_athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legacy_athlete_links_organization_id_athlete_membership_id_fkey"
+            columns: ["organization_id","athlete_membership_id"]
+            isOneToOne: true
+            referencedRelation: "organization_memberships"
+            referencedColumns: ["organization_id","id"]
+          },
+          {
+            foreignKeyName: "legacy_athlete_links_verified_by_user_id_fkey"
+            columns: ["verified_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      "legacy_group_links": {
+        Row: {
+          "legacy_group_id": string,
+          "organization_id": string,
+          "status": string,
+          "verification_method": string,
+          "verified_by_user_id": string | null,
+          "verified_at": string,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "legacy_group_id": string
+          "organization_id": string
+          "status"?: string
+          "verification_method": string
+          "verified_by_user_id"?: string | null
+          "verified_at"?: string
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "legacy_group_id"?: string
+          "organization_id"?: string
+          "status"?: string
+          "verification_method"?: string
+          "verified_by_user_id"?: string | null
+          "verified_at"?: string
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legacy_group_links_legacy_group_id_fkey"
+            columns: ["legacy_group_id"]
+            isOneToOne: true
+            referencedRelation: "athlete_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legacy_group_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legacy_group_links_verified_by_user_id_fkey"
+            columns: ["verified_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
           }
         ]
       }

@@ -37,3 +37,5 @@ create table if not exists public.user_roles (
   user_id uuid primary key references auth.users (id),
   role text not null check (role in ('coach', 'athlete'))
 );
+create table if not exists public.athlete_groups (id uuid primary key, name text not null);
+create table if not exists public.athlete_group_members (group_id uuid not null references public.athlete_groups (id), athlete_id uuid not null references public.athletes (id), unique (group_id, athlete_id));

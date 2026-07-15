@@ -2,14 +2,14 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const image = "public.ecr.aws/supabase/postgres:17.6.1.121";
-const containerName = `myrideplan-l09-${process.pid}`;
+const containerName = `myrideplan-l09bis-${process.pid}`;
 const files = [
   "supabase/tests/access-control-v2-bootstrap.sql",
   "supabase/migrations/20260714000000_access_control_v2_foundation.sql",
   "supabase/tests/access-control-v2-fixtures.sql",
   "supabase/migrations/20260714010000_groups_v2_foundation.sql",
-  "supabase/migrations/20260714010000_groups_v2_foundation.sql",
-  "supabase/tests/groups-v2-foundation.sql",
+  "supabase/migrations/20260715010000_groups_v2_mapping_bridge.sql",
+  "supabase/tests/groups-v2-mapping-bridge.sql",
 ];
 
 function run(command, args, input) {
@@ -66,7 +66,7 @@ try {
     if (output.trim()) process.stdout.write(output);
   }
 
-  console.log("Groups V2 SQL migration test passed.");
+  console.log("Groups V2 bridge SQL migration test passed.");
 } finally {
   spawnSync("docker", ["rm", "-f", containerName], { stdio: "ignore" });
 }
