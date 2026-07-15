@@ -52,11 +52,15 @@ function executeSql(file) {
   );
 }
 
+function containerLogs() {
+  const result = spawnSync("docker", ["logs", containerName], { encoding: "utf8" });
+  return [result.stdout, result.stderr].filter(Boolean).join("\n") || "No container logs available.";
+}
+
 try {
   run("docker", [
     "run",
     "--detach",
-    "--rm",
     "--name",
     containerName,
     "--entrypoint",
@@ -64,7 +68,6 @@ try {
     "--user",
     "postgres",
     image,
-    "bash",
     "-lc",
     "initdb -D /tmp/l05-postgres >/dev/null && pg_ctl -D /tmp/l05-postgres -o \"-c listen_addresses=''\" -w start >/dev/null && tail -f /dev/null",
   ]);
@@ -81,7 +84,7 @@ try {
     }
 
     if (attempt === 119) {
-      throw new Error("Isolated PostgreSQL test container did not become ready");
+      throw new Error(`Isolated PostgreSQL test container did not become ready\n${containerLogs()}`);
     }
 
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
@@ -96,5 +99,5 @@ try {
 
   console.log("Access-control V2 SQL migration test passed.");
 } finally {
-  spawnSync("docker", ["stop", containerName], { stdio: "ignore" });
+  spawnSync("docker", ["rm", "-f", containerName], { stdio: "ignore" });
 }
