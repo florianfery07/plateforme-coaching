@@ -2,29 +2,14 @@
 "use client";
 
 import {
-  addDays,
   avg,
   criticalPower,
   dateKey,
-  dayStart,
   durationHours,
   feedbackDone,
-  feedbackReady,
-  findWeekForDate,
   monthDays,
   parseLocalDate,
-  sessionLoadParts,
-  sessionStatus,
-  trainingAverage,
   trainingStats,
-  weekInfo,
-  weekInfoForYear,
-  weekLabel,
-  weekObject,
-  weekRange,
-  weekStart,
-  weeksInYear,
-  weeksOfYear,
 } from "@/lib/trainingUtils";
 import {
   athlete,
@@ -32,17 +17,10 @@ import {
   blankNonDone,
   blankWorkout,
   CALENDAR_YEARS,
-  COLORS,
-  DAYS,
   defaultAthletes,
   defaultCategories,
   defaultLibrary,
   defaultSubcategories,
-  MONTHS,
-  statusLabel,
-  statusStyle,
-  weekLabels,
-  ZONES,
 } from "@/lib/platformDefaults";
 import { getColorClass } from "@/lib/colors";
 import { isFeatureEnabled } from "@/lib/features";
@@ -52,17 +30,9 @@ import { createAthleteInviteService, createAthleteInviteSupabaseRepository } fro
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Badge,
-  Btn,
-  Empty,
-  Panel,
-  Select,
-} from "@/components/ui/ui";
 import AuthPage from "@/components/auth/AuthPage";
 
 import Header from "@/components/layout/Header";
-import { proposalStyle } from "@/lib/proposalUtils";
 import {
   createAthleteGroup,
   loadAthleteGroups,
@@ -71,14 +41,7 @@ import {
   updateAthleteGroupName,
 } from "@/lib/api/groups";
 import AthleteSelector from "@/components/athlete/AthleteSelector";
-import Proposal from "@/components/calendar/Proposal";
-import AthleteProposalForm from "@/components/calendar/AthleteProposalForm";
-import Block from "@/components/calendar/Block";
 import CalendarPageOld from "@/components/calendar/CalendarPageOld";
-import StatCard from "@/components/athlete/StatCard";
-import WeeklyLoadChart from "@/components/athlete/WeeklyLoadChart";
-import WeekPicker from "@/components/athlete/WeekPicker";
-import WeekDetail from "@/components/athlete/WeekDetail";
 import ManagementPage from "@/components/athlete/ManagementPage";
 import CreatePage from "@/components/library/CreatePage";
 import LibraryPage from "@/components/library/LibraryPage";
@@ -681,11 +644,12 @@ async function loginAthlete(email, password) {
     return false;
   }
 
-  let { data: athlete, error: athleteError } = await supabase
+  const { data: initialAthlete, error: athleteError } = await supabase
     .from("athletes")
     .select("*")
     .eq("user_id", data.user.id)
     .maybeSingle();
+  let athlete = initialAthlete;
 
   if (athleteError) {
     console.error("Erreur récupération athlète", athleteError);

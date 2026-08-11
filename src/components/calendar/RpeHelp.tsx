@@ -45,7 +45,7 @@ export default function RpeHelp() {
             Aide aux retours
           </div>
           <div className="text-xs text-zinc-500">
-            Appuie sur une échelle pour afficher l'explication.
+            Appuie sur une échelle pour afficher l&apos;explication.
           </div>
         </div>
 
@@ -75,18 +75,18 @@ export default function RpeHelp() {
       {open === "about" && (
         <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-300">
           <p>
-            Le RPE sert à décrire le ressenti réel après une séance. Il n'existe pas
+            Le RPE sert à décrire le ressenti réel après une séance. Il n&apos;existe pas
             de bonne ou de mauvaise note.
           </p>
 
           <p className="mt-2">
-            Le but n'est pas de juger la séance, mais de comprendre comment le corps
-            a réagi à l'entraînement.
+            Le but n&apos;est pas de juger la séance, mais de comprendre comment le corps
+            a réagi à l&apos;entraînement.
           </p>
 
           <p className="mt-2">
             Une même séance peut produire un RPE différent selon la fatigue,
-            le sommeil, le stress, la récupération, la météo ou l'état de forme.
+            le sommeil, le stress, la récupération, la météo ou l&apos;état de forme.
           </p>
 
           <p className="mt-2">
@@ -104,7 +104,7 @@ export default function RpeHelp() {
             </div>
 
             <div>
-              Évaluez vos sensations sur l'ensemble de la séance, surtout pendant les périodes faciles et hors intervalles : échauffement, récupération entre les efforts, endurance, retour au calme. Les efforts intenses ne doivent pas faire monter fortement le RPE global : leur difficulté est déjà exprimée dans le RPE spécifique.
+              Évaluez vos sensations sur l&apos;ensemble de la séance, surtout pendant les périodes faciles et hors intervalles : échauffement, récupération entre les efforts, endurance, retour au calme. Les efforts intenses ne doivent pas faire monter fortement le RPE global : leur difficulté est déjà exprimée dans le RPE spécifique.
             </div>
           </div>
 
@@ -176,7 +176,7 @@ export default function RpeHelp() {
             </div>
 
             <div>
-              Évaluez votre motivation avant la séance. Il n'existe pas de bonne ou de mauvaise note. L'objectif est simplement de décrire le plus fidèlement possible votre état d'esprit avant l'entraînement.
+              Évaluez votre motivation avant la séance. Il n&apos;existe pas de bonne ou de mauvaise note. L&apos;objectif est simplement de décrire le plus fidèlement possible votre état d&apos;esprit avant l&apos;entraînement.
             </div>
           </div>
 
@@ -212,7 +212,7 @@ export default function RpeHelp() {
             </div>
 
             <div>
-              Évaluez le plaisir que vous avez pris pendant la séance. Il n'existe pas de bonne ou de mauvaise note. L'objectif est simplement de décrire votre ressenti pendant l'entraînement.
+              Évaluez le plaisir que vous avez pris pendant la séance. Il n&apos;existe pas de bonne ou de mauvaise note. L&apos;objectif est simplement de décrire votre ressenti pendant l&apos;entraînement.
             </div>
           </div>
 

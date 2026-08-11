@@ -15,9 +15,10 @@ export default function AthleteSelector({
   selectedGroupId = "",
   setSelectedGroupId,
 }) {
+  const [open, setOpen] = useState(false);
+
   if (!visible) return null;
 
-  const [open, setOpen] = useState(false);
   const activeAthlete = athletes.find((a) => a.id === activeId);
   const activeGroup = athleteGroups.find((g) => g.id === selectedGroupId);
 

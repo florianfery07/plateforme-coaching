@@ -27,7 +27,7 @@ export default function AthleteGoalUpdatePanel({ athlete, validateGoalUpdate }) 
       <div className="mb-5 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
         <h2 className="font-bold text-amber-200">Mise à jour des objectifs demandée</h2>
         <p className="mt-1 text-sm text-zinc-300">
-          Ton coach te demande d'actualiser tes objectifs. Remplis les trois champs puis valide.
+          Ton coach te demande d&apos;actualiser tes objectifs. Remplis les trois champs puis valide.
         </p>
       </div>
 

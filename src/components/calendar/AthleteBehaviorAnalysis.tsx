@@ -339,13 +339,13 @@ export default function AthleteBehaviorAnalysis({ sessions = [] }) {
 
               <div className="mt-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
                 Cette catégorie coûte généralement{" "}
-                <b>{formatPercent(selected.globalDeltaAverage)}</b> par rapport à l'attendu.
+                <b>{formatPercent(selected.globalDeltaAverage)}</b> par rapport à l&apos;attendu.
               </div>
 
               {selected.pleasureAverage !== null &&
                 selected.pleasureAverage <= 2.5 && (
                   <div className="mt-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-100">
-                    Faible adhésion à ce type d'entraînement.
+                    Faible adhésion à ce type d&apos;entraînement.
                   </div>
                 )}
 
