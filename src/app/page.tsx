@@ -23,13 +23,15 @@ import {
   defaultSubcategories,
 } from "@/lib/platformDefaults";
 import { getColorClass } from "@/lib/colors";
+import { loadAccessControlV2Context, type AccessContextRpcClient } from "@/lib/access";
 import { isFeatureEnabled } from "@/lib/features";
 import { supabase } from "@/lib/supabase";
 import { createTypedSupabaseClient } from "@/lib/supabase-typed";
 import { createAthleteInviteService, createAthleteInviteSupabaseRepository } from "@/services/athlete-invites";
+import { createAthleteLifecycleService, shouldUseAthleteLifecycleV2 } from "@/services/athlete-lifecycle";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AuthPage from "@/components/auth/AuthPage";
 
 import Header from "@/components/layout/Header";
@@ -141,8 +143,11 @@ const [athleteGroups, setAthleteGroups] = useState([]);
 const [athleteGroupMembers, setAthleteGroupMembers] = useState([]);
 const [newGroupName, setNewGroupName] = useState("");
 const [planningTargetType, setPlanningTargetType] = useState("athlete");
-const [selectedGroupId, setSelectedGroupId] = useState("");
-const [auth, setAuth] = useState(null);
+	const [selectedGroupId, setSelectedGroupId] = useState("");
+	const [auth, setAuth] = useState(null);
+	const [athleteLifecycleV2Enabled, setAthleteLifecycleV2Enabled] = useState(false);
+	const [athleteLifecyclePendingAthleteId, setAthleteLifecyclePendingAthleteId] = useState(null);
+	const athleteLifecycleLocksRef = useRef(new Set());
 
 async function loadAllData() {
   const { data: athletesData, error: athletesError } = await supabase
@@ -432,6 +437,36 @@ useEffect(() => {
     setSelectedDate(new Date());
   }
 }, [auth]);
+
+const athleteLifecycleFeatureEnabled = isFeatureEnabled("accessControlV2")
+  && isFeatureEnabled("athleteLifecycleV2");
+const athleteLifecyclePilotEnabled = athleteLifecycleFeatureEnabled
+  && auth?.role === "coach"
+  && athleteLifecycleV2Enabled;
+
+useEffect(() => {
+  let active = true;
+
+  if (!athleteLifecycleFeatureEnabled || auth?.role !== "coach") {
+    return () => { active = false; };
+  }
+
+  void (async () => {
+    const client = createTypedSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const context = await loadAccessControlV2Context(
+      client as unknown as AccessContextRpcClient,
+      true,
+    );
+    if (active) {
+      setAthleteLifecycleV2Enabled(shouldUseAthleteLifecycleV2(context, true));
+    }
+  })();
+
+  return () => { active = false; };
+}, [athleteLifecycleFeatureEnabled, auth?.role]);
   const isCoach = auth?.role === "coach";
   const visibleAthletes = athletes.filter((row) => row.active !== false);
   const athleteActive =
@@ -818,7 +853,49 @@ async function logout() {
   setAuth(null);
   setView("calendar");
 }
+  async function runAthleteLifecycleV2(athleteId, operation) {
+  if (athleteLifecycleLocksRef.current.has(athleteId)) return false;
+
+  athleteLifecycleLocksRef.current.add(athleteId);
+  setAthleteLifecyclePendingAthleteId(athleteId);
+
+  try {
+    const client = createTypedSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const service = createAthleteLifecycleService(client);
+    const result = operation === "archive"
+      ? await service.archive(athleteId)
+      : await service.restore(athleteId);
+
+    if (result.kind === "error") {
+      alert(result.message);
+      return false;
+    }
+
+    await loadAllData();
+    return true;
+  } finally {
+    athleteLifecycleLocksRef.current.delete(athleteId);
+    setAthleteLifecyclePendingAthleteId(null);
+  }
+}
+
+async function setAthleteActive(athleteId, nextActive) {
+  if (athleteLifecyclePilotEnabled) {
+    return runAthleteLifecycleV2(athleteId, nextActive ? "restore" : "archive");
+  }
+
+  await updateAthlete("active", nextActive, athleteId);
+  return true;
+}
+
   async function deleteAthlete(athleteId) {
+  if (athleteLifecyclePilotEnabled) {
+    return runAthleteLifecycleV2(athleteId, "archive");
+  }
+
   if (athletes.length <= 1) return;
 
   const ok = window.confirm(
@@ -1616,7 +1693,7 @@ async function validateAthleteGoalUpdate(goalValues) {
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
-    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, athleteGroups, athleteGroupMembers, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
+    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
 }

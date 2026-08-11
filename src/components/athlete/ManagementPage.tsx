@@ -12,6 +12,9 @@ export default function ManagementPage({
   addAthlete,
   deleteAthlete,
   updateAthlete,
+  setAthleteActive,
+  athleteLifecycleV2Enabled = false,
+  athleteLifecyclePendingAthleteId = null,
 
   athleteGroups = [],
   athleteGroupMembers = [],
@@ -23,6 +26,7 @@ export default function ManagementPage({
   toggleAthleteGroupMember,
 }) {
  const [confirmDelete, setConfirmDelete] = useState(null);
+const [archivePending, setArchivePending] = useState(false);
 const [confirmGroupDelete, setConfirmGroupDelete] = useState(null);
 const [managementTab, setManagementTab] = useState("athletes");
   const [selectedAthleteId, setSelectedAthleteId] = useState(
@@ -151,7 +155,9 @@ const [managementTab, setManagementTab] = useState("athletes");
 
                         <button
                           type="button"
-                          onClick={() => updateSelectedAthlete("active", selectedAthlete.active === false)}
+                          onClick={() => setAthleteActive
+                            ? setAthleteActive(selectedAthlete.id, selectedAthlete.active === false)
+                            : updateSelectedAthlete("active", selectedAthlete.active === false)}
                           className={`rounded-2xl px-4 py-2 text-sm font-bold ${
                             selectedAthlete.active === false
                               ? "bg-zinc-700 text-zinc-200"
@@ -193,30 +199,44 @@ const [managementTab, setManagementTab] = useState("athletes");
                   </div>
 
                   <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-                    <h3 className="mb-3 text-lg font-semibold">Suppression</h3>
+                    <h3 className="mb-3 text-lg font-semibold">{athleteLifecycleV2Enabled ? "Archivage" : "Suppression"}</h3>
                     <Btn
                       variant="danger"
                       onClick={() => setConfirmDelete(selectedAthlete.id)}
                       className={athletes.length <= 1 ? "opacity-40" : ""}
                       disabled={athletes.length <= 1}
                     >
-                      Supprimer cet athlète
+                      {athleteLifecycleV2Enabled ? "Archiver cet athlète" : "Supprimer cet athlète"}
                     </Btn>
 
                     {confirmDelete === selectedAthlete.id && (
                       <div className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4">
                         <div className="text-sm text-zinc-300">
-                          Confirmer la suppression de <b>{selectedAthlete.name}</b> ?
+                          {athleteLifecycleV2Enabled
+                            ? <>Archiver <b>{selectedAthlete.name}</b> ? Ses données seront conservées.</>
+                            : <>Confirmer la suppression de <b>{selectedAthlete.name}</b> ?</>}
                         </div>
                         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                           <Btn
                             variant="danger"
                             onClick={() => {
-                              deleteAthlete(selectedAthlete.id);
-                              setConfirmDelete(null);
+                              if (!athleteLifecycleV2Enabled) {
+                                deleteAthlete(selectedAthlete.id);
+                                setConfirmDelete(null);
+                                return;
+                              }
+                              if (archivePending) return;
+                              setArchivePending(true);
+                              void deleteAthlete(selectedAthlete.id).then(
+                                () => setConfirmDelete(null),
+                                () => undefined,
+                              ).finally(() => setArchivePending(false));
                             }}
+                            disabled={athleteLifecycleV2Enabled && (archivePending || athleteLifecyclePendingAthleteId === selectedAthlete.id)}
                           >
-                            Supprimer définitivement
+                            {athleteLifecycleV2Enabled
+                              ? archivePending || athleteLifecyclePendingAthleteId === selectedAthlete.id ? "Archivage..." : "Archiver"
+                              : "Supprimer définitivement"}
                           </Btn>
                           <Btn onClick={() => setConfirmDelete(null)}>Annuler</Btn>
                         </div>

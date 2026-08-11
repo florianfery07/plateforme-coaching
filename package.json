@@ -16,6 +16,7 @@
     "test:groups-v2:sql": "node scripts/test-groups-v2-sql.mjs",
     "test:groups-v2-bridge:sql": "node scripts/test-groups-v2-bridge-sql.mjs",
     "test:athlete-invites-v2:sql": "node scripts/test-athlete-invites-v2-sql.mjs",
+    "test:athlete-lifecycle-v2:sql": "node scripts/test-athlete-lifecycle-v2-sql.mjs",
     "local:groups-v2:bootstrap": "node scripts/bootstrap-groups-v2-local.mjs"
   },
   "dependencies": {

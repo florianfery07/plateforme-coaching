@@ -39,6 +39,14 @@ export const featureFlagRegistry = {
     removal: "Remove after secure invitations V2 have replaced the legacy invitation flow.",
     stage: "pilot",
   },
+  athleteLifecycleV2: {
+    description: "Pilot-only atomic athlete archive and restoration backed by Access Control V2.",
+    defaultValue: false,
+    environmentVariable: "NEXT_PUBLIC_FEATURE_ATHLETE_LIFECYCLE_V2",
+    owner: "Platform",
+    removal: "Remove after the audited athlete lifecycle has replaced the legacy destructive flow.",
+    stage: "pilot",
+  },
   reliableMutationsV2: {
     description: "Future progressive replacement for legacy mutation reliability flows.",
     defaultValue: false,

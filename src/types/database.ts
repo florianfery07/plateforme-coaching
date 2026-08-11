@@ -6,6 +6,7 @@
  * Source: supabase/migrations/20260714010000_groups_v2_foundation.sql (ecc6d5792ad0b9186749ce848bc48de2b82ab5871c0782e0efcc72c3a0132dad)
  * Source: supabase/migrations/20260715010000_groups_v2_mapping_bridge.sql (71d91feacd980283d9ee23807ee21dc6e53ff570071a5e12cd6c59d04acf9358)
  * Source: supabase/migrations/20260716000000_secure_athlete_invites_v2.sql (5f8ee0889662e491256b92244e8f8fc288ecc8c243f19f9681d33d08ea643535)
+ * Source: supabase/migrations/20260811000000_athlete_lifecycle_v2.sql (03106e71a7e01b2decd1617acfddc568cb715cabb7d3958eaed979f59e09a9d1)
  * Regenerate: npm run generate:types
  */
 
@@ -959,6 +960,12 @@ export type Database = {
         }
         Returns: Json
       }
+      "archive_legacy_athlete_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+        }
+        Returns: Json
+      }
       "cancel_group_session_v2": {
         Args: {
           "p_group_session_id": string
@@ -1042,6 +1049,12 @@ export type Database = {
       "resolve_legacy_group_bridge_v2": {
         Args: {
           "p_legacy_group_id": string
+        }
+        Returns: Json
+      }
+      "restore_legacy_athlete_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
         }
         Returns: Json
       }
@@ -1248,6 +1261,36 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      }
+      "athlete_lifecycle_events_v2": {
+        Row: {
+          "id": string,
+          "legacy_athlete_id": string,
+          "organization_id": string,
+          "athlete_membership_id": string,
+          "actor_user_id": string,
+          "event_type": string,
+          "created_at": string
+        }
+        Insert: {
+          "id"?: string
+          "legacy_athlete_id": string
+          "organization_id": string
+          "athlete_membership_id": string
+          "actor_user_id": string
+          "event_type": string
+          "created_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "legacy_athlete_id"?: string
+          "organization_id"?: string
+          "athlete_membership_id"?: string
+          "actor_user_id"?: string
+          "event_type"?: string
+          "created_at"?: string
+        }
+        Relationships: []
       }
       "coach_athlete_access": {
         Row: {

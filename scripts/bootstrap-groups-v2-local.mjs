@@ -14,6 +14,7 @@ const bootstrapFiles = [
   "supabase/migrations/20260714010000_groups_v2_foundation.sql",
   "supabase/migrations/20260715010000_groups_v2_mapping_bridge.sql",
   "supabase/migrations/20260716000000_secure_athlete_invites_v2.sql",
+  "supabase/migrations/20260811000000_athlete_lifecycle_v2.sql",
   "supabase/tests/groups-v2-local-fixture.sql",
   "supabase/tests/athlete-invites-v2-local-fixture.sql",
 ];
@@ -60,7 +61,7 @@ run(
 
 const verification = run(
   "docker",
-  ["exec", databaseContainer, "psql", "-tAc", "select to_regclass('public.athlete_groups') is not null and to_regclass('public.group_sessions_v2') is not null and to_regprocedure('public.resolve_legacy_group_bridge_v2(uuid)') is not null and to_regprocedure('public.consume_athlete_invite_v2(text)') is not null;", "-U", "postgres", "-d", "postgres"],
+  ["exec", databaseContainer, "psql", "-tAc", "select to_regclass('public.athlete_groups') is not null and to_regclass('public.group_sessions_v2') is not null and to_regprocedure('public.resolve_legacy_group_bridge_v2(uuid)') is not null and to_regprocedure('public.consume_athlete_invite_v2(text)') is not null and to_regprocedure('public.archive_legacy_athlete_v2(uuid)') is not null and to_regprocedure('public.restore_legacy_athlete_v2(uuid)') is not null;", "-U", "postgres", "-d", "postgres"],
 ).trim();
 if (verification !== "t") throw new Error("Local Groups V2 bootstrap verification failed.");
 

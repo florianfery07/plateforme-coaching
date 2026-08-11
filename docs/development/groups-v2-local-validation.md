@@ -20,7 +20,9 @@ the Docker PostgreSQL container:
 2. L05 Access Control V2 migration;
 3. L09 Groups V2 migration;
 4. L09bis legacy-to-Groups V2 bridge migration;
-5. `supabase/tests/groups-v2-local-fixture.sql` (synthetic local data).
+5. L11 secure athlete invitations V2 migration;
+6. L12 athlete lifecycle V2 migration;
+7. `supabase/tests/groups-v2-local-fixture.sql` (synthetic local data).
 
 The baseline remains outside `supabase/migrations/`: it is historical DDL,
 not a deployable migration. Re-running the bootstrap resets the local database
