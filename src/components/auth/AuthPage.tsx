@@ -1,7 +1,9 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useReliableMutation } from "@/hooks/use-reliable-mutation";
+import { isFeatureEnabled } from "@/lib/features";
 
 function PasswordInput({ value, onChange, placeholder }) {
   const [visible, setVisible] = useState(false);
@@ -27,6 +29,12 @@ function PasswordInput({ value, onChange, placeholder }) {
   );
 }
 
+function invitationTokenFromLocation() {
+  const queryToken = new URLSearchParams(window.location.search).get("invite");
+  const fragmentToken = new URLSearchParams(window.location.hash.slice(1)).get("invite");
+  return fragmentToken || queryToken || window.history.state?.athleteInviteToken || "";
+}
+
 export default function AuthPage({
   athletes,
   loginCoach,
@@ -41,13 +49,36 @@ export default function AuthPage({
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePassword, setInvitePassword] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
+  const [inviteToken, setInviteToken] = useState("");
 
-  const inviteToken =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("invite")
-      : "";
+  useEffect(() => {
+    const synchronizeInvitation = () => {
+      const token = invitationTokenFromLocation();
+      if (!token) {
+        setInviteToken("");
+        return;
+      }
+      if (window.location.hash) {
+        window.history.replaceState(
+          { ...window.history.state, athleteInviteToken: token },
+          "",
+          `${window.location.pathname}${window.location.search}`,
+        );
+      }
+      setInviteToken(token);
+    };
 
-  const invitedAthlete = inviteToken
+    synchronizeInvitation();
+    window.addEventListener("hashchange", synchronizeInvitation);
+    return () => window.removeEventListener("hashchange", synchronizeInvitation);
+  }, []);
+
+  const isV2Invite = /^v2i_[0-9a-f]{64}$/.test(inviteToken || "");
+  const v2InviteEnabled = isV2Invite
+    && isFeatureEnabled("accessControlV2")
+    && isFeatureEnabled("athleteInvitesV2");
+
+  const invitedAthlete = inviteToken && !isV2Invite
     ? athletes.find((row) => row.inviteToken === inviteToken)
     : null;
 
@@ -87,26 +118,34 @@ export default function AuthPage({
       return;
     }
 
-    const result = await acceptInvite(
-      inviteToken,
-      inviteEmail.trim(),
-      invitePassword
-    );
+    const mutation = await inviteMutation.mutate({
+      token: inviteToken,
+      email: inviteEmail.trim(),
+      password: invitePassword,
+    });
+    const result = mutation.data;
 
-    if (!result.ok) {
-      setInviteMessage(result.message);
+    if (mutation.state !== "success" || !result?.ok) {
+      setInviteMessage(result?.message || "Cette invitation est indisponible ou n’est plus valide.");
       return;
     }
 
     setInviteMessage("Compte créé. Connexion en cours...");
   }
 
+  const inviteMutation = useReliableMutation({
+    key: `athlete-invite-accept:${inviteToken || "none"}`,
+    concurrency: "reject",
+    type: "athlete-invite-v2-consume",
+    operation: async (input) => acceptInvite(input.token, input.email, input.password),
+  });
+
   if (inviteToken) {
     return (
       <main className="min-h-screen bg-zinc-950 px-4 py-6 text-zinc-950 sm:px-6">
         <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-md items-center">
-          <section className="w-full rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
-            <div className="mb-6">
+      <section className="w-full rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+        <div className="mb-6">
               <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">
                 MyRidePlan
               </p>
@@ -115,7 +154,9 @@ export default function AuthPage({
                 Invitation athlète
               </h1>
 
-              {invitedAthlete ? (
+              {v2InviteEnabled ? (
+                <p className="mt-2 text-sm leading-6 text-zinc-600">Crée ton compte pour activer ton accès athlète.</p>
+              ) : invitedAthlete ? (
                 <p className="mt-2 text-sm leading-6 text-zinc-600">
                   Crée ton compte pour accéder au calendrier de{" "}
                   <span className="font-semibold text-zinc-950">
@@ -125,7 +166,7 @@ export default function AuthPage({
                 </p>
               ) : (
                 <p className="mt-2 text-sm leading-6 text-red-700">
-                  Invitation introuvable. Vérifie que le lien est complet.
+                  {isV2Invite ? "Ce pilote d’invitation sécurisée n’est pas disponible." : "Invitation introuvable. Vérifie que le lien est complet."}
                 </p>
               )}
             </div>
@@ -136,7 +177,7 @@ export default function AuthPage({
               </div>
             )}
 
-            {invitedAthlete && (
+            {(invitedAthlete || v2InviteEnabled) && (
               <form onSubmit={submitInvite} className="space-y-4">
                 <input
                   className="min-h-12 w-full rounded-2xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none"
@@ -156,7 +197,7 @@ export default function AuthPage({
                   className="min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white"
                   type="submit"
                 >
-                  Créer mon compte athlète
+                  {inviteMutation.pending ? "Création..." : "Créer mon compte athlète"}
                 </button>
               </form>
             )}

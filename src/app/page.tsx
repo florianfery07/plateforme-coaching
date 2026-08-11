@@ -47,6 +47,8 @@ import {
 import { getColorClass } from "@/lib/colors";
 import { isFeatureEnabled } from "@/lib/features";
 import { supabase } from "@/lib/supabase";
+import { createTypedSupabaseClient } from "@/lib/supabase-typed";
+import { createAthleteInviteService, createAthleteInviteSupabaseRepository } from "@/services/athlete-invites";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useState } from "react";
@@ -752,18 +754,25 @@ async function loginAthlete(email, password) {
   return true;
 }
 async function acceptInvite(inviteToken, email, password) {
-  const athleteToLink = athletes.find(
-    (row) => row.inviteToken === inviteToken
-  );
+  const isV2Invite = /^v2i_[0-9a-f]{64}$/.test(inviteToken || "");
+  const v2InviteEnabled = isV2Invite
+    && isFeatureEnabled("accessControlV2")
+    && isFeatureEnabled("athleteInvitesV2");
+  if (isV2Invite && !v2InviteEnabled) {
+    return { ok: false, message: "Ce pilote d’invitation sécurisée n’est pas disponible." };
+  }
+  const athleteToLink = isV2Invite
+    ? undefined
+    : athletes.find((row) => row.inviteToken === inviteToken);
 
-    if (athleteToLink?.user_id) {
+  if (!v2InviteEnabled && athleteToLink?.user_id) {
     return {
       ok: false,
       message: "Invitation déjà utilisée.",
     };
   }
 
-  if (!athleteToLink) {
+  if (!v2InviteEnabled && !athleteToLink) {
     return {
       ok: false,
       message: "Invitation introuvable ou invalide.",
@@ -787,6 +796,25 @@ async function acceptInvite(inviteToken, email, password) {
       ok: false,
       message: "Compte créé, mais utilisateur non récupéré.",
     };
+  }
+
+  if (v2InviteEnabled) {
+    if (!data.session) {
+      return { ok: false, message: "Compte créé. Confirmez votre email puis reconnectez-vous avec le même lien." };
+    }
+    const service = createAthleteInviteService(createAthleteInviteSupabaseRepository(
+      createTypedSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!),
+    ));
+    const consumption = await service.consume(inviteToken);
+    if (consumption.kind === "error") {
+      await supabase.auth.signOut();
+      return { ok: false, message: consumption.message };
+    }
+    setAuth({ role: "athlete", athleteId: consumption.legacyAthleteId });
+    setActiveId(consumption.legacyAthleteId);
+    setView("calendar");
+    await loadAllData();
+    return { ok: true, message: "Compte athlète créé et lié." };
   }
 
   const { error: updateError } = await supabase.rpc(

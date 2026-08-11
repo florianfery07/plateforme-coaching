@@ -13,6 +13,7 @@ describe("feature flags", () => {
     expect(resolveFeatureFlags()).toEqual({
       groupsV2: false,
       accessControlV2: false,
+      athleteInvitesV2: false,
       reliableMutationsV2: false,
     });
   });

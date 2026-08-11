@@ -5,6 +5,7 @@
  * Source: supabase/migrations/20260714000000_access_control_v2_foundation.sql (a3adbe401dc3a205423d604a51ce79459d5dd3600b95d06627fc83f87c5337df)
  * Source: supabase/migrations/20260714010000_groups_v2_foundation.sql (ecc6d5792ad0b9186749ce848bc48de2b82ab5871c0782e0efcc72c3a0132dad)
  * Source: supabase/migrations/20260715010000_groups_v2_mapping_bridge.sql (71d91feacd980283d9ee23807ee21dc6e53ff570071a5e12cd6c59d04acf9358)
+ * Source: supabase/migrations/20260716000000_secure_athlete_invites_v2.sql (5f8ee0889662e491256b92244e8f8fc288ecc8c243f19f9681d33d08ea643535)
  * Regenerate: npm run generate:types
  */
 
@@ -965,6 +966,19 @@ export type Database = {
         }
         Returns: Json
       }
+      "consume_athlete_invite_v2": {
+        Args: {
+          "p_token": string
+        }
+        Returns: Json
+      }
+      "create_athlete_invite_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+          "p_coach_membership_id": string
+        }
+        Returns: Json
+      }
       "create_group_session_v2": {
         Args: {
           "p_organization_id": string
@@ -1010,6 +1024,13 @@ export type Database = {
         }
         Returns: string
       }
+      "list_athlete_invites_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+          "p_coach_membership_id": string
+        }
+        Returns: Json
+      }
       "remove_group_session_participant_v2": {
         Args: {
           "p_group_session_id": string
@@ -1021,6 +1042,13 @@ export type Database = {
       "resolve_legacy_group_bridge_v2": {
         Args: {
           "p_legacy_group_id": string
+        }
+        Returns: Json
+      }
+      "revoke_athlete_invite_v2": {
+        Args: {
+          "p_invite_id": string
+          "p_coach_membership_id": string
         }
         Returns: Json
       }
@@ -1143,6 +1171,80 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      "athlete_invites": {
+        Row: {
+          "id": string,
+          "organization_id": string,
+          "coach_membership_id": string,
+          "legacy_athlete_id": string,
+          "token_hash": string,
+          "status": string,
+          "expires_at": string,
+          "consumed_at": string | null,
+          "consumed_by_user_id": string | null,
+          "revoked_at": string | null,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "id"?: string
+          "organization_id": string
+          "coach_membership_id": string
+          "legacy_athlete_id": string
+          "token_hash": string
+          "status"?: string
+          "expires_at": string
+          "consumed_at"?: string | null
+          "consumed_by_user_id"?: string | null
+          "revoked_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "organization_id"?: string
+          "coach_membership_id"?: string
+          "legacy_athlete_id"?: string
+          "token_hash"?: string
+          "status"?: string
+          "expires_at"?: string
+          "consumed_at"?: string | null
+          "consumed_by_user_id"?: string | null
+          "revoked_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_invites_consumed_by_user_id_fkey"
+            columns: ["consumed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_invites_legacy_athlete_id_fkey"
+            columns: ["legacy_athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_invites_organization_id_coach_membership_id_fkey"
+            columns: ["organization_id","coach_membership_id"]
+            isOneToOne: false
+            referencedRelation: "organization_memberships"
+            referencedColumns: ["organization_id","id"]
+          },
+          {
+            foreignKeyName: "athlete_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           }
         ]

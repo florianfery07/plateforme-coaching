@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/ui";
 
 import CP from "@/components/athlete/CP";
+import AthleteInviteV2Panel from "@/components/athlete/AthleteInviteV2Panel";
 import { supabase } from "@/lib/supabase";
 
 export default function AthleteProfilePage({
@@ -543,6 +544,8 @@ export default function AthleteProfilePage({
                 </div>
               </div>
             </div>
+
+            <AthleteInviteV2Panel athleteId={a.id} />
           </>
         )}
       </Panel>
