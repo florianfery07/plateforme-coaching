@@ -37,6 +37,8 @@ import {
   loadCalendarProposals,
 } from "@/services/calendar-proposals";
 import { calendarProposalsRepository } from "@/services/calendar-proposals-repository";
+import { loadWeeklyPlanning } from "@/services/weekly-planning";
+import { weeklyPlanningRepository } from "@/services/weekly-planning-repository";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -289,25 +291,10 @@ if (weekNoteData) {
     )
   );
 }
-const { data: weekPlanningData } = await supabase
-  .from("athlete_week_planning")
-  .select("*");
+const weeklyPlanningResult = await loadWeeklyPlanning(weeklyPlanningRepository);
 
-if (weekPlanningData) {
-  setWeekPlanning(
-    Object.fromEntries(
-      weekPlanningData.map((row) => [
-        `${row.athlete_id}-${row.year}-${row.week}`,
-        {
-          goal: row.goal || "Off",
-          category: row.category || "",
-          subcategory: row.subcategory || "",
-          status: row.status || "planned",
-          coachComment: row.coach_comment || "",
-        },
-      ])
-    )
-  );
+if (weeklyPlanningResult.kind === "success") {
+  setWeekPlanning(weeklyPlanningResult.planning);
 }
 try {
   const groupsResult = await loadAthleteGroups();
