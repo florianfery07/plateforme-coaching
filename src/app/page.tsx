@@ -31,6 +31,12 @@ import { createAthleteInviteService, createAthleteInviteSupabaseRepository } fro
 import { createAthleteLifecycleService, shouldUseAthleteLifecycleV2 } from "@/services/athlete-lifecycle";
 import { calendarSessionsForDate, loadCalendarSessions } from "@/services/calendar-sessions";
 import { calendarSessionsRepository } from "@/services/calendar-sessions-repository";
+import {
+  calendarProposalsForAthlete,
+  calendarProposalsForDate,
+  loadCalendarProposals,
+} from "@/services/calendar-proposals";
+import { calendarProposalsRepository } from "@/services/calendar-proposals-repository";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -248,25 +254,12 @@ const { data: subcategoryData } = await supabase
 if (subcategoryData?.length) {
   setSubcategories(subcategoryData);
 }
-const { data: proposalData } = await supabase
-  .from("athlete_proposals")
-  .select("*")
-  .order("created_at", { ascending: false });
+const calendarProposalsResult = await loadCalendarProposals(
+  calendarProposalsRepository,
+);
 
-if (proposalData) {
-  setProposals(
-    proposalData
-      .filter((row) => !["Refusée", "Programmée"].includes(row.status))
-      .map((row) => ({
-        id: row.id,
-        athleteId: row.athlete_id,
-        date: row.date,
-        type: row.type,
-        title: row.title,
-        message: row.message,
-        status: row.status || "À traiter",
-      }))
-  );
+if (calendarProposalsResult.kind === "success") {
+  setProposals(calendarProposalsResult.proposals);
 }
 const { data: weekColorData } = await supabase
   .from("athlete_week_colors")
@@ -428,7 +421,7 @@ useEffect(() => {
   const cpData = criticalPower(athleteActive?.power5, athleteActive?.power12, athleteActive?.power20, athleteActive?.weight);
   const days = useMemo(() => monthDays(year, month), [year, month]);
   const activeSessions = sessions[activeId] || [];
-  const activeProposals = proposals.filter((proposal) => proposal.athleteId === activeId);
+  const activeProposals = calendarProposalsForAthlete(proposals, activeId);
   const selectedGroup = athleteGroups.find((group) => group.id === selectedGroupId);
   const selectedGroupMembers = athleteGroupMembers.filter(
     (member) => member.group_id === selectedGroupId
@@ -1459,7 +1452,7 @@ async function updateWeekNote(year, week, value) {
 }
 
   const sessionsFor = (date) => calendarSessionsForDate(activeSessions, dateKey(date));
-  const proposalsFor = (date) => activeProposals.filter((proposal) => proposal.date === dateKey(date));
+  const proposalsFor = (date) => calendarProposalsForDate(activeProposals, dateKey(date));
  const programProposal = async (proposal) => {
   const alreadyExists = activeSessions.some(
     (session) => session.sourceProposalId === proposal.id
