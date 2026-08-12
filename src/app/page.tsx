@@ -29,6 +29,8 @@ import { supabase } from "@/lib/supabase";
 import { createTypedSupabaseClient } from "@/lib/supabase-typed";
 import { createAthleteInviteService, createAthleteInviteSupabaseRepository } from "@/services/athlete-invites";
 import { createAthleteLifecycleService, shouldUseAthleteLifecycleV2 } from "@/services/athlete-lifecycle";
+import { calendarSessionsForDate, loadCalendarSessions } from "@/services/calendar-sessions";
+import { calendarSessionsRepository } from "@/services/calendar-sessions-repository";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -185,71 +187,21 @@ async function loadAllData() {
     }))
   : [];
 
-  const { data: workoutsData, error: workoutsError } = await supabase
-    .from("calendar_workouts")
-    .select(`
-      *,
-      workout_feedbacks (*)
-    `);
-
-  if (workoutsError) {
-    console.error("Erreur chargement séances", workoutsError);
-    return;
-  }
-
-  const grouped = Object.fromEntries(
-    loadedAthletes.map((row) => [row.id, []])
+  const calendarSessionsResult = await loadCalendarSessions(
+    calendarSessionsRepository,
+    loadedAthletes.map((row) => row.id),
   );
 
-  workoutsData?.forEach((row) => {
-    const feedback = Array.isArray(row.workout_feedbacks)
-      ? row.workout_feedbacks[0]
-      : row.workout_feedbacks;
-
-    if (!grouped[row.athlete_id]) grouped[row.athlete_id] = [];
-
-    grouped[row.athlete_id].push({
-      id: row.id,
-      athleteSeenAt: row.athlete_seen_at || null,
-      category: row.workout_type || "Séance",
-      subcategory: row.subcategory || "",
-      title: row.title || "Séance",
-      totalDuration: row.duration || "",
-      expectedRpe: row.expected_rpe_global || row.expected_rpe || "",
-      expectedRpeGlobal: row.expected_rpe_global || row.expected_rpe || "",
-      expectedSpecificDuration: row.expected_specific_duration || "",
-      adjustedSpecificDuration: row.adjusted_specific_duration || "",
-      expectedRpeSpecific: row.expected_rpe_specific || "",
-      description: row.description || "",
-      date: row.date,
-      blocks: row.blocks || [],
-      feedback: {
-        ...blankFeedback(),
-        actualTime: feedback?.real_duration || "",
-        rpe: feedback?.rpe_global ? String(feedback.rpe_global) : feedback?.rpe ? String(feedback.rpe) : "",
-        rpeGlobal: feedback?.rpe_global ? String(feedback.rpe_global) : feedback?.rpe ? String(feedback.rpe) : "",
-        rpeSpecific: feedback?.rpe_specific ? String(feedback.rpe_specific) : "",
-        motivation: feedback?.motivation ? String(feedback.motivation) : "",
-        pleasure: feedback?.pleasure ? String(feedback.pleasure) : "",
-        comment: feedback?.comment || "",
-        validated: Boolean(row.completed),
-      },
-      nonDone: {
-  ...blankNonDone(),
-  validated: Boolean(row.non_done),
-  reason: row.non_done_reason || "",
-  fatigue: row.non_done_fatigue || "",
-  pain: row.non_done_pain || "",
-  comment: row.non_done_comment || "",
-},
-    });
-  });
+  if (calendarSessionsResult.kind === "error") {
+    console.error("Erreur chargement séances", calendarSessionsResult.error);
+    return;
+  }
 
   setAthletes(loadedAthletes);
   if (loadedAthletes.length && !loadedAthletes.some((row) => row.id === activeId)) {
     setActiveId(loadedAthletes[0].id);
   }
-  setSessions(grouped);
+  setSessions(calendarSessionsResult.sessions);
 
 const { data: libraryData, error: libraryError } = await supabase
   .from("workout_library")
@@ -1506,7 +1458,7 @@ async function updateWeekNote(year, week, value) {
   }
 }
 
-  const sessionsFor = (date) => activeSessions.filter((session) => session.date === dateKey(date));
+  const sessionsFor = (date) => calendarSessionsForDate(activeSessions, dateKey(date));
   const proposalsFor = (date) => activeProposals.filter((proposal) => proposal.date === dateKey(date));
  const programProposal = async (proposal) => {
   const alreadyExists = activeSessions.some(
