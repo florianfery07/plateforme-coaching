@@ -42,6 +42,8 @@ import { weeklyPlanningRepository } from "@/services/weekly-planning-repository"
 import { loadWeeklyColors } from "@/services/weekly-colors";
 import { weeklyColorsRepository } from "@/services/weekly-colors-repository";
 import { loadWeekNotes, supabaseWeekNoteRepository } from "@/services/week-notes";
+import { filterWorkoutLibrary, loadWorkoutLibrary } from "@/services/workout-library";
+import { workoutLibraryRepository } from "@/services/workout-library-repository";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -214,32 +216,15 @@ async function loadAllData() {
   }
   setSessions(calendarSessionsResult.sessions);
 
-const { data: libraryData, error: libraryError } = await supabase
-  .from("workout_library")
-  .select("*")
-  .order("created_at", { ascending: false });
+const workoutLibraryResult = await loadWorkoutLibrary(workoutLibraryRepository);
 
-if (libraryError) {
-  console.error("Erreur chargement bibliothèque", libraryError);
+if (workoutLibraryResult.kind === "error") {
+  console.error("Erreur chargement bibliothèque", workoutLibraryResult.error);
   return;
 }
 
-if (libraryData) {
-  setLibrary(
-    libraryData.map((row) => ({
-      id: row.id,
-      category: row.category || "Route",
-      subcategory: row.subcategory || "",
-      title: row.title || "",
-      totalDuration: row.total_duration || "",
-      expectedRpe: row.expected_rpe_global || row.expected_rpe || "",
-      expectedRpeGlobal: row.expected_rpe_global || row.expected_rpe || "",
-      expectedSpecificDuration: row.expected_specific_duration || "",
-      expectedRpeSpecific: row.expected_rpe_specific || "",
-      description: row.description || "",
-      blocks: row.blocks || [],
-    }))
-  );
+if (workoutLibraryResult.library) {
+  setLibrary(workoutLibraryResult.library);
 }
 
 const { data: categoryData } = await supabase
@@ -399,12 +384,7 @@ useEffect(() => {
     (member) => member.group_id === selectedGroupId
   );
   const selectedGroupAthleteIds = selectedGroupMembers.map((member) => member.athlete_id);
-  const filteredLibrary = library.filter((workout) => {
-  const categoryOk = !filter.category || workout.category === filter.category;
-  const subcategoryOk = !filter.subcategory || workout.subcategory === filter.subcategory;
-
-  return categoryOk && subcategoryOk;
-});
+  const filteredLibrary = filterWorkoutLibrary(library, filter);
   const done = activeSessions.filter((session) => feedbackDone(session.feedback));
   const notDone = activeSessions.filter((session) => session.nonDone?.validated);
   const plannedDurationHours = activeSessions.reduce(
