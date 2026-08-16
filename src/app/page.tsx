@@ -41,6 +41,7 @@ import { loadWeeklyPlanning } from "@/services/weekly-planning";
 import { weeklyPlanningRepository } from "@/services/weekly-planning-repository";
 import { loadWeeklyColors } from "@/services/weekly-colors";
 import { weeklyColorsRepository } from "@/services/weekly-colors-repository";
+import { loadWeekNotes, supabaseWeekNoteRepository } from "@/services/week-notes";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -270,19 +271,10 @@ const weeklyColorsResult = await loadWeeklyColors(weeklyColorsRepository);
 if (weeklyColorsResult.kind === "success") {
   setWeekColors(weeklyColorsResult.colors);
 }
-const { data: weekNoteData } = await supabase
-  .from("athlete_week_notes")
-  .select("*");
+const weekNotesResult = await loadWeekNotes(supabaseWeekNoteRepository);
 
-if (weekNoteData) {
-  setWeekNotes(
-    Object.fromEntries(
-      weekNoteData.map((row) => [
-        `${row.athlete_id}-${row.year}-${row.week}`,
-        row.note || "",
-      ])
-    )
-  );
+if (weekNotesResult.kind === "success") {
+  setWeekNotes(weekNotesResult.notes);
 }
 const weeklyPlanningResult = await loadWeeklyPlanning(weeklyPlanningRepository);
 

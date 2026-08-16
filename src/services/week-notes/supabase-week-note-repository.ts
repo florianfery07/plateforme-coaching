@@ -1,8 +1,14 @@
 import { supabase } from "../../lib/supabase";
 
-import type { WeekNoteRepository } from "./types";
+import type { WeekNoteReadRepository, WeekNoteRepository } from "./types";
 
-export const supabaseWeekNoteRepository: WeekNoteRepository = {
+export const supabaseWeekNoteRepository: WeekNoteRepository & WeekNoteReadRepository = {
+  async list() {
+    return supabase
+      .from("athlete_week_notes")
+      .select("athlete_id, year, week, note");
+  },
+
   async upsert(payload, signal) {
     const { data, error } = await supabase
       .from("athlete_week_notes")

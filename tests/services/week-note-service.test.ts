@@ -2,10 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createWeekNoteService,
+  loadWeekNotes,
+  mapWeekNotes,
   mapWeekNotePersistenceError,
   validateWeekNotePayload,
 } from "../../src/services/week-notes/week-note-service";
 import type {
+  WeekNoteReadRepository,
+  WeekNoteRow,
   WeekNotePayload,
   WeekNoteRepository,
 } from "../../src/services/week-notes/types";
@@ -19,6 +23,25 @@ const payload: WeekNotePayload = {
 
 function repository(result: Awaited<ReturnType<WeekNoteRepository["upsert"]>>): WeekNoteRepository {
   return { upsert: vi.fn().mockResolvedValue(result) };
+}
+
+function noteRow(overrides: Partial<WeekNoteRow> = {}): WeekNoteRow {
+  return {
+    id: "note-1",
+    athlete_id: "athlete-1",
+    year: 2026,
+    week: "S12",
+    note: "Build steadily.",
+    created_at: "2026-08-12T10:00:00.000Z",
+    updated_at: "2026-08-12T10:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function readRepository(
+  result: Awaited<ReturnType<WeekNoteReadRepository["list"]>>,
+): WeekNoteReadRepository {
+  return { list: vi.fn().mockResolvedValue(result) };
 }
 
 describe("week note service", () => {
@@ -88,5 +111,65 @@ describe("week note service", () => {
 
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+
+  it("keeps the legacy empty note result when no rows are returned", () => {
+    expect(mapWeekNotes(null)).toEqual({});
+  });
+
+  it("maps notes by their exact legacy athlete, year, and week key", () => {
+    const rows = [
+      noteRow({ athlete_id: "athlete-1", year: 2025, week: "S52" }),
+      noteRow({ athlete_id: "athlete-1", year: 2026, week: "S12" }),
+      noteRow({ athlete_id: "athlete-2", year: 2026, week: "S12" }),
+    ];
+
+    expect(mapWeekNotes(rows)).toEqual({
+      "athlete-1-2025-S52": "Build steadily.",
+      "athlete-1-2026-S12": "Build steadily.",
+      "athlete-2-2026-S12": "Build steadily.",
+    });
+  });
+
+  it("preserves legacy empty and null note defaults", () => {
+    expect(mapWeekNotes([
+      noteRow({ week: "S12", note: "" }),
+      noteRow({ week: "S13", note: null }),
+    ])).toEqual({
+      "athlete-1-2026-S12": "",
+      "athlete-1-2026-S13": "",
+    });
+  });
+
+  it("preserves the legacy duplicate behavior, where the final row wins", () => {
+    const rows = [
+      noteRow({ id: "note-old", note: "Old" }),
+      noteRow({ id: "note-new", note: "New" }),
+    ];
+
+    expect(mapWeekNotes(rows)["athlete-1-2026-S12"]).toBe("New");
+    expect(rows.map((row) => row.id)).toEqual(["note-old", "note-new"]);
+  });
+
+  it("returns a read error without preparing partial notes", async () => {
+    const source = readRepository({ data: null, error: { message: "unavailable" } });
+
+    await expect(loadWeekNotes(source)).resolves.toEqual({
+      kind: "error",
+      error: { message: "unavailable" },
+    });
+  });
+
+  it("keeps read and write contracts together without invoking persistence during a read", async () => {
+    const writes = repository({ data: { ...payload, updatedAt: null }, error: null });
+    const reads = readRepository({ data: [noteRow()], error: null });
+    const source: WeekNoteRepository & WeekNoteReadRepository = { ...reads, ...writes };
+
+    await expect(loadWeekNotes(source)).resolves.toEqual({
+      kind: "success",
+      notes: { "athlete-1-2026-S12": "Build steadily." },
+    });
+    expect(source.list).toHaveBeenCalledOnce();
+    expect(source.upsert).not.toHaveBeenCalled();
   });
 });

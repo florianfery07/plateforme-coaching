@@ -33,9 +33,10 @@ describe("weekly note reliable-mutation pilot guard", () => {
 
     expect(weekDetail).toContain("useWeekNoteAutosave");
     expect(sourceReferences).toEqual([
-      "src/app/page.tsx", // legacy read, cleanup and calendar-editor write
+      "src/app/page.tsx", // legacy cleanup and calendar-editor write
       "src/components/athlete/WeekDetail.tsx", // selected L08b pilot plus legacy fallback
-      "src/services/week-notes/supabase-week-note-repository.ts", // pilot V2 write
+      "src/services/week-notes/supabase-week-note-repository.ts", // pilot V2 write and L13e read
+      "src/services/week-notes/types.ts", // typed L13e read contract
       "src/types/database.ts", // generated database contract
     ]);
     expect(directWeekNoteWrites).toEqual([

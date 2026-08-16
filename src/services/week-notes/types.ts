@@ -1,4 +1,10 @@
 import type { MutationError } from "../mutations";
+import type { Database } from "../../types/database";
+
+export type WeekNoteRow =
+  Database["public"]["Tables"]["athlete_week_notes"]["Row"];
+
+export type WeekNotes = Record<string, string>;
 
 export type WeekNotePayload = {
   athleteId: string;
@@ -25,6 +31,17 @@ export type WeekNoteRepository = {
     error: WeekNotePersistenceError | null;
   }>;
 };
+
+export type WeekNoteReadRepository = {
+  list: () => Promise<{
+    data: WeekNoteRow[] | null;
+    error: unknown;
+  }>;
+};
+
+export type WeekNoteLoadResult =
+  | { kind: "success"; notes: WeekNotes }
+  | { kind: "error"; error: unknown };
 
 export type WeekNoteService = {
   save: (

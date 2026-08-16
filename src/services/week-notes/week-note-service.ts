@@ -2,9 +2,13 @@ import type { MutationError } from "../mutations";
 
 import type {
   WeekNotePayload,
+  WeekNoteLoadResult,
   WeekNotePersistenceError,
+  WeekNoteReadRepository,
   WeekNoteRepository,
   WeekNoteService,
+  WeekNoteRow,
+  WeekNotes,
 } from "./types";
 
 const errorMessages: Record<MutationError["kind"], string> = {
@@ -61,6 +65,26 @@ export function validateWeekNotePayload(
   }
 
   return null;
+}
+
+/** Preserves the legacy weekly-note lookup shape while keeping it independent from React. */
+export function mapWeekNotes(rows: WeekNoteRow[] | null): WeekNotes {
+  return Object.fromEntries(
+    (rows ?? []).map((row) => [
+      `${row.athlete_id}-${row.year}-${row.week}`,
+      row.note || "",
+    ]),
+  );
+}
+
+export async function loadWeekNotes(
+  repository: WeekNoteReadRepository,
+): Promise<WeekNoteLoadResult> {
+  const { data, error } = await repository.list();
+
+  if (error) return { kind: "error", error };
+
+  return { kind: "success", notes: mapWeekNotes(data) };
 }
 
 export function createWeekNoteService(
