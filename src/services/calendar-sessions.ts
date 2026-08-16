@@ -38,6 +38,90 @@ export type CalendarSessionsRepository = {
   }>;
 };
 
+export type CalendarFeedback = {
+  actualTime: string;
+  comment: string;
+  motivation: string;
+  pleasure: string;
+  rpe: string;
+  rpeGlobal: string;
+  rpeSpecific: string;
+  validated: boolean;
+};
+
+export type CalendarFeedbackSaveInput = {
+  feedback: CalendarFeedback;
+  workoutId: string;
+};
+
+export type CalendarFeedbackPersistence = {
+  comment: string;
+  motivation: number | null;
+  pleasure: number | null;
+  real_duration: string;
+  rpe: number | null;
+  rpe_global: number | null;
+  rpe_specific: number | null;
+  workout_id: string;
+};
+
+export type CalendarFeedbackRepository = {
+  upsertFeedback: (
+    feedback: CalendarFeedbackPersistence,
+    signal?: AbortSignal,
+  ) => Promise<{ data: CalendarFeedbackPersistence | null; error: unknown }>;
+};
+
+export type CalendarFeedbackService = {
+  save: (
+    input: CalendarFeedbackSaveInput,
+    signal?: AbortSignal,
+  ) => Promise<CalendarFeedbackPersistence>;
+};
+
+function cleanFeedbackRpe(value: unknown): number | null {
+  const match = String(value || "").replace(",", ".").match(/[0-9.]+/);
+  return match ? Number(match[0]) : null;
+}
+
+/** Maps the existing session feedback shape to its single legacy persistence row. */
+export function toCalendarFeedbackPersistence(
+  input: CalendarFeedbackSaveInput,
+): CalendarFeedbackPersistence {
+  const { feedback, workoutId } = input;
+
+  return {
+    workout_id: workoutId,
+    rpe: cleanFeedbackRpe(feedback.rpeGlobal || feedback.rpe),
+    rpe_global: cleanFeedbackRpe(feedback.rpeGlobal || feedback.rpe),
+    rpe_specific: cleanFeedbackRpe(feedback.rpeSpecific),
+    motivation: feedback.motivation ? Number(feedback.motivation) : null,
+    pleasure: feedback.pleasure ? Number(feedback.pleasure) : null,
+    comment: feedback.comment || "",
+    real_duration: feedback.actualTime || "",
+  };
+}
+
+export function createCalendarFeedbackService(
+  repository: CalendarFeedbackRepository,
+): CalendarFeedbackService {
+  return {
+    async save(input, signal) {
+      if (!input.workoutId) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const feedback = toCalendarFeedbackPersistence(input);
+      const { data, error } = await repository.upsertFeedback(feedback, signal);
+
+      if (error) throw error;
+      if (!data) throw { kind: "unknown", retryable: false };
+
+      return data;
+    },
+  };
+}
+
 function feedbackFor(row: CalendarWorkoutWithFeedback): WorkoutFeedbackRow | null {
   return Array.isArray(row.workout_feedbacks)
     ? row.workout_feedbacks[0] ?? null

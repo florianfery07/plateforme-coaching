@@ -3,7 +3,10 @@
 
 import { sessionStatus, feedbackReady } from "@/lib/trainingUtils";
 import { statusLabel, statusStyle } from "@/lib/platformDefaults";
+import { isReliableMutationsPilotEnabled } from "@/lib/features/reliable-mutations-pilot";
 import { supabase } from "@/lib/supabase";
+import { useReliableMutation } from "@/hooks/use-reliable-mutation";
+import { calendarFeedbackService } from "@/services/calendar-sessions-repository";
 
 import {
   Btn,
@@ -30,8 +33,54 @@ export default function Session({
   const isRest =
   session.category?.toLowerCase() === "repos";
 
-  const changeFeedback = (field, value) =>
+  const feedbackPilotEnabled = isReliableMutationsPilotEnabled();
+  const patch = (fn) =>
+    updateSession((items) =>
+      items.map((item) => (item.id === session.id ? fn(item) : item))
+    );
+
+  const feedbackMutation = useReliableMutation({
+    concurrency: "serial",
+    key: `calendar-feedback:${session.id}`,
+    latestWins: true,
+    onMutate: ({ feedback, previousFeedback }) => {
+      patch((item) => ({ ...item, feedback }));
+      return () => patch((item) => ({ ...item, feedback: previousFeedback }));
+    },
+    operation: ({ feedback }, context) =>
+      calendarFeedbackService.save({ feedback, workoutId: session.id }, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "calendar-feedback.save",
+  });
+
+  const savePilotFeedback = (field, value) => {
+    const previousFeedback = session.feedback;
+    const feedback = {
+      ...previousFeedback,
+      [field]: value,
+      ...(field === "rpeGlobal" ? { rpe: value } : {}),
+    };
+
+    void feedbackMutation.mutate({ feedback, previousFeedback }).then((result) => {
+      if (result.state === "error") {
+        alert("Impossible d'enregistrer le retour. Réessaie.");
+      }
+    });
+  };
+
+  const changeFeedback = (field, value) => {
+    if (feedbackPilotEnabled && field !== "validated") {
+      draftFeedback(field, value);
+      return;
+    }
+
     updateFeedback(session.id, field, value);
+  };
 
   const draftFeedback = (field, value) =>
     patch((item) => ({
@@ -44,6 +93,11 @@ export default function Session({
     }));
 
   const saveFeedback = (field, value) => {
+    if (feedbackPilotEnabled && field !== "validated") {
+      savePilotFeedback(field, value);
+      return;
+    }
+
     updateFeedback(session.id, field, value);
 
     if (field === "rpeGlobal") {
@@ -140,11 +194,6 @@ function changeActualTimePart(part, value) {
 }
   const changeNonDone = (field, value) =>
     updateNonDone(session.id, field, value);
-
-  const patch = (fn) =>
-    updateSession((items) =>
-      items.map((item) => (item.id === session.id ? fn(item) : item))
-    );
    if (isRest) {
   return (
     <article className="rounded-3xl border border-blue-500 bg-blue-950 p-3 sm:p-5">
@@ -350,6 +399,9 @@ function changeActualTimePart(part, value) {
       onChange={(event) =>
         changeFeedback("rpeSpecific", cleanScore(event.target.value, 10))
       }
+      onBlur={feedbackPilotEnabled
+        ? (event) => saveFeedback("rpeSpecific", cleanScore(event.target.value, 10))
+        : undefined}
       type="number"
       inputMode="decimal"
       min="0"
@@ -364,6 +416,9 @@ function changeActualTimePart(part, value) {
       onChange={(event) =>
         changeFeedback("motivation", cleanScore(event.target.value, 10))
       }
+      onBlur={feedbackPilotEnabled
+        ? (event) => saveFeedback("motivation", cleanScore(event.target.value, 10))
+        : undefined}
       type="number"
       inputMode="decimal"
       min="0"
@@ -378,6 +433,9 @@ function changeActualTimePart(part, value) {
       onChange={(event) =>
         changeFeedback("pleasure", cleanScore(event.target.value, 5))
       }
+      onBlur={feedbackPilotEnabled
+        ? (event) => saveFeedback("pleasure", cleanScore(event.target.value, 5))
+        : undefined}
       type="number"
       inputMode="decimal"
       min="0"

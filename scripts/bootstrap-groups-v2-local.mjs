@@ -17,6 +17,7 @@ const bootstrapFiles = [
   "supabase/migrations/20260811000000_athlete_lifecycle_v2.sql",
   "supabase/tests/groups-v2-local-fixture.sql",
   "supabase/tests/athlete-invites-v2-local-fixture.sql",
+  "supabase/tests/reliable-mutations-v2-local-fixture.sql",
 ];
 
 function run(command, args, input) {
