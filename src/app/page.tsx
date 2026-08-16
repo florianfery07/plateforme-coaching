@@ -44,6 +44,7 @@ import { weeklyColorsRepository } from "@/services/weekly-colors-repository";
 import { loadWeekNotes, supabaseWeekNoteRepository } from "@/services/week-notes";
 import { filterWorkoutLibrary, loadWorkoutLibrary } from "@/services/workout-library";
 import { workoutLibraryRepository } from "@/services/workout-library-repository";
+import { createAthletesRepository, loadLegacyAthleteDirectory } from "@/services/athletes";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -165,40 +166,16 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const athleteLifecycleLocksRef = useRef(new Set());
 
 async function loadAllData() {
-  const { data: athletesData, error: athletesError } = await supabase
-    .from("athletes")
-    .select("*")
-    .order("created_at", { ascending: true });
+  const athleteDirectoryResult = await loadLegacyAthleteDirectory(
+    createAthletesRepository(supabase),
+  );
 
-  if (athletesError) {
-    console.error("Erreur chargement athlètes", athletesError);
+  if (athleteDirectoryResult.kind === "error") {
+    console.error("Erreur chargement athlètes", athleteDirectoryResult.error);
     return;
   }
 
-  const loadedAthletes = athletesData?.length
-  ? athletesData.map((row) => ({
-      ...athlete(
-        row.id,
-        row.name,
-        row.weight || "",
-        row.power5 || "",
-        row.power12 || "",
-        row.power20 || ""
-      ),
-      email: row.email || "",
-      age: row.age || "",
-      height: row.height || "",
-      sport: row.sport || "Vélo",
-      shortGoal: row.short_goal || "",
-      mediumGoal: row.medium_goal || "",
-      longGoal: row.long_goal || "",
-      context: row.context || "",
-      goalUpdateRequested: Boolean(row.goal_update_requested),
-      user_id: row.user_id || "",
-      active: row.active !== false,
-      color: getColorClass(row.color),
-    }))
-  : [];
+  const loadedAthletes = athleteDirectoryResult.athletes;
 
   const calendarSessionsResult = await loadCalendarSessions(
     calendarSessionsRepository,
