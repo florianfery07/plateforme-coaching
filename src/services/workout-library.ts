@@ -42,9 +42,46 @@ export type WorkoutLibraryRepository = {
   }>;
 };
 
+export type WorkoutLibraryWriteRepository = {
+  update: (
+    workoutId: string,
+    workout: WorkoutLibraryPersistence,
+    signal?: AbortSignal,
+  ) => Promise<{
+    data: WorkoutLibraryReadRow | null;
+    error: unknown;
+  }>;
+};
+
 export type WorkoutLibraryLoadResult =
   | { kind: "success"; library: WorkoutLibraryItem[] | null }
   | { kind: "error"; error: unknown };
+
+export type WorkoutLibrarySaveInput = {
+  workout: WorkoutLibraryItem;
+  workoutId: string;
+};
+
+export type WorkoutLibraryPersistence = Pick<
+  Database["public"]["Tables"]["workout_library"]["Update"],
+  | "blocks"
+  | "category"
+  | "description"
+  | "expected_rpe"
+  | "expected_rpe_global"
+  | "expected_rpe_specific"
+  | "expected_specific_duration"
+  | "subcategory"
+  | "title"
+  | "total_duration"
+>;
+
+export type WorkoutLibraryService = {
+  save: (
+    input: WorkoutLibrarySaveInput,
+    signal?: AbortSignal,
+  ) => Promise<WorkoutLibraryItem>;
+};
 
 /** Preserves the legacy workout-library shape while keeping read preparation independent from React. */
 export function mapWorkoutLibrary(
@@ -87,5 +124,58 @@ export async function loadWorkoutLibrary(
   return {
     kind: "success",
     library: data ? mapWorkoutLibrary(data) : null,
+  };
+}
+
+function cleanWorkoutRpe(value: string | number): string | null {
+  const match = String(value || "").replace(",", ".").match(/[0-9.]+/);
+  return match ? match[0] : null;
+}
+
+/** Maps the existing editor draft to its single workout_library persistence row. */
+export function toWorkoutLibraryPersistence(
+  workout: WorkoutLibraryItem,
+): WorkoutLibraryPersistence {
+  const expectedRpe = cleanWorkoutRpe(
+    workout.expectedRpeGlobal || workout.expectedRpe,
+  );
+
+  return {
+    blocks: workout.blocks,
+    category: workout.category,
+    description: workout.description,
+    expected_rpe: expectedRpe,
+    expected_rpe_global: expectedRpe ? Number(expectedRpe) : null,
+    expected_rpe_specific: (() => {
+      const value = cleanWorkoutRpe(workout.expectedRpeSpecific);
+      return value ? Number(value) : null;
+    })(),
+    expected_specific_duration: workout.expectedSpecificDuration || "",
+    subcategory: workout.subcategory,
+    title: workout.title,
+    total_duration: workout.totalDuration,
+  };
+}
+
+export function createWorkoutLibraryService(
+  repository: WorkoutLibraryWriteRepository,
+): WorkoutLibraryService {
+  return {
+    async save(input, signal) {
+      if (!input.workoutId || !input.workout.title.trim()) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.update(
+        input.workoutId,
+        toWorkoutLibraryPersistence(input.workout),
+        signal,
+      );
+
+      if (error) throw error;
+      if (!data) throw { kind: "unknown", retryable: false };
+
+      return mapWorkoutLibrary([data])[0];
+    },
   };
 }

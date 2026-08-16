@@ -7,6 +7,7 @@ import {
   resolveFeatureFlags,
   type FeatureFlagKey,
 } from "../../src/lib/features";
+import { isReliableMutationsPilotEnabled } from "../../src/lib/features/reliable-mutations-pilot";
 
 describe("feature flags", () => {
   it("uses the legacy defaults when no environment variable is present", () => {
@@ -56,5 +57,26 @@ describe("feature flags", () => {
     for (const key of Object.keys(featureFlagRegistry) as FeatureFlagKey[]) {
       expect(resolvedFlags[key]).toBe(false);
     }
+  });
+
+  it("keeps reliable mutations on the legacy path unless the local pilot is explicit", () => {
+    expect(
+      isReliableMutationsPilotEnabled({
+        featureEnabled: false,
+        nodeEnv: "development",
+      }),
+    ).toBe(false);
+    expect(
+      isReliableMutationsPilotEnabled({
+        featureEnabled: true,
+        nodeEnv: "production",
+      }),
+    ).toBe(false);
+    expect(
+      isReliableMutationsPilotEnabled({
+        featureEnabled: true,
+        nodeEnv: "development",
+      }),
+    ).toBe(true);
   });
 });

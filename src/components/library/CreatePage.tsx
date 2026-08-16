@@ -28,6 +28,7 @@ export default function CreatePage({
   newSub,
   setNewSub,
   addItem,
+  savePending = false,
 }) {
   const addSimple = () =>
     setDraft((current) => ({
@@ -140,7 +141,7 @@ export default function CreatePage({
           </p>
         </div>
 
-        <Btn variant="primary" onClick={saveWorkout}>
+        <Btn variant="primary" onClick={saveWorkout} disabled={savePending}>
           {editingId ? "Mettre à jour" : "Enregistrer dans la bibliothèque"}
         </Btn>
       </div>

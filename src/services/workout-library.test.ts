@@ -1,12 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  createWorkoutLibraryService,
   filterWorkoutLibrary,
   loadWorkoutLibrary,
   mapWorkoutLibrary,
+  toWorkoutLibraryPersistence,
   type WorkoutLibraryItem,
   type WorkoutLibraryReadRow,
   type WorkoutLibraryRepository,
+  type WorkoutLibraryWriteRepository,
 } from "./workout-library";
 
 function workout(
@@ -174,5 +177,93 @@ describe("workout library read preparation", () => {
       kind: "success",
       library: legacyWorkoutLibrary([workout()]),
     });
+  });
+});
+
+describe("workout library targeted save", () => {
+  const item: WorkoutLibraryItem = {
+    blocks: [{ duration: "60 min", name: "Endurance", type: "simple" }],
+    category: "Route",
+    description: "Rester stable.",
+    expectedRpe: "4/10",
+    expectedRpeGlobal: "5/10",
+    expectedRpeSpecific: "7/10",
+    expectedSpecificDuration: "20 min",
+    id: "workout-1",
+    subcategory: "Endurance",
+    title: "Endurance fondamentale",
+    totalDuration: "1h30",
+  };
+
+  function repository(
+    update = vi.fn().mockResolvedValue({ data: workout(), error: null }),
+  ): WorkoutLibraryWriteRepository {
+    return { update };
+  }
+
+  it("keeps the existing editor payload limited to workout_library fields", () => {
+    expect(toWorkoutLibraryPersistence(item)).toEqual({
+      blocks: item.blocks,
+      category: "Route",
+      description: "Rester stable.",
+      expected_rpe: "5",
+      expected_rpe_global: 5,
+      expected_rpe_specific: 7,
+      expected_specific_duration: "20 min",
+      subcategory: "Endurance",
+      title: "Endurance fondamentale",
+      total_duration: "1h30",
+    });
+  });
+
+  it("writes one existing workout and returns the locally usable row", async () => {
+    const update = vi.fn().mockResolvedValue({
+      data: workout({ title: "Mise à jour" }),
+      error: null,
+    });
+    const signal = new AbortController().signal;
+
+    await expect(
+      createWorkoutLibraryService(repository(update)).save(
+        { workout: item, workoutId: item.id },
+        signal,
+      ),
+    ).resolves.toMatchObject({ id: item.id, title: "Mise à jour" });
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(
+      item.id,
+      expect.objectContaining({
+        category: item.category,
+        subcategory: item.subcategory,
+        title: item.title,
+      }),
+      signal,
+    );
+  });
+
+  it("rejects an invalid save before any persistence write", async () => {
+    const update = vi.fn();
+
+    await expect(
+      createWorkoutLibraryService(repository(update)).save({
+        workout: { ...item, title: " " },
+        workoutId: item.id,
+      }),
+    ).rejects.toMatchObject({ kind: "validation" });
+
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("preserves the repository error for the reliable mutation boundary", async () => {
+    const failure = { code: "42501" };
+    const update = vi.fn().mockResolvedValue({ data: null, error: failure });
+
+    await expect(
+      createWorkoutLibraryService(repository(update)).save({
+        workout: item,
+        workoutId: item.id,
+      }),
+    ).rejects.toBe(failure);
   });
 });

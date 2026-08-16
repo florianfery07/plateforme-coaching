@@ -25,6 +25,7 @@ import {
 import { getColorClass } from "@/lib/colors";
 import { loadAccessControlV2Context, type AccessContextRpcClient } from "@/lib/access";
 import { isFeatureEnabled } from "@/lib/features";
+import { isReliableMutationsPilotEnabled } from "@/lib/features/reliable-mutations-pilot";
 import { supabase } from "@/lib/supabase";
 import { createTypedSupabaseClient } from "@/lib/supabase-typed";
 import { createAthleteInviteService, createAthleteInviteSupabaseRepository } from "@/services/athlete-invites";
@@ -43,7 +44,8 @@ import { loadWeeklyColors } from "@/services/weekly-colors";
 import { weeklyColorsRepository } from "@/services/weekly-colors-repository";
 import { loadWeekNotes, supabaseWeekNoteRepository } from "@/services/week-notes";
 import { filterWorkoutLibrary, loadWorkoutLibrary } from "@/services/workout-library";
-import { workoutLibraryRepository } from "@/services/workout-library-repository";
+import { workoutLibraryRepository, workoutLibraryService } from "@/services/workout-library-repository";
+import { useReliableMutation } from "@/hooks/use-reliable-mutation";
 import { createAthletesRepository, loadLegacyAthleteDirectory } from "@/services/athletes";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
 import { loadPilotAuthAthleteRead } from "@/features/auth-athletes/pilot-read-service";
@@ -164,6 +166,20 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const [athleteLifecycleV2Enabled, setAthleteLifecycleV2Enabled] = useState(false);
 	const [athleteLifecyclePendingAthleteId, setAthleteLifecyclePendingAthleteId] = useState(null);
 	const athleteLifecycleLocksRef = useRef(new Set());
+  const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
+  const workoutLibrarySaveMutation = useReliableMutation({
+    concurrency: "reject",
+    key: `workout-library:${editingId || "new"}`,
+    operation: ({ workout, workoutId }, context) =>
+      workoutLibraryService.save({ workout, workoutId }, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "workout-library.save",
+  });
 
 async function loadAllData() {
   const athleteDirectoryResult = await loadLegacyAthleteDirectory(
@@ -895,6 +911,28 @@ function cleanRpe(value) {
   console.log("SAVE_WORKOUT", workoutData);
 
   if (editingId) {
+    if (workoutLibraryPilotEnabled) {
+      const result = await workoutLibrarySaveMutation.mutate({
+        workout: draft,
+        workoutId: editingId,
+      });
+
+      if (result.state === "success" && result.data) {
+        setLibrary((items) =>
+          items.map((workout) =>
+            workout.id === result.data.id ? result.data : workout,
+          ),
+        );
+        setDraft(blankWorkout());
+        setEditingId(null);
+        setView("library");
+      } else if (result.state === "error") {
+        alert("Impossible d'enregistrer cette séance. Réessaie.");
+      }
+
+      return;
+    }
+
     const { error } = await supabase
       .from("workout_library")
       .update(workoutData)
@@ -1564,7 +1602,7 @@ async function validateAthleteGoalUpdate(goalValues) {
     subcategories={subcategories}
   />
 )}
-    {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem }} />}
+    {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && !!editingId && workoutLibrarySaveMutation.pending }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}

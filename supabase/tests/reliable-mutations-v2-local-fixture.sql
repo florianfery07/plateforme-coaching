@@ -42,3 +42,43 @@ insert into public.calendar_workouts (
   blocks = excluded.blocks,
   completed = false,
   non_done = false;
+
+-- L14b local-only browser fixture. The block follows the current editor shape.
+insert into public.workout_library (
+  id,
+  title,
+  category,
+  duration,
+  description,
+  blocks,
+  subcategory,
+  total_duration,
+  expected_rpe,
+  expected_rpe_global,
+  expected_specific_duration,
+  expected_rpe_specific
+) values (
+  '99000000-0000-0000-0000-000000000014',
+  'L14b Targeted Library Save',
+  'Endurance',
+  '1h00',
+  'Synthetic local-only workout used to measure targeted library saves.',
+  '[{"type":"simple","name":"Endurance","duration":"60 min","zone":"Z2","targetPercent":"56-75","instruction":"Stable","repeatItems":[]}]',
+  'Base',
+  '1h00',
+  '4',
+  4,
+  '60 min',
+  4
+) on conflict (id) do update set
+  title = excluded.title,
+  category = excluded.category,
+  duration = excluded.duration,
+  description = excluded.description,
+  blocks = excluded.blocks,
+  subcategory = excluded.subcategory,
+  total_duration = excluded.total_duration,
+  expected_rpe = excluded.expected_rpe,
+  expected_rpe_global = excluded.expected_rpe_global,
+  expected_specific_duration = excluded.expected_specific_duration,
+  expected_rpe_specific = excluded.expected_rpe_specific;
