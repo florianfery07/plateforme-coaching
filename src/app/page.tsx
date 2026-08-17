@@ -31,7 +31,7 @@ import { createTypedSupabaseClient } from "@/lib/supabase-typed";
 import { createAthleteInviteService, createAthleteInviteSupabaseRepository } from "@/services/athlete-invites";
 import { createAthleteLifecycleService, shouldUseAthleteLifecycleV2 } from "@/services/athlete-lifecycle";
 import { calendarSessionsForDate, loadCalendarSessions } from "@/services/calendar-sessions";
-import { calendarSessionsRepository } from "@/services/calendar-sessions-repository";
+import { calendarSessionService, calendarSessionsRepository } from "@/services/calendar-sessions-repository";
 import {
   calendarProposalsForAthlete,
   calendarProposalsForDate,
@@ -167,6 +167,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const [athleteLifecyclePendingAthleteId, setAthleteLifecyclePendingAthleteId] = useState(null);
 	const athleteLifecycleLocksRef = useRef(new Set());
   const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
+  const calendarSessionImportPilotEnabled = isReliableMutationsPilotEnabled();
   const workoutLibrarySaveMutation = useReliableMutation({
     concurrency: "reject",
     key: `workout-library:${editingId || "new"}`,
@@ -179,6 +180,13 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     },
     timeoutMs: 10_000,
     type: "workout-library.save",
+  });
+  const calendarSessionImportMutation = useReliableMutation({
+    concurrency: "reject",
+    key: `calendar-session-import:${activeId}:${dateKey(selectedDate)}`,
+    operation: ({ athleteId, session }, context) =>
+      calendarSessionService.create({ athleteId, session }, context.signal),
+    type: "calendar-session.import",
   });
 
 async function loadAllData() {
@@ -980,6 +988,27 @@ alert(JSON.stringify(error, null, 2));
     }
   }
 
+  if (calendarSessionImportPilotEnabled && planningTargetType !== "group") {
+    const targetAthleteId = activeId;
+    const result = await calendarSessionImportMutation.mutate({
+      athleteId: targetAthleteId,
+      session,
+    });
+
+    if (result.state === "success" && result.data) {
+      setSessions((items) => ({
+        ...items,
+        [targetAthleteId]: [...(items[targetAthleteId] || []), result.data],
+      }));
+      setMode("day");
+      setView("calendar");
+    } else if (result.state === "error") {
+      alert("Impossible de programmer cette séance. Réessaie.");
+    }
+
+    return;
+  }
+
   const payload = targetAthleteIds.map((athleteId) => ({
     athlete_id: athleteId,
     date: session.date,
@@ -1584,7 +1613,7 @@ async function validateAthleteGoalUpdate(goalValues) {
         validateGoalUpdate={validateAthleteGoalUpdate}
       />
     )}
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
    {auth?.role === "athlete" && view === "athleteStats" && (
   <AthleteStatsPage
     athlete={athleteActive}

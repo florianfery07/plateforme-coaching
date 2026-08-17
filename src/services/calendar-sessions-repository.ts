@@ -2,11 +2,13 @@ import { supabase } from "../lib/supabase";
 
 import {
   createCalendarFeedbackService,
+  createCalendarSessionService,
   type CalendarFeedbackRepository,
   type CalendarSessionsRepository,
+  type CalendarSessionWriteRepository,
 } from "./calendar-sessions";
 
-export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository = {
+export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository & CalendarSessionWriteRepository = {
   async list() {
     return supabase
       .from("calendar_workouts")
@@ -26,6 +28,18 @@ export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFe
       .select("workout_id, rpe, rpe_global, rpe_specific, motivation, pleasure, comment, real_duration")
       .single();
   },
+  async insert(session, signal) {
+    const query = supabase
+      .from("calendar_workouts")
+      .insert(session);
+
+    if (signal) query.abortSignal(signal);
+
+    return query
+      .select("*")
+      .single();
+  },
 };
 
 export const calendarFeedbackService = createCalendarFeedbackService(calendarSessionsRepository);
+export const calendarSessionService = createCalendarSessionService(calendarSessionsRepository);

@@ -1,5 +1,5 @@
 import { blankFeedback, blankNonDone } from "../lib/platformDefaults";
-import type { Json } from "../types/database";
+import type { Database, Json } from "../types/database";
 import type { WorkoutFeedbackRow, WorkoutRow } from "../types/domain";
 
 type CalendarWorkoutWithFeedback = WorkoutRow & {
@@ -36,6 +36,57 @@ export type CalendarSessionsRepository = {
     data: CalendarWorkoutWithFeedback[] | null;
     error: unknown;
   }>;
+};
+
+export type CalendarSessionCreateInput = {
+  athleteId: string;
+  session: Pick<
+    CalendarSession,
+    | "blocks"
+    | "category"
+    | "date"
+    | "description"
+    | "expectedRpe"
+    | "expectedRpeGlobal"
+    | "expectedRpeSpecific"
+    | "expectedSpecificDuration"
+    | "subcategory"
+    | "title"
+    | "totalDuration"
+  >;
+};
+
+export type CalendarSessionPersistence = Pick<
+  Database["public"]["Tables"]["calendar_workouts"]["Insert"],
+  | "adjusted_specific_duration"
+  | "athlete_id"
+  | "athlete_seen_at"
+  | "blocks"
+  | "completed"
+  | "date"
+  | "description"
+  | "duration"
+  | "expected_rpe"
+  | "expected_rpe_global"
+  | "expected_rpe_specific"
+  | "expected_specific_duration"
+  | "subcategory"
+  | "title"
+  | "workout_type"
+>;
+
+export type CalendarSessionWriteRepository = {
+  insert: (
+    session: CalendarSessionPersistence,
+    signal?: AbortSignal,
+  ) => Promise<{ data: WorkoutRow | null; error: unknown }>;
+};
+
+export type CalendarSessionService = {
+  create: (
+    input: CalendarSessionCreateInput,
+    signal?: AbortSignal,
+  ) => Promise<CalendarSession>;
 };
 
 export type CalendarFeedback = {
@@ -82,6 +133,65 @@ export type CalendarFeedbackService = {
 function cleanFeedbackRpe(value: unknown): number | null {
   const match = String(value || "").replace(",", ".").match(/[0-9.]+/);
   return match ? Number(match[0]) : null;
+}
+
+/** Preserves the legacy calendar_workouts payload for a single-athlete import. */
+export function toCalendarSessionPersistence(
+  input: CalendarSessionCreateInput,
+): CalendarSessionPersistence {
+  const expectedRpe = cleanFeedbackRpe(
+    input.session.expectedRpeGlobal || input.session.expectedRpe,
+  );
+
+  return {
+    athlete_id: input.athleteId,
+    date: input.session.date,
+    workout_type: input.session.category,
+    subcategory: input.session.subcategory,
+    title: input.session.title,
+    duration: input.session.totalDuration,
+    expected_rpe: expectedRpe === null ? null : String(expectedRpe),
+    expected_rpe_global: expectedRpe,
+    expected_specific_duration: input.session.expectedSpecificDuration || "",
+    adjusted_specific_duration: "",
+    expected_rpe_specific: cleanFeedbackRpe(input.session.expectedRpeSpecific),
+    description: input.session.description,
+    blocks: input.session.blocks,
+    athlete_seen_at: null,
+    completed: false,
+  };
+}
+
+function mapCalendarSession(row: WorkoutRow): CalendarSession {
+  const athleteId = row.athlete_id ?? "null";
+  const sessions = mapCalendarSessions([athleteId], [{
+    ...row,
+    workout_feedbacks: null,
+  }]);
+
+  return sessions[athleteId][0];
+}
+
+export function createCalendarSessionService(
+  repository: CalendarSessionWriteRepository,
+): CalendarSessionService {
+  return {
+    async create(input, signal) {
+      if (!input.athleteId || !input.session.date) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.insert(
+        toCalendarSessionPersistence(input),
+        signal,
+      );
+
+      if (error) throw error;
+      if (!data) throw { kind: "unknown", retryable: false };
+
+      return mapCalendarSession(data);
+    },
+  };
 }
 
 /** Maps the existing session feedback shape to its single legacy persistence row. */

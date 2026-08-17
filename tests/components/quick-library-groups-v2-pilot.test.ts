@@ -21,4 +21,8 @@ describe("QuickLibrary Groups V2 pilot", () => {
     expect(source).toContain('kind: "legacy_fallback"');
     expect(source).toContain('concurrency: "reject"');
   });
+
+  it("keeps the Groups V2 controls independent from the individual import pending state", () => {
+    expect(source).toContain('disabled={planningTargetType !== "group" && importPending}');
+  });
 });

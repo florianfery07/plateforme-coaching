@@ -31,6 +31,7 @@ export default function QuickLibrary({
   selectedGroup,
   selectedGroupMembers = [],
   athletes = [],
+  importPending = false,
   selectedDate,
 }) {
   const [pendingWorkout, setPendingWorkout] = useState(null);
@@ -232,9 +233,12 @@ export default function QuickLibrary({
                   ? openGroupImport(workout)
                   : importWorkout(workout)
               }
+              disabled={planningTargetType !== "group" && importPending}
               className="mt-3 w-full"
             >
-              Importer ce jour
+              {planningTargetType !== "group" && importPending
+                ? "Programmation..."
+                : "Importer ce jour"}
             </Btn>
           </div>
         ))}
