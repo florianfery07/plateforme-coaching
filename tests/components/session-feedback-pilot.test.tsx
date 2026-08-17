@@ -151,4 +151,113 @@ describe("Session feedback reliable mutation pilot", () => {
     expect(updateFeedback).not.toHaveBeenCalled();
     expect(updateSession).toHaveBeenCalledTimes(3);
   });
+
+  it("keeps the legacy adjustment writer when the pilot is disabled", () => {
+    pilotEnabled.mockReturnValue(false);
+    const updateCalendarWorkoutField = vi.fn();
+    render(
+      <Session
+        session={session}
+        cpData={{}}
+        updateFeedback={vi.fn()}
+        updateNonDone={vi.fn()}
+        updateSession={vi.fn()}
+        updateCalendarWorkoutField={updateCalendarWorkoutField}
+        isCoach
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Durée spécifique retenue"), {
+      target: { value: "45 min" },
+    });
+
+    expect(updateCalendarWorkoutField).toHaveBeenCalledWith(
+      "session-1",
+      "adjustedSpecificDuration",
+      "45 min",
+    );
+  });
+
+  it("saves one confirmed adjustment only on blur in the pilot", async () => {
+    pilotEnabled.mockReturnValue(true);
+    const updateCalendarWorkoutField = vi.fn().mockResolvedValue({
+      data: { ...session, adjustedSpecificDuration: "45 min" },
+      state: "success",
+    });
+    const updateSession = vi.fn();
+    render(
+      <Session
+        session={session}
+        cpData={{}}
+        updateFeedback={vi.fn()}
+        updateNonDone={vi.fn()}
+        updateSession={updateSession}
+        updateCalendarWorkoutField={updateCalendarWorkoutField}
+        isCoach
+      />,
+    );
+    const adjustment = screen.getByLabelText("Durée spécifique retenue");
+
+    fireEvent.change(adjustment, { target: { value: "45 min" } });
+    expect(updateCalendarWorkoutField).not.toHaveBeenCalled();
+    fireEvent.blur(adjustment);
+
+    await waitFor(() => expect(updateCalendarWorkoutField).toHaveBeenCalledTimes(1));
+    expect(updateCalendarWorkoutField).toHaveBeenCalledWith(
+      "session-1",
+      "adjustedSpecificDuration",
+      "45 min",
+    );
+    expect(updateSession).not.toHaveBeenCalled();
+  });
+
+  it("does not invoke the parent writer while an adjustment is pending", () => {
+    pilotEnabled.mockReturnValue(true);
+    const updateCalendarWorkoutField = vi.fn();
+    render(
+      <Session
+        session={session}
+        cpData={{}}
+        updateFeedback={vi.fn()}
+        updateNonDone={vi.fn()}
+        updateSession={vi.fn()}
+        updateCalendarWorkoutField={updateCalendarWorkoutField}
+        adjustmentPending
+        isCoach
+      />,
+    );
+    const adjustment = screen.getByLabelText("Durée spécifique retenue");
+
+    fireEvent.change(adjustment, { target: { value: "45 min" } });
+    fireEvent.blur(adjustment);
+
+    expect(updateCalendarWorkoutField).not.toHaveBeenCalled();
+  });
+
+  it("restores the visible adjustment after a failed pilot write", async () => {
+    pilotEnabled.mockReturnValue(true);
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+    const updateCalendarWorkoutField = vi.fn().mockResolvedValue({
+      data: null,
+      state: "error",
+    });
+    render(
+      <Session
+        session={{ ...session, adjustedSpecificDuration: "30 min" }}
+        cpData={{}}
+        updateFeedback={vi.fn()}
+        updateNonDone={vi.fn()}
+        updateSession={vi.fn()}
+        updateCalendarWorkoutField={updateCalendarWorkoutField}
+        isCoach
+      />,
+    );
+    const adjustment = screen.getByLabelText("Durée spécifique retenue");
+
+    fireEvent.change(adjustment, { target: { value: "45 min" } });
+    fireEvent.blur(adjustment);
+
+    await waitFor(() => expect(alert).toHaveBeenCalledWith("Impossible d'enregistrer l'ajustement. Réessaie."));
+    expect(adjustment).toHaveValue("30 min");
+  });
 });

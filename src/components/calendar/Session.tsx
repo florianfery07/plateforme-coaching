@@ -1,6 +1,8 @@
 // @ts-nocheck
 "use client";
 
+import { useState } from "react";
+
 import { sessionStatus, feedbackReady } from "@/lib/trainingUtils";
 import { statusLabel, statusStyle } from "@/lib/platformDefaults";
 import { isReliableMutationsPilotEnabled } from "@/lib/features/reliable-mutations-pilot";
@@ -26,6 +28,7 @@ export default function Session({
   updateNonDone,
   updateSession,
   updateCalendarWorkoutField,
+  adjustmentPending = false,
   isCoach,
 }) {
   const status = sessionStatus(session);
@@ -34,6 +37,10 @@ export default function Session({
   session.category?.toLowerCase() === "repos";
 
   const feedbackPilotEnabled = isReliableMutationsPilotEnabled();
+  const adjustmentPilotEnabled = isReliableMutationsPilotEnabled();
+  const [adjustedSpecificDurationDraft, setAdjustedSpecificDurationDraft] = useState(
+    session.adjustedSpecificDuration || "",
+  );
   const patch = (fn) =>
     updateSession((items) =>
       items.map((item) => (item.id === session.id ? fn(item) : item))
@@ -103,6 +110,32 @@ export default function Session({
     if (field === "rpeGlobal") {
       updateFeedback(session.id, "rpe", value);
     }
+  };
+
+  const savePilotAdjustment = () => {
+    const previousValue = session.adjustedSpecificDuration || "";
+
+    if (
+      adjustmentPending ||
+      adjustedSpecificDurationDraft === previousValue
+    ) {
+      return;
+    }
+
+    void updateCalendarWorkoutField(
+      session.id,
+      "adjustedSpecificDuration",
+      adjustedSpecificDurationDraft,
+    ).then((result) => {
+      if (result.state === "success" && result.data) {
+        setAdjustedSpecificDurationDraft(
+          result.data.adjustedSpecificDuration || "",
+        );
+      } else if (result.state === "error") {
+        setAdjustedSpecificDurationDraft(previousValue);
+        alert("Impossible d'enregistrer l'ajustement. Réessaie.");
+      }
+    });
   };
 
   function cleanScore(value, max) {
@@ -502,14 +535,25 @@ function changeActualTimePart(part, value) {
           <div className="w-full sm:w-48">
             <Field label="Durée spécifique retenue">
               <Input
-                value={session.adjustedSpecificDuration || ""}
-                onChange={(event) =>
+                value={
+                  adjustmentPilotEnabled
+                    ? adjustedSpecificDurationDraft
+                    : session.adjustedSpecificDuration || ""
+                }
+                onChange={(event) => {
+                  if (adjustmentPilotEnabled) {
+                    setAdjustedSpecificDurationDraft(event.target.value);
+                    return;
+                  }
+
                   updateCalendarWorkoutField(
                     session.id,
                     "adjustedSpecificDuration",
                     event.target.value
-                  )
-                }
+                  );
+                }}
+                onBlur={adjustmentPilotEnabled ? savePilotAdjustment : undefined}
+                disabled={adjustmentPilotEnabled && adjustmentPending}
                 type="text"
                 inputMode="decimal"
                 placeholder={

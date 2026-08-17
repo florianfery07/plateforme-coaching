@@ -4,6 +4,7 @@ import {
   createCalendarSessionService,
   toCalendarSessionPersistence,
   type CalendarSessionCreateInput,
+  type CalendarSessionAdjustmentRepository,
   type CalendarSessionWriteRepository,
 } from "../../src/services/calendar-sessions";
 
@@ -51,8 +52,9 @@ const row = {
 
 function repository(
   insert = vi.fn().mockResolvedValue({ data: row, error: null }),
-): CalendarSessionWriteRepository {
-  return { insert };
+  updateAdjustment = vi.fn().mockResolvedValue({ data: row, error: null }),
+): CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository {
+  return { insert, updateAdjustment };
 }
 
 describe("calendar session targeted create service", () => {
@@ -111,5 +113,39 @@ describe("calendar session targeted create service", () => {
       .rejects.toBe(failure);
 
     expect(insert).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates only the confirmed session adjustment", async () => {
+    const updateAdjustment = vi.fn().mockResolvedValue({
+      data: { ...row, adjusted_specific_duration: "45 min" },
+      error: null,
+    });
+    const signal = new AbortController().signal;
+
+    await expect(createCalendarSessionService(repository(undefined, updateAdjustment)).saveAdjustment({
+      adjustedSpecificDuration: "45 min",
+      workoutId: "workout-1",
+    }, signal)).resolves.toMatchObject({
+      adjustedSpecificDuration: "45 min",
+      id: "workout-1",
+    });
+
+    expect(updateAdjustment).toHaveBeenCalledTimes(1);
+    expect(updateAdjustment).toHaveBeenCalledWith(
+      "workout-1",
+      { adjusted_specific_duration: "45 min" },
+      signal,
+    );
+  });
+
+  it("rejects a missing workout before attempting an adjustment write", async () => {
+    const updateAdjustment = vi.fn();
+
+    await expect(createCalendarSessionService(repository(undefined, updateAdjustment)).saveAdjustment({
+      adjustedSpecificDuration: "45 min",
+      workoutId: "",
+    })).rejects.toMatchObject({ kind: "validation" });
+
+    expect(updateAdjustment).not.toHaveBeenCalled();
   });
 });

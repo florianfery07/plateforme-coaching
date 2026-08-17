@@ -82,9 +82,31 @@ export type CalendarSessionWriteRepository = {
   ) => Promise<{ data: WorkoutRow | null; error: unknown }>;
 };
 
+export type CalendarSessionAdjustmentSaveInput = {
+  adjustedSpecificDuration: string;
+  workoutId: string;
+};
+
+export type CalendarSessionAdjustmentPersistence = Pick<
+  Database["public"]["Tables"]["calendar_workouts"]["Update"],
+  "adjusted_specific_duration"
+>;
+
+export type CalendarSessionAdjustmentRepository = {
+  updateAdjustment: (
+    workoutId: string,
+    adjustment: CalendarSessionAdjustmentPersistence,
+    signal?: AbortSignal,
+  ) => Promise<{ data: WorkoutRow | null; error: unknown }>;
+};
+
 export type CalendarSessionService = {
   create: (
     input: CalendarSessionCreateInput,
+    signal?: AbortSignal,
+  ) => Promise<CalendarSession>;
+  saveAdjustment: (
+    input: CalendarSessionAdjustmentSaveInput,
     signal?: AbortSignal,
   ) => Promise<CalendarSession>;
 };
@@ -173,7 +195,7 @@ function mapCalendarSession(row: WorkoutRow): CalendarSession {
 }
 
 export function createCalendarSessionService(
-  repository: CalendarSessionWriteRepository,
+  repository: CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository,
 ): CalendarSessionService {
   return {
     async create(input, signal) {
@@ -183,6 +205,24 @@ export function createCalendarSessionService(
 
       const { data, error } = await repository.insert(
         toCalendarSessionPersistence(input),
+        signal,
+      );
+
+      if (error) throw error;
+      if (!data) throw { kind: "unknown", retryable: false };
+
+      return mapCalendarSession(data);
+    },
+    async saveAdjustment(input, signal) {
+      if (!input.workoutId) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.updateAdjustment(
+        input.workoutId,
+        {
+          adjusted_specific_duration: input.adjustedSpecificDuration || null,
+        },
         signal,
       );
 

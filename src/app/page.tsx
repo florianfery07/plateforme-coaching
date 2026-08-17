@@ -168,6 +168,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const athleteLifecycleLocksRef = useRef(new Set());
   const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionImportPilotEnabled = isReliableMutationsPilotEnabled();
+  const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
   const workoutLibrarySaveMutation = useReliableMutation({
     concurrency: "reject",
     key: `workout-library:${editingId || "new"}`,
@@ -187,6 +188,16 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     operation: ({ athleteId, session }, context) =>
       calendarSessionService.create({ athleteId, session }, context.signal),
     type: "calendar-session.import",
+  });
+  const calendarSessionAdjustmentMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "calendar-session-adjustment",
+    operation: ({ adjustedSpecificDuration, workoutId }, context) =>
+      calendarSessionService.saveAdjustment({
+        adjustedSpecificDuration,
+        workoutId,
+      }, context.signal),
+    type: "calendar-session.adjustment.save",
   });
 
 async function loadAllData() {
@@ -1087,6 +1098,33 @@ async function addRestDay(date = selectedDate) {
   setView("calendar");
 }
   async function updateCalendarWorkoutField(sessionId, field, value) {
+  if (
+    calendarSessionAdjustmentPilotEnabled &&
+    field === "adjustedSpecificDuration"
+  ) {
+    const targetAthleteId = activeId;
+    const result = await calendarSessionAdjustmentMutation.mutate({
+      adjustedSpecificDuration: value,
+      workoutId: sessionId,
+    });
+
+    if (result.state === "success" && result.data) {
+      setSessions((items) => ({
+        ...items,
+        [targetAthleteId]: (items[targetAthleteId] || []).map((item) =>
+          item.id === sessionId
+            ? {
+              ...item,
+              adjustedSpecificDuration: result.data.adjustedSpecificDuration,
+            }
+            : item,
+        ),
+      }));
+    }
+
+    return result;
+  }
+
   updateSession((items) =>
     items.map((item) =>
       item.id === sessionId
@@ -1613,7 +1651,7 @@ async function validateAthleteGoalUpdate(goalValues) {
         validateGoalUpdate={validateAthleteGoalUpdate}
       />
     )}
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
    {auth?.role === "athlete" && view === "athleteStats" && (
   <AthleteStatsPage
     athlete={athleteActive}
