@@ -11,8 +11,10 @@ const athletes = [
 type GroupsPageOptions = {
   addAthleteGroup?: ReturnType<typeof vi.fn>;
   athleteGroupCreatePending?: boolean;
+  athleteGroupDeletePilotEnabled?: boolean;
   athleteGroupMemberPendingKeys?: string[];
   athleteGroupMemberPilotEnabled?: boolean;
+  deleteAthleteGroup?: ReturnType<typeof vi.fn>;
   newGroupName?: string;
   toggleAthleteGroupMember?: ReturnType<typeof vi.fn>;
 };
@@ -43,8 +45,10 @@ function renderPage(deleteAthlete = vi.fn().mockResolvedValue(true)) {
 function renderGroupsPage({
   addAthleteGroup = vi.fn(),
   athleteGroupCreatePending = false,
+  athleteGroupDeletePilotEnabled = false,
   athleteGroupMemberPendingKeys = [],
   athleteGroupMemberPilotEnabled = false,
+  deleteAthleteGroup = vi.fn(),
   newGroupName = "",
   toggleAthleteGroupMember = vi.fn(),
 }: GroupsPageOptions = {}) {
@@ -64,17 +68,18 @@ function renderGroupsPage({
       athleteGroupMemberPilotEnabled={athleteGroupMemberPilotEnabled}
       athleteGroupMemberPendingKeys={athleteGroupMemberPendingKeys as unknown as never[]}
       athleteGroupCreatePending={athleteGroupCreatePending}
+      athleteGroupDeletePilotEnabled={athleteGroupDeletePilotEnabled}
       newGroupName={newGroupName}
       setNewGroupName={vi.fn()}
       addAthleteGroup={addAthleteGroup}
       renameAthleteGroup={vi.fn()}
-      deleteAthleteGroup={vi.fn()}
+      deleteAthleteGroup={deleteAthleteGroup}
       toggleAthleteGroupMember={toggleAthleteGroupMember}
     />,
   );
 
   fireEvent.click(screen.getByRole("button", { name: "Groupes" }));
-  return { addAthleteGroup, toggleAthleteGroupMember };
+  return { addAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember };
 }
 
 describe("ManagementPage athlete lifecycle V2", () => {
@@ -161,5 +166,36 @@ describe("ManagementPage athlete lifecycle V2", () => {
     fireEvent.click(create);
 
     expect(addAthleteGroup).not.toHaveBeenCalled();
+  });
+
+  it("keeps the existing group deletion callback available when the pilot is disabled", () => {
+    const { deleteAthleteGroup } = renderGroupsPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer le groupe" }));
+
+    expect(deleteAthleteGroup).toHaveBeenCalledTimes(1);
+    expect(deleteAthleteGroup).toHaveBeenCalledWith("group-1");
+  });
+
+  it("submits a pilot group deletion only once while it is pending", () => {
+    let resolveDeletion: (() => void) | undefined;
+    const deleteAthleteGroup = vi.fn(
+      () => new Promise<void>((resolve) => { resolveDeletion = resolve; }),
+    );
+    renderGroupsPage({ athleteGroupDeletePilotEnabled: true, deleteAthleteGroup });
+
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    const remove = screen.getByRole("button", { name: "Supprimer le groupe" });
+    fireEvent.click(remove);
+
+    expect(deleteAthleteGroup).toHaveBeenCalledTimes(1);
+    expect(remove).toBeDisabled();
+    expect(remove).toHaveTextContent("Suppression...");
+
+    fireEvent.click(remove);
+    expect(deleteAthleteGroup).toHaveBeenCalledTimes(1);
+
+    resolveDeletion?.();
   });
 });

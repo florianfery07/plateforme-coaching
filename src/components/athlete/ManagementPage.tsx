@@ -21,6 +21,7 @@ export default function ManagementPage({
   athleteGroupMemberPilotEnabled = false,
   athleteGroupMemberPendingKeys = [],
   athleteGroupCreatePending = false,
+  athleteGroupDeletePilotEnabled = false,
   newGroupName,
   setNewGroupName,
   addAthleteGroup,
@@ -31,6 +32,7 @@ export default function ManagementPage({
  const [confirmDelete, setConfirmDelete] = useState(null);
 const [archivePending, setArchivePending] = useState(false);
 const [confirmGroupDelete, setConfirmGroupDelete] = useState(null);
+const [groupDeleteSubmitting, setGroupDeleteSubmitting] = useState(null);
 const [managementTab, setManagementTab] = useState("athletes");
   const [selectedAthleteId, setSelectedAthleteId] = useState(
     athletes?.[0]?.id || null
@@ -349,11 +351,25 @@ const [managementTab, setManagementTab] = useState("athletes");
       <Btn
         variant="danger"
         onClick={() => {
-          deleteAthleteGroup(group.id);
-          setConfirmGroupDelete(null);
+          if (!athleteGroupDeletePilotEnabled) {
+            deleteAthleteGroup(group.id);
+            setConfirmGroupDelete(null);
+            return;
+          }
+
+          if (groupDeleteSubmitting === group.id) return;
+
+          setGroupDeleteSubmitting(group.id);
+          void deleteAthleteGroup(group.id).then(
+            () => setConfirmGroupDelete(null),
+            () => undefined,
+          ).finally(() => setGroupDeleteSubmitting(null));
         }}
+        disabled={athleteGroupDeletePilotEnabled && groupDeleteSubmitting === group.id}
       >
-        Supprimer le groupe
+        {athleteGroupDeletePilotEnabled && groupDeleteSubmitting === group.id
+          ? "Suppression..."
+          : "Supprimer le groupe"}
       </Btn>
       <Btn onClick={() => setConfirmGroupDelete(null)}>Annuler</Btn>
     </div>

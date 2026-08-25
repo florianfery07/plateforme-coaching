@@ -175,6 +175,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
   const calendarSessionNonDonePilotEnabled = isReliableMutationsPilotEnabled();
   const athleteGroupMemberPilotEnabled = isReliableMutationsPilotEnabled();
   const athleteGroupCreatePilotEnabled = isReliableMutationsPilotEnabled();
+  const athleteGroupDeletePilotEnabled = isReliableMutationsPilotEnabled();
   const workoutLibrarySaveMutation = useReliableMutation({
     concurrency: "reject",
     key: `workout-library:${editingId || "new"}`,
@@ -262,6 +263,12 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     key: "athlete-group.create",
     operation: ({ name }) => createAthleteGroup(name),
     type: "athlete-group.create",
+  });
+  const athleteGroupDeleteMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "athlete-group.delete",
+    operation: ({ groupId }) => removeAthleteGroup(groupId),
+    type: "athlete-group.delete",
   });
 
 async function loadAllData() {
@@ -599,6 +606,24 @@ async function renameAthleteGroup(groupId, name) {
 async function deleteAthleteGroup(groupId) {
   const ok = window.confirm("Supprimer ce groupe ? Les athlètes ne seront pas supprimés.");
   if (!ok) return;
+
+  if (athleteGroupDeletePilotEnabled) {
+    const result = await athleteGroupDeleteMutation.mutate({ groupId });
+
+    if (result.state === "success" && result.data) {
+      setAthleteGroups((items) => items.filter((group) => group.id !== groupId));
+      setAthleteGroupMembers((items) =>
+        items.filter((member) => member.group_id !== groupId),
+      );
+      return result;
+    }
+
+    if (result.state === "error") {
+      alert("Impossible de supprimer ce groupe. Réessaie.");
+    }
+
+    return result;
+  }
 
   try {
     await removeAthleteGroup(groupId);
@@ -1824,7 +1849,7 @@ async function validateAthleteGoalUpdate(goalValues) {
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && !!editingId && workoutLibrarySaveMutation.pending }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
-    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, athleteGroupCreatePending: athleteGroupCreatePilotEnabled && athleteGroupCreateMutation.pending, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
+    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, athleteGroupCreatePending: athleteGroupCreatePilotEnabled && athleteGroupCreateMutation.pending, athleteGroupDeletePilotEnabled, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
 }
