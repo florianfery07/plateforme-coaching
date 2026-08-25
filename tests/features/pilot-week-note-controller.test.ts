@@ -20,7 +20,7 @@ describe("weekly note reliable-mutation pilot guard", () => {
     expect(isReliableMutationsPilotEnabled({ featureEnabled: true, nodeEnv: "development" })).toBe(true);
   });
 
-  it("keeps every non-pilot weekly-note path legacy", () => {
+  it("keeps direct writes legacy-only outside the selected pilots", () => {
     const root = process.cwd();
     const weekDetail = readFileSync(resolve(root, "src/components/athlete/WeekDetail.tsx"), "utf8");
     const sourceReferences = sourceFiles(resolve(root, "src"))
@@ -45,6 +45,6 @@ describe("weekly note reliable-mutation pilot guard", () => {
       "src/services/week-notes/supabase-week-note-repository.ts",
     ]);
     expect(readFileSync(resolve(root, "src/app/page.tsx"), "utf8")).not.toContain("useWeekNoteAutosave");
-    expect(readFileSync(resolve(root, "src/components/calendar/CalendarPageOld.tsx"), "utf8")).not.toContain("useWeekNoteAutosave");
+    expect(readFileSync(resolve(root, "src/components/calendar/CalendarPageOld.tsx"), "utf8")).toContain("useWeekNoteAutosave");
   });
 });

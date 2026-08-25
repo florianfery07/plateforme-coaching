@@ -4,6 +4,10 @@
 import { useMemo, useState } from "react";
 
 import { Panel, Select, Textarea } from "@/components/ui/ui";
+import { useWeekNoteAutosave } from "@/hooks/use-week-note-autosave";
+import { isReliableMutationsPilotEnabled } from "@/lib/features";
+import { validateWeekNotePayload } from "@/services/week-notes";
+import { weekNoteService } from "@/services/week-notes/week-note-client-service";
 
 import CalendarToolbar from "@/components/calendar/CalendarToolbar";
 import YearView from "@/components/calendar/YearView";
@@ -107,6 +111,7 @@ function PlanningLoadTool({
   weekPlanning = {},
   updateWeekPlanning,
   weekNotes = {},
+  setWeekNotes,
   updateWeekNote,
 }) {
   const [open, setOpen] = useState(false);
@@ -122,6 +127,38 @@ function PlanningLoadTool({
   };
 
   const weekNote = weekNotes[selectedKey] || "";
+  const reliableWeekNotePilot =
+    isReliableMutationsPilotEnabled() &&
+    validateWeekNotePayload({
+      athleteId: activeId,
+      note: "",
+      week: info.label,
+      year: selectedYear,
+    }) === null;
+
+  function saveWeekNoteLegacy(value) {
+    return updateWeekNote(selectedYear, info.label, value);
+  }
+
+  const weekNoteAutosave = useWeekNoteAutosave({
+    athleteId: activeId,
+    enabled: reliableWeekNotePilot,
+    legacySave: saveWeekNoteLegacy,
+    service: weekNoteService,
+    week: info.label,
+    year: selectedYear,
+  });
+
+  function handleWeekNoteChange(value) {
+    if (reliableWeekNotePilot) {
+      setWeekNotes((items) => ({
+        ...items,
+        [selectedKey]: value,
+      }));
+    }
+
+    weekNoteAutosave.save(value);
+  }
 
   const selectedWeekSessions = weekSessionsFor(sessions, start, end);
   const selectedLoad = computeWeekLoad(selectedWeekSessions);
@@ -274,16 +311,33 @@ function PlanningLoadTool({
 
             <Textarea
               value={weekNote}
-              onChange={(event) =>
-                updateWeekNote(
-                  selectedYear,
-                  info.label,
-                  event.target.value
-                )
-              }
+              onBlur={weekNoteAutosave.flush}
+              onChange={(event) => handleWeekNoteChange(event.target.value)}
               rows={3}
               placeholder="Ex : bloc PMA avant objectif, semaine de relance, affûtage avant course..."
             />
+            {reliableWeekNotePilot && (
+              <div className="mt-2 min-h-5 text-xs">
+                {weekNoteAutosave.state.state === "pending" && (
+                  <p className="text-zinc-400" role="status">Enregistrement...</p>
+                )}
+                {weekNoteAutosave.state.state === "success" && (
+                  <p className="text-emerald-400" role="status">Enregistre</p>
+                )}
+                {weekNoteAutosave.state.state === "error" && (
+                  <div className="flex items-center gap-2 text-amber-300" role="alert">
+                    <span>Echec de l&apos;enregistrement</span>
+                    <button
+                      type="button"
+                      className="underline underline-offset-2"
+                      onClick={weekNoteAutosave.retry}
+                    >
+                      Reessayer
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
@@ -455,6 +509,7 @@ export default function CalendarPageOld(props) {
               weekPlanning={props.weekPlanning}
               updateWeekPlanning={props.updateWeekPlanning}
               weekNotes={props.weekNotes}
+              setWeekNotes={props.setWeekNotes}
               updateWeekNote={props.updateWeekNote}
             />
 
