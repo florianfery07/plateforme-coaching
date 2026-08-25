@@ -70,6 +70,7 @@ export type CalendarSessionPersistence = Pick<
   | "expected_rpe_global"
   | "expected_rpe_specific"
   | "expected_specific_duration"
+  | "non_done"
   | "subcategory"
   | "title"
   | "workout_type"
@@ -85,6 +86,11 @@ export type CalendarSessionWriteRepository = {
 export type CalendarSessionAdjustmentSaveInput = {
   adjustedSpecificDuration: string;
   workoutId: string;
+};
+
+export type CalendarRestDayInput = {
+  athleteId: string;
+  date: string;
 };
 
 export type CalendarSessionAdjustmentPersistence = Pick<
@@ -103,6 +109,10 @@ export type CalendarSessionAdjustmentRepository = {
 export type CalendarSessionService = {
   create: (
     input: CalendarSessionCreateInput,
+    signal?: AbortSignal,
+  ) => Promise<CalendarSession>;
+  createRestDay: (
+    input: CalendarRestDayInput,
     signal?: AbortSignal,
   ) => Promise<CalendarSession>;
   saveAdjustment: (
@@ -184,6 +194,25 @@ export function toCalendarSessionPersistence(
   };
 }
 
+/** Preserves the legacy single-athlete rest-day payload for the targeted pilot. */
+export function toCalendarRestDayPersistence(
+  input: CalendarRestDayInput,
+): CalendarSessionPersistence {
+  return {
+    athlete_id: input.athleteId,
+    date: input.date,
+    workout_type: "Repos",
+    subcategory: "",
+    title: "Repos",
+    duration: "",
+    expected_rpe: "",
+    description: "Journée de récupération.",
+    blocks: [],
+    completed: true,
+    non_done: false,
+  };
+}
+
 function mapCalendarSession(row: WorkoutRow): CalendarSession {
   const athleteId = row.athlete_id ?? "null";
   const sessions = mapCalendarSessions([athleteId], [{
@@ -205,6 +234,21 @@ export function createCalendarSessionService(
 
       const { data, error } = await repository.insert(
         toCalendarSessionPersistence(input),
+        signal,
+      );
+
+      if (error) throw error;
+      if (!data) throw { kind: "unknown", retryable: false };
+
+      return mapCalendarSession(data);
+    },
+    async createRestDay(input, signal) {
+      if (!input.athleteId || !input.date) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.insert(
+        toCalendarRestDayPersistence(input),
         signal,
       );
 

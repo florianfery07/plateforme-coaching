@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createCalendarSessionService,
+  toCalendarRestDayPersistence,
   toCalendarSessionPersistence,
   type CalendarSessionCreateInput,
   type CalendarSessionAdjustmentRepository,
@@ -113,6 +114,70 @@ describe("calendar session targeted create service", () => {
       .rejects.toBe(failure);
 
     expect(insert).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves the single-athlete legacy rest-day payload", () => {
+    expect(toCalendarRestDayPersistence({
+      athleteId: "athlete-1",
+      date: "2026-08-18",
+    })).toEqual({
+      athlete_id: "athlete-1",
+      blocks: [],
+      completed: true,
+      date: "2026-08-18",
+      description: "Journée de récupération.",
+      duration: "",
+      expected_rpe: "",
+      non_done: false,
+      subcategory: "",
+      title: "Repos",
+      workout_type: "Repos",
+    });
+  });
+
+  it("creates one confirmed rest day through the existing session writer", async () => {
+    const insert = vi.fn().mockResolvedValue({
+      data: {
+        ...row,
+        completed: true,
+        date: "2026-08-18",
+        description: "Journée de récupération.",
+        duration: "",
+        title: "Repos",
+        workout_type: "Repos",
+      },
+      error: null,
+    });
+    const signal = new AbortController().signal;
+
+    await expect(createCalendarSessionService(repository(insert)).createRestDay({
+      athleteId: "athlete-1",
+      date: "2026-08-18",
+    }, signal)).resolves.toMatchObject({
+      category: "Repos",
+      date: "2026-08-18",
+      feedback: expect.objectContaining({ validated: true }),
+    });
+
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledWith(
+      toCalendarRestDayPersistence({
+        athleteId: "athlete-1",
+        date: "2026-08-18",
+      }),
+      signal,
+    );
+  });
+
+  it("rejects an incomplete rest-day target before attempting a write", async () => {
+    const insert = vi.fn();
+
+    await expect(createCalendarSessionService(repository(insert)).createRestDay({
+      athleteId: "",
+      date: "2026-08-18",
+    })).rejects.toMatchObject({ kind: "validation" });
+
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it("updates only the confirmed session adjustment", async () => {

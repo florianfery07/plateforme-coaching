@@ -169,6 +169,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
   const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionImportPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
+  const calendarRestDayPilotEnabled = isReliableMutationsPilotEnabled();
   const workoutLibrarySaveMutation = useReliableMutation({
     concurrency: "reject",
     key: `workout-library:${editingId || "new"}`,
@@ -198,6 +199,13 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
         workoutId,
       }, context.signal),
     type: "calendar-session.adjustment.save",
+  });
+  const calendarRestDayMutation = useReliableMutation({
+    concurrency: "reject",
+    key: `calendar-rest-day:${activeId}:${dateKey(selectedDate)}`,
+    operation: ({ athleteId, date }, context) =>
+      calendarSessionService.createRestDay({ athleteId, date }, context.signal),
+    type: "calendar-session.rest-day.create",
   });
 
 async function loadAllData() {
@@ -1069,6 +1077,27 @@ async function addRestDay(date = selectedDate) {
     }
   }
 
+  if (calendarRestDayPilotEnabled && planningTargetType !== "group") {
+    const targetAthleteId = activeId;
+    const result = await calendarRestDayMutation.mutate({
+      athleteId: targetAthleteId,
+      date: dateKey(date),
+    });
+
+    if (result.state === "success" && result.data) {
+      setSessions((items) => ({
+        ...items,
+        [targetAthleteId]: [...(items[targetAthleteId] || []), result.data],
+      }));
+      setMode("day");
+      setView("calendar");
+    } else if (result.state === "error") {
+      alert("Impossible d'ajouter ce jour de repos. Réessaie.");
+    }
+
+    return result;
+  }
+
   const payload = targetAthleteIds.map((athleteId) => ({
     athlete_id: athleteId,
     date: dateKey(date),
@@ -1651,7 +1680,7 @@ async function validateAthleteGoalUpdate(goalValues) {
         validateGoalUpdate={validateAthleteGoalUpdate}
       />
     )}
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
    {auth?.role === "athlete" && view === "athleteStats" && (
   <AthleteStatsPage
     athlete={athleteActive}

@@ -23,6 +23,7 @@ export default function DayView({
   updateSession,
   updateCalendarWorkoutField,
   adjustmentPending = false,
+  restDayPending = false,
   setProposals,
   programProposal,
   addAthleteProposal,
@@ -82,7 +83,10 @@ export default function DayView({
           )}
 
           {isCoach && (
-            <Btn onClick={() => addRestDay(selectedDate)}>
+            <Btn
+              onClick={() => addRestDay(selectedDate)}
+              disabled={restDayPending}
+            >
               Marquer repos
             </Btn>
           )}
