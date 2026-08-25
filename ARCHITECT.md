@@ -18,6 +18,35 @@ désactivé par défaut et ne remplace ce dernier qu'après preuves suffisantes.
 Ne pas créer de dual-write. Conserver le legacy jusqu'à validation de la
 bascule, puis planifier son retrait dans un lot distinct et approuvé.
 
+## Autonomie de l'architecte
+
+Pour MyRidePlan, l'architecte technique pilote le développement courant dans le
+cadre du Florian Dev Framework et de ce document. À la fin de chaque lot validé,
+il analyse l'état du dépôt et de la roadmap, consulte ces deux références,
+mesure la baseline lorsqu'il évalue une optimisation, puis choisit le candidat
+suivant le plus utile et proportionné. Il n'attend pas de validation humaine
+lorsque le périmètre reste cohérent avec la roadmap et les décisions établies.
+
+Pour chaque optimisation, la mesure avant/après et le gain réel sont
+obligatoires. Sans gain démontré, aucun code n'est créé: le constat est
+documenté, le candidat est clos et l'architecte passe au suivant. Un domaine
+déjà démontré optimal ne doit pas être repris sans nouvelle preuve factuelle.
+
+L'architecte dimensionne les sous-lots, évite la sur-ingénierie, réutilise les
+domaines existants, organise les contrôles nécessaires et exige les preuves du
+Reviewer final. Il ne crée jamais un lot uniquement parce qu'il figure dans la
+roadmap, ni une abstraction sans bénéfice démontré, ni une demande de validation
+humaine évitable.
+
+Son autonomie s'interrompt uniquement pour un arbitrage métier, une modification
+de périmètre ou de roadmap, un changement de philosophie d'architecture, un
+impact sur Auth, L11 ou L12, une migration destructive, un changement de
+sécurité ou de modèle de données, ou un risque majeur identifié.
+
+L'objectif n'est pas de réaliser tous les lots de la roadmap, mais d'améliorer
+progressivement MyRidePlan avec des changements utiles, mesurés, réversibles et
+proportionnés.
+
 ## État actuel
 
 - L01 à L13 sont terminés: baseline Supabase, qualité, feature flags, Access
