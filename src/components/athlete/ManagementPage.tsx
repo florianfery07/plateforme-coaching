@@ -20,6 +20,7 @@ export default function ManagementPage({
   athleteGroupMembers = [],
   athleteGroupMemberPilotEnabled = false,
   athleteGroupMemberPendingKeys = [],
+  athleteGroupCreatePending = false,
   newGroupName,
   setNewGroupName,
   addAthleteGroup,
@@ -274,8 +275,12 @@ const [managementTab, setManagementTab] = useState("athletes");
                 onClick={() => {
                   addAthleteGroup();
                 }}
-                disabled={!String(newGroupName || "").trim()}
-                className={!String(newGroupName || "").trim() ? "opacity-40" : ""}
+                disabled={athleteGroupCreatePending || !String(newGroupName || "").trim()}
+                className={
+                  athleteGroupCreatePending || !String(newGroupName || "").trim()
+                    ? "opacity-40"
+                    : ""
+                }
               >
                 + Créer
               </Btn>

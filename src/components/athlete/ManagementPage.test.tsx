@@ -9,8 +9,11 @@ const athletes = [
 ];
 
 type GroupsPageOptions = {
+  addAthleteGroup?: ReturnType<typeof vi.fn>;
+  athleteGroupCreatePending?: boolean;
   athleteGroupMemberPendingKeys?: string[];
   athleteGroupMemberPilotEnabled?: boolean;
+  newGroupName?: string;
   toggleAthleteGroupMember?: ReturnType<typeof vi.fn>;
 };
 
@@ -38,8 +41,11 @@ function renderPage(deleteAthlete = vi.fn().mockResolvedValue(true)) {
 }
 
 function renderGroupsPage({
+  addAthleteGroup = vi.fn(),
+  athleteGroupCreatePending = false,
   athleteGroupMemberPendingKeys = [],
   athleteGroupMemberPilotEnabled = false,
+  newGroupName = "",
   toggleAthleteGroupMember = vi.fn(),
 }: GroupsPageOptions = {}) {
   render(
@@ -57,9 +63,10 @@ function renderGroupsPage({
       ] as unknown as never[]}
       athleteGroupMemberPilotEnabled={athleteGroupMemberPilotEnabled}
       athleteGroupMemberPendingKeys={athleteGroupMemberPendingKeys as unknown as never[]}
-      newGroupName=""
+      athleteGroupCreatePending={athleteGroupCreatePending}
+      newGroupName={newGroupName}
       setNewGroupName={vi.fn()}
-      addAthleteGroup={vi.fn()}
+      addAthleteGroup={addAthleteGroup}
       renameAthleteGroup={vi.fn()}
       deleteAthleteGroup={vi.fn()}
       toggleAthleteGroupMember={toggleAthleteGroupMember}
@@ -67,7 +74,7 @@ function renderGroupsPage({
   );
 
   fireEvent.click(screen.getByRole("button", { name: "Groupes" }));
-  return toggleAthleteGroupMember;
+  return { addAthleteGroup, toggleAthleteGroupMember };
 }
 
 describe("ManagementPage athlete lifecycle V2", () => {
@@ -111,7 +118,7 @@ describe("ManagementPage athlete lifecycle V2", () => {
   });
 
   it("keeps the existing group membership callback available when the pilot is disabled", () => {
-    const toggleAthleteGroupMember = renderGroupsPage();
+    const { toggleAthleteGroupMember } = renderGroupsPage();
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Athlete One" }));
 
@@ -119,7 +126,7 @@ describe("ManagementPage athlete lifecycle V2", () => {
   });
 
   it("blocks only the pending group-member checkbox in the reliable-mutation pilot", () => {
-    const toggleAthleteGroupMember = renderGroupsPage({
+    const { toggleAthleteGroupMember } = renderGroupsPage({
       athleteGroupMemberPilotEnabled: true,
       athleteGroupMemberPendingKeys: ["group-1:athlete-1"],
     });
@@ -130,5 +137,29 @@ describe("ManagementPage athlete lifecycle V2", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Athlete Two" }));
 
     expect(toggleAthleteGroupMember).toHaveBeenCalledWith("group-1", "athlete-2", true);
+  });
+
+  it("keeps the existing group-creation action available when no pilot mutation is pending", () => {
+    const addAthleteGroup = vi.fn();
+    renderGroupsPage({ addAthleteGroup, newGroupName: "Synthetic group" });
+
+    fireEvent.click(screen.getByRole("button", { name: "+ Créer" }));
+
+    expect(addAthleteGroup).toHaveBeenCalledTimes(1);
+  });
+
+  it("prevents a duplicate group creation while the reliable mutation is pending", () => {
+    const addAthleteGroup = vi.fn();
+    renderGroupsPage({
+      addAthleteGroup,
+      athleteGroupCreatePending: true,
+      newGroupName: "Synthetic group",
+    });
+
+    const create = screen.getByRole("button", { name: "+ Créer" });
+    expect(create).toBeDisabled();
+    fireEvent.click(create);
+
+    expect(addAthleteGroup).not.toHaveBeenCalled();
   });
 });
