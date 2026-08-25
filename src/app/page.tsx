@@ -159,6 +159,7 @@ async function deleteGroupDayWorkouts(date = selectedDate) {
   const [weekPlanning, setWeekPlanning] = useState({});
 const [athleteGroups, setAthleteGroups] = useState([]);
 const [athleteGroupMembers, setAthleteGroupMembers] = useState([]);
+const [athleteGroupMemberPendingKeys, setAthleteGroupMemberPendingKeys] = useState([]);
 const [newGroupName, setNewGroupName] = useState("");
 const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const [selectedGroupId, setSelectedGroupId] = useState("");
@@ -166,11 +167,13 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const [athleteLifecycleV2Enabled, setAthleteLifecycleV2Enabled] = useState(false);
 	const [athleteLifecyclePendingAthleteId, setAthleteLifecyclePendingAthleteId] = useState(null);
 	const athleteLifecycleLocksRef = useRef(new Set());
+	const athleteGroupMemberLocksRef = useRef(new Set());
   const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionImportPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarRestDayPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionNonDonePilotEnabled = isReliableMutationsPilotEnabled();
+  const athleteGroupMemberPilotEnabled = isReliableMutationsPilotEnabled();
   const workoutLibrarySaveMutation = useReliableMutation({
     concurrency: "reject",
     key: `workout-library:${editingId || "new"}`,
@@ -214,6 +217,44 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     operation: ({ nonDone, workoutId }, context) =>
       calendarSessionService.saveNonDone({ nonDone, workoutId }, context.signal),
     type: "calendar-session.non-done.save",
+  });
+  const athleteGroupMemberMutation = useReliableMutation({
+    concurrency: "parallel",
+    key: "athlete-group-member",
+    onMutate: ({ athleteId, checked, groupId }) => {
+      setAthleteGroupMembers((current) => {
+        const exists = current.some(
+          (member) => member.group_id === groupId && member.athlete_id === athleteId,
+        );
+
+        if (checked) {
+          return exists ? current : [...current, { athlete_id: athleteId, group_id: groupId }];
+        }
+
+        return current.filter(
+          (member) => member.group_id !== groupId || member.athlete_id !== athleteId,
+        );
+      });
+
+      return () => {
+        setAthleteGroupMembers((current) => {
+          const exists = current.some(
+            (member) => member.group_id === groupId && member.athlete_id === athleteId,
+          );
+
+          if (checked) {
+            return current.filter(
+              (member) => member.group_id !== groupId || member.athlete_id !== athleteId,
+            );
+          }
+
+          return exists ? current : [...current, { athlete_id: athleteId, group_id: groupId }];
+        });
+      };
+    },
+    operation: ({ athleteId, checked, groupId }) =>
+      setAthleteGroupMember(groupId, athleteId, checked),
+    type: "athlete-group-member.save",
   });
 
 async function loadAllData() {
@@ -546,6 +587,36 @@ async function deleteAthleteGroup(groupId) {
 }
 
 async function toggleAthleteGroupMember(groupId, athleteId, checked) {
+  if (athleteGroupMemberPilotEnabled) {
+    const membershipKey = `${groupId}:${athleteId}`;
+
+    if (athleteGroupMemberLocksRef.current.has(membershipKey)) return;
+
+    athleteGroupMemberLocksRef.current.add(membershipKey);
+    setAthleteGroupMemberPendingKeys((current) => [...current, membershipKey]);
+
+    try {
+      const result = await athleteGroupMemberMutation.mutate({
+        athleteId,
+        checked,
+        groupId,
+      });
+
+      if (result.state === "error") {
+        alert("Impossible de modifier ce membre du groupe. Réessaie.");
+      }
+    } catch {
+      alert("Impossible de modifier ce membre du groupe. Réessaie.");
+    } finally {
+      athleteGroupMemberLocksRef.current.delete(membershipKey);
+      setAthleteGroupMemberPendingKeys((current) =>
+        current.filter((key) => key !== membershipKey),
+      );
+    }
+
+    return;
+  }
+
   try {
     await setAthleteGroupMember(groupId, athleteId, checked);
     await loadAllData();
@@ -1730,7 +1801,7 @@ async function validateAthleteGoalUpdate(goalValues) {
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && !!editingId && workoutLibrarySaveMutation.pending }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
-    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
+    {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
     {auth?.role === "coach" && <DevChecks />}
   </div></div>;
 }

@@ -18,6 +18,8 @@ export default function ManagementPage({
 
   athleteGroups = [],
   athleteGroupMembers = [],
+  athleteGroupMemberPilotEnabled = false,
+  athleteGroupMemberPendingKeys = [],
   newGroupName,
   setNewGroupName,
   addAthleteGroup,
@@ -367,6 +369,11 @@ const [managementTab, setManagementTab] = useState("athletes");
                         const checked = groupMembers.some(
                           (member) => member.athlete_id === athlete.id
                         );
+                        const membershipPending =
+                          athleteGroupMemberPilotEnabled &&
+                          athleteGroupMemberPendingKeys.includes(
+                            `${group.id}:${athlete.id}`
+                          );
 
                         return (
                           <label
@@ -387,6 +394,7 @@ const [managementTab, setManagementTab] = useState("athletes");
                                   event.target.checked
                                 )
                               }
+                              disabled={membershipPending}
                               className="h-4 w-4 accent-white"
                             />
                             <span className="font-medium">{athlete.name}</span>
