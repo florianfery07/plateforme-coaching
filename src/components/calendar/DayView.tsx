@@ -23,6 +23,7 @@ export default function DayView({
   updateSession,
   updateCalendarWorkoutField,
   adjustmentPending = false,
+  nonDonePending = false,
   restDayPending = false,
   setProposals,
   programProposal,
@@ -188,6 +189,7 @@ export default function DayView({
               updateSession={updateSession}
               updateCalendarWorkoutField={updateCalendarWorkoutField}
               adjustmentPending={adjustmentPending}
+              nonDonePending={nonDonePending}
               isCoach={isCoach}
             />
           ))}

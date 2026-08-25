@@ -6,6 +6,7 @@ import {
   toCalendarSessionPersistence,
   type CalendarSessionCreateInput,
   type CalendarSessionAdjustmentRepository,
+  type CalendarSessionNonDoneRepository,
   type CalendarSessionWriteRepository,
 } from "../../src/services/calendar-sessions";
 
@@ -54,8 +55,9 @@ const row = {
 function repository(
   insert = vi.fn().mockResolvedValue({ data: row, error: null }),
   updateAdjustment = vi.fn().mockResolvedValue({ data: row, error: null }),
-): CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository {
-  return { insert, updateAdjustment };
+  updateNonDone = vi.fn().mockResolvedValue({ data: row, error: null }),
+): CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository {
+  return { insert, updateAdjustment, updateNonDone };
 }
 
 describe("calendar session targeted create service", () => {
@@ -212,5 +214,70 @@ describe("calendar session targeted create service", () => {
     })).rejects.toMatchObject({ kind: "validation" });
 
     expect(updateAdjustment).not.toHaveBeenCalled();
+  });
+
+  it("updates the complete confirmed non-done payload with one targeted write", async () => {
+    const updateNonDone = vi.fn().mockResolvedValue({
+      data: {
+        ...row,
+        non_done: true,
+        non_done_comment: "Trop fatigué",
+        non_done_fatigue: "7",
+        non_done_pain: "2",
+        non_done_reason: "Fatigue",
+      },
+      error: null,
+    });
+    const signal = new AbortController().signal;
+
+    await expect(createCalendarSessionService(repository(undefined, undefined, updateNonDone)).saveNonDone({
+      nonDone: {
+        comment: "Trop fatigué",
+        fatigue: "7",
+        pain: "2",
+        reason: "Fatigue",
+        validated: true,
+      },
+      workoutId: "workout-1",
+    }, signal)).resolves.toMatchObject({
+      id: "workout-1",
+      nonDone: {
+        comment: "Trop fatigué",
+        fatigue: "7",
+        pain: "2",
+        reason: "Fatigue",
+        validated: true,
+      },
+    });
+
+    expect(updateNonDone).toHaveBeenCalledTimes(1);
+    expect(updateNonDone).toHaveBeenCalledWith(
+      "workout-1",
+      {
+        non_done: true,
+        non_done_comment: "Trop fatigué",
+        non_done_fatigue: "7",
+        non_done_pain: "2",
+        non_done_reason: "Fatigue",
+      },
+      signal,
+    );
+  });
+
+  it("rejects a missing workout before attempting a non-done write", async () => {
+    const updateNonDone = vi.fn();
+
+    await expect(createCalendarSessionService(repository(undefined, undefined, updateNonDone)).saveNonDone({
+      nonDone: {
+        comment: "",
+        fatigue: "",
+        pain: "",
+        reason: "",
+        validated: true,
+      },
+      workoutId: "",
+    })).rejects.toMatchObject({ kind: "validation" });
+
+    expect(updateNonDone).not.toHaveBeenCalled();
   });
 });

@@ -170,6 +170,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
   const calendarSessionImportPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarRestDayPilotEnabled = isReliableMutationsPilotEnabled();
+  const calendarSessionNonDonePilotEnabled = isReliableMutationsPilotEnabled();
   const workoutLibrarySaveMutation = useReliableMutation({
     concurrency: "reject",
     key: `workout-library:${editingId || "new"}`,
@@ -206,6 +207,13 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     operation: ({ athleteId, date }, context) =>
       calendarSessionService.createRestDay({ athleteId, date }, context.signal),
     type: "calendar-session.rest-day.create",
+  });
+  const calendarSessionNonDoneMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "calendar-session-non-done",
+    operation: ({ nonDone, workoutId }, context) =>
+      calendarSessionService.saveNonDone({ nonDone, workoutId }, context.signal),
+    type: "calendar-session.non-done.save",
   });
 
 async function loadAllData() {
@@ -1260,6 +1268,27 @@ await loadAllData();
     await loadAllData();
   }
   async function updateNonDone(sessionId, field, value) {
+  if (calendarSessionNonDonePilotEnabled && field === "commit") {
+    const targetAthleteId = activeId;
+    const result = await calendarSessionNonDoneMutation.mutate({
+      nonDone: value,
+      workoutId: sessionId,
+    });
+
+    if (result.state === "success" && result.data) {
+      setSessions((items) => ({
+        ...items,
+        [targetAthleteId]: (items[targetAthleteId] || []).map((item) =>
+          item.id === sessionId
+            ? { ...item, nonDone: result.data.nonDone }
+            : item,
+        ),
+      }));
+    }
+
+    return result;
+  }
+
   const session = activeSessions.find((item) => item.id === sessionId);
   if (!session) return;
 
@@ -1680,7 +1709,7 @@ async function validateAthleteGoalUpdate(goalValues) {
         validateGoalUpdate={validateAthleteGoalUpdate}
       />
     )}
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending, nonDonePending: calendarSessionNonDonePilotEnabled && calendarSessionNonDoneMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
    {auth?.role === "athlete" && view === "athleteStats" && (
   <AthleteStatsPage
     athlete={athleteActive}

@@ -23,9 +23,10 @@ bascule, puis planifier son retrait dans un lot distinct et approuvé.
 - L01 à L13 sont terminés: baseline Supabase, qualité, feature flags, Access
   Control V2, typage, lectures pilotes, mutations fiables, Groups V2,
   invitations, cycle de vie athlète et extraction ciblée du calendrier.
-- L14a, L14b, L14d, L14e et L14f sont terminés: sauvegardes ciblées de
+- L14a, L14b, L14d, L14e, L14f et L14g sont terminés: sauvegardes ciblées de
   feedback, de bibliothèque, de programmation individuelle, d'ajustement de
-  durée spécifique et de repos individuel au calendrier.
+  durée spécifique, de repos individuel et de justification de séance non faite
+  au calendrier.
 - L14c a été volontairement abandonné après mesure: la sauvegarde du planning
   hebdomadaire réalise déjà une écriture ciblée, sans lecture globale ni
   `loadAllData`.
@@ -41,8 +42,9 @@ La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 - L11 sécurise les invitations athlètes V2; L12 remplace, pour son pilote,
   la suppression destructive par l'archivage atomique et sa restauration.
 - L13 a extrait des lectures legacy du calendrier sans changement observable.
-- L14 privilégie les sauvegardes ciblées mesurées: L14a, L14b, L14d, L14e et
-  L14f sont intégrés; L14c ne crée rien lorsque la baseline est déjà optimale.
+- L14 privilégie les sauvegardes ciblées mesurées: L14a, L14b, L14d, L14e, L14f
+  et L14g sont intégrés; L14c ne crée rien lorsque la baseline est déjà
+  optimale.
 
 ## Domaines métier
 

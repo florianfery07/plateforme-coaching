@@ -88,6 +88,11 @@ export type CalendarSessionAdjustmentSaveInput = {
   workoutId: string;
 };
 
+export type CalendarSessionNonDoneSaveInput = {
+  nonDone: CalendarSession["nonDone"];
+  workoutId: string;
+};
+
 export type CalendarRestDayInput = {
   athleteId: string;
   date: string;
@@ -106,6 +111,23 @@ export type CalendarSessionAdjustmentRepository = {
   ) => Promise<{ data: WorkoutRow | null; error: unknown }>;
 };
 
+export type CalendarSessionNonDonePersistence = Pick<
+  Database["public"]["Tables"]["calendar_workouts"]["Update"],
+  | "non_done"
+  | "non_done_comment"
+  | "non_done_fatigue"
+  | "non_done_pain"
+  | "non_done_reason"
+>;
+
+export type CalendarSessionNonDoneRepository = {
+  updateNonDone: (
+    workoutId: string,
+    nonDone: CalendarSessionNonDonePersistence,
+    signal?: AbortSignal,
+  ) => Promise<{ data: WorkoutRow | null; error: unknown }>;
+};
+
 export type CalendarSessionService = {
   create: (
     input: CalendarSessionCreateInput,
@@ -117,6 +139,10 @@ export type CalendarSessionService = {
   ) => Promise<CalendarSession>;
   saveAdjustment: (
     input: CalendarSessionAdjustmentSaveInput,
+    signal?: AbortSignal,
+  ) => Promise<CalendarSession>;
+  saveNonDone: (
+    input: CalendarSessionNonDoneSaveInput,
     signal?: AbortSignal,
   ) => Promise<CalendarSession>;
 };
@@ -224,7 +250,9 @@ function mapCalendarSession(row: WorkoutRow): CalendarSession {
 }
 
 export function createCalendarSessionService(
-  repository: CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository,
+  repository: CalendarSessionWriteRepository
+    & CalendarSessionAdjustmentRepository
+    & CalendarSessionNonDoneRepository,
 ): CalendarSessionService {
   return {
     async create(input, signal) {
@@ -266,6 +294,28 @@ export function createCalendarSessionService(
         input.workoutId,
         {
           adjusted_specific_duration: input.adjustedSpecificDuration || null,
+        },
+        signal,
+      );
+
+      if (error) throw error;
+      if (!data) throw { kind: "unknown", retryable: false };
+
+      return mapCalendarSession(data);
+    },
+    async saveNonDone(input, signal) {
+      if (!input.workoutId) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.updateNonDone(
+        input.workoutId,
+        {
+          non_done: input.nonDone.validated || false,
+          non_done_reason: input.nonDone.reason || "",
+          non_done_fatigue: input.nonDone.fatigue || "",
+          non_done_pain: input.nonDone.pain || "",
+          non_done_comment: input.nonDone.comment || "",
         },
         signal,
       );

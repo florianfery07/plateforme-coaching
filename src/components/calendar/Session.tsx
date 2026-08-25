@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { sessionStatus, feedbackReady } from "@/lib/trainingUtils";
 import { statusLabel, statusStyle } from "@/lib/platformDefaults";
@@ -29,6 +29,7 @@ export default function Session({
   updateSession,
   updateCalendarWorkoutField,
   adjustmentPending = false,
+  nonDonePending = false,
   isCoach,
 }) {
   const status = sessionStatus(session);
@@ -38,9 +39,12 @@ export default function Session({
 
   const feedbackPilotEnabled = isReliableMutationsPilotEnabled();
   const adjustmentPilotEnabled = isReliableMutationsPilotEnabled();
+  const nonDonePilotEnabled = isReliableMutationsPilotEnabled();
   const [adjustedSpecificDurationDraft, setAdjustedSpecificDurationDraft] = useState(
     session.adjustedSpecificDuration || "",
   );
+  const [nonDoneDraft, setNonDoneDraft] = useState(session.nonDone || {});
+  const nonDoneSubmittingRef = useRef(false);
   const patch = (fn) =>
     updateSession((items) =>
       items.map((item) => (item.id === session.id ? fn(item) : item))
@@ -225,8 +229,39 @@ function changeActualTimePart(part, value) {
 
   draftFeedback("actualTime", formatted);
 }
-  const changeNonDone = (field, value) =>
+  const changeNonDone = (field, value) => {
+    if (nonDonePilotEnabled) {
+      setNonDoneDraft((current) => ({ ...current, [field]: value }));
+      return;
+    }
+
     updateNonDone(session.id, field, value);
+  };
+  const visibleNonDone = nonDonePilotEnabled ? nonDoneDraft : session.nonDone;
+  const savePilotNonDone = () => {
+    const previousNonDone = session.nonDone || {};
+
+    if (nonDonePending || nonDoneSubmittingRef.current) return;
+
+    nonDoneSubmittingRef.current = true;
+    void updateNonDone(session.id, "commit", {
+      ...nonDoneDraft,
+      validated: true,
+    }).then((result) => {
+      if (result?.state === "success" && result.data) {
+        setNonDoneDraft(result.data.nonDone);
+        return;
+      }
+
+      setNonDoneDraft(previousNonDone);
+      alert("Impossible d'enregistrer la justification. Réessaie.");
+    }).catch(() => {
+      setNonDoneDraft(previousNonDone);
+      alert("Impossible d'enregistrer la justification. Réessaie.");
+    }).finally(() => {
+      nonDoneSubmittingRef.current = false;
+    });
+  };
    if (isRest) {
   return (
     <article className="rounded-3xl border border-blue-500 bg-blue-950 p-3 sm:p-5">
@@ -576,10 +611,11 @@ function changeActualTimePart(part, value) {
           <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Raison">
               <Select
-                value={session.nonDone?.reason || ""}
+                value={visibleNonDone?.reason || ""}
                 onChange={(event) =>
                   changeNonDone("reason", event.target.value)
                 }
+                disabled={nonDonePilotEnabled && nonDonePending}
               >
                 <option value="">Choisir</option>
 
@@ -598,41 +634,52 @@ function changeActualTimePart(part, value) {
 
             <Field label="Fatigue optionnelle">
               <Input
-                value={session.nonDone?.fatigue || ""}
+                value={visibleNonDone?.fatigue || ""}
                 onChange={(event) =>
                   changeNonDone("fatigue", event.target.value)
                 }
                 type="text"
                 inputMode="decimal"
+                disabled={nonDonePilotEnabled && nonDonePending}
               />
             </Field>
 
             <Field label="Douleur optionnelle">
               <Input
-                value={session.nonDone?.pain || ""}
+                value={visibleNonDone?.pain || ""}
                 onChange={(event) =>
                   changeNonDone("pain", event.target.value)
                 }
                 type="text"
                 inputMode="decimal"
+                disabled={nonDonePilotEnabled && nonDonePending}
               />
             </Field>
           </div>
 
           <Field label="Commentaire optionnel">
             <Textarea
-              value={session.nonDone?.comment || ""}
+            value={visibleNonDone?.comment || ""}
               onChange={(event) =>
                 changeNonDone("comment", event.target.value)
               }
-              rows={3}
+            rows={3}
+            disabled={nonDonePilotEnabled && nonDonePending}
             />
           </Field>
 
           <Btn
             variant="primary"
             className="mt-3"
-            onClick={() => changeNonDone("validated", true)}
+            onClick={() => {
+              if (nonDonePilotEnabled) {
+                savePilotNonDone();
+                return;
+              }
+
+              changeNonDone("validated", true);
+            }}
+            disabled={nonDonePilotEnabled && nonDonePending}
           >
             Valider séance non faite
           </Btn>
