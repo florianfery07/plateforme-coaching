@@ -36,6 +36,7 @@ function workout(overrides: Partial<CalendarWorkoutWithFeedback> = {}): Calendar
     expected_rpe_specific: null,
     adjusted_specific_duration: null,
     athlete_seen_at: null,
+    source_proposal_id: null,
     workout_feedbacks: null,
     ...overrides,
   };

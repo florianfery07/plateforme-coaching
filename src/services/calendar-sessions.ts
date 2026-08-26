@@ -9,6 +9,7 @@ type CalendarWorkoutWithFeedback = WorkoutRow & {
 export type CalendarSession = {
   id: string;
   athleteSeenAt: string | null;
+  sourceProposalId: string | null;
   category: string;
   subcategory: string;
   title: string;
@@ -259,7 +260,7 @@ export function toCalendarRestDayPersistence(
   };
 }
 
-function mapCalendarSession(row: WorkoutRow): CalendarSession {
+export function mapCalendarSession(row: WorkoutRow): CalendarSession {
   const athleteId = row.athlete_id ?? "null";
   const sessions = mapCalendarSessions([athleteId], [{
     ...row,
@@ -489,6 +490,7 @@ export function mapCalendarSessions(
     sessions[athleteId].push({
       id: row.id,
       athleteSeenAt: row.athlete_seen_at || null,
+      sourceProposalId: row.source_proposal_id || null,
       category: row.workout_type || "Séance",
       subcategory: row.subcategory || "",
       title: row.title || "Séance",

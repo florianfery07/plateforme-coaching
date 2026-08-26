@@ -9,6 +9,7 @@ export default function Proposal({
   proposal,
   setProposals,
   programProposal,
+  programPending = false,
   isCoach,
 }) {
   const scheduled = proposal.status === "Programmée";
@@ -60,6 +61,7 @@ export default function Proposal({
             <Btn
               variant="primary"
               onClick={() => programProposal(proposal)}
+              disabled={programPending}
             >
               Programmer
             </Btn>

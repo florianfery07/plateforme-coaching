@@ -1,15 +1,62 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { Database } from "../types/database";
+import { createMutationExecutor } from "./mutations";
 import {
   calendarProposalsForAthlete,
   calendarProposalsForDate,
+  createCalendarProposalSchedulingService,
   loadCalendarProposals,
+  type CalendarProposalSchedulingRepository,
   mapCalendarProposals,
   type CalendarProposalsRepository,
 } from "./calendar-proposals";
 
 type AthleteProposalRow = Database["public"]["Tables"]["athlete_proposals"]["Row"];
+
+const schedulingProposalId = "13000000-0000-0000-0000-000000000151";
+const schedulingWorkoutId = "11000000-0000-0000-0000-000000000151";
+const schedulingAthleteId = "10000000-0000-0000-0000-000000000151";
+
+function scheduledPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    proposalId: schedulingProposalId,
+    status: "Programmée",
+    created: true,
+    workout: {
+      id: schedulingWorkoutId,
+      athlete_id: schedulingAthleteId,
+      date: "2026-08-26",
+      workout_type: "Proposition athlète",
+      subcategory: "Course à ajouter",
+      title: "Course locale",
+      duration: "",
+      completed: false,
+      created_at: "2026-08-26T10:00:00.000Z",
+      non_done: false,
+      non_done_reason: null,
+      non_done_fatigue: null,
+      non_done_pain: null,
+      non_done_comment: null,
+      description: "À ajouter au calendrier.",
+      expected_rpe: null,
+      blocks: [],
+      expected_rpe_global: null,
+      expected_specific_duration: "",
+      expected_rpe_specific: null,
+      adjusted_specific_duration: null,
+      athlete_seen_at: null,
+      source_proposal_id: schedulingProposalId,
+    },
+    ...overrides,
+  };
+}
+
+function schedulingRepository(
+  schedule: CalendarProposalSchedulingRepository["schedule"],
+): CalendarProposalSchedulingRepository {
+  return { schedule };
+}
 
 function proposal(overrides: Partial<AthleteProposalRow> = {}): AthleteProposalRow {
   return {
@@ -101,6 +148,84 @@ describe("calendar proposal preparation", () => {
     await expect(loadCalendarProposals(repository)).resolves.toEqual({
       kind: "success",
       proposals: [expect.objectContaining({ id: "proposal-1", title: "XCO régional" })],
+    });
+  });
+});
+
+describe("calendar proposal scheduling service", () => {
+  it("accepts only the confirmed RPC result and preserves the durable proposal link", async () => {
+    const schedule = vi.fn().mockResolvedValue({ data: scheduledPayload(), error: null });
+    const service = createCalendarProposalSchedulingService(schedulingRepository(schedule));
+
+    await expect(service.schedule(schedulingProposalId)).resolves.toMatchObject({
+      athleteId: schedulingAthleteId,
+      created: true,
+      proposalId: schedulingProposalId,
+      status: "Programmée",
+      session: {
+        id: schedulingWorkoutId,
+        sourceProposalId: schedulingProposalId,
+        title: "Course locale",
+      },
+    });
+    expect(schedule).toHaveBeenCalledWith(schedulingProposalId, undefined);
+  });
+
+  it("keeps malformed and legacy-ambiguous server results out of local state", async () => {
+    const malformed = createCalendarProposalSchedulingService(schedulingRepository(async () => ({
+      data: { proposalId: schedulingProposalId, status: "Programmée", created: true },
+      error: null,
+    })));
+    const ambiguous = createCalendarProposalSchedulingService(schedulingRepository(async () => ({
+      data: null,
+      error: { message: "proposal_schedule_legacy_ambiguous" },
+    })));
+
+    await expect(malformed.schedule(schedulingProposalId)).rejects.toMatchObject({ kind: "unknown" });
+    await expect(ambiguous.schedule(schedulingProposalId)).rejects.toMatchObject({ kind: "validation" });
+  });
+
+  it("rejects an invalid client identifier before making an RPC call", async () => {
+    const schedule = vi.fn();
+    const service = createCalendarProposalSchedulingService(schedulingRepository(schedule));
+
+    await expect(service.schedule("proposal-legacy")).rejects.toMatchObject({ kind: "validation" });
+    expect(schedule).not.toHaveBeenCalled();
+  });
+
+  it("submits one RPC operation for a double click while the reliable mutation is pending", async () => {
+    let resolveSchedule: ((value: { data: unknown; error: null }) => void) | undefined;
+    const schedule = vi.fn(() => new Promise<{ data: unknown; error: null }>((resolve) => {
+      resolveSchedule = resolve;
+    }));
+    const service = createCalendarProposalSchedulingService(schedulingRepository(schedule));
+    const executor = createMutationExecutor();
+    const options = {
+      concurrency: "reject" as const,
+      key: "calendar-proposal.schedule",
+      operation: ({ proposalId }: { proposalId: string }) => service.schedule(proposalId),
+      type: "calendar-proposal.schedule",
+    };
+
+    const first = executor.execute({ proposalId: schedulingProposalId }, options);
+    const second = await executor.execute({ proposalId: schedulingProposalId }, options);
+
+    expect(second.state).toBe("superseded");
+    expect(schedule).toHaveBeenCalledTimes(1);
+
+    resolveSchedule?.({ data: scheduledPayload(), error: null });
+    await expect(first).resolves.toMatchObject({ state: "success" });
+  });
+
+  it("marks a transport failure retryable without exposing a server detail", async () => {
+    const service = createCalendarProposalSchedulingService(schedulingRepository(async () => ({
+      data: null,
+      error: { message: "Failed to fetch" },
+    })));
+
+    await expect(service.schedule(schedulingProposalId)).rejects.toMatchObject({
+      kind: "network",
+      retryable: true,
     });
   });
 });

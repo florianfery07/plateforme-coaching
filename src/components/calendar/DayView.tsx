@@ -25,6 +25,7 @@ export default function DayView({
   adjustmentPending = false,
   nonDonePending = false,
   restDayPending = false,
+  proposalSchedulingPending = false,
   setProposals,
   programProposal,
   addAthleteProposal,
@@ -218,6 +219,7 @@ export default function DayView({
                 proposal={proposal}
                 setProposals={setProposals}
                 programProposal={programProposal}
+                programPending={proposalSchedulingPending}
                 isCoach={isCoach}
               />
             ))}

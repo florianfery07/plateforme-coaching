@@ -37,7 +37,10 @@ import {
   calendarProposalsForDate,
   loadCalendarProposals,
 } from "@/services/calendar-proposals";
-import { calendarProposalsRepository } from "@/services/calendar-proposals-repository";
+import {
+  calendarProposalSchedulingService,
+  calendarProposalsRepository,
+} from "@/services/calendar-proposals-repository";
 import { loadWeeklyPlanning } from "@/services/weekly-planning";
 import { weeklyPlanningRepository } from "@/services/weekly-planning-repository";
 import { loadWeeklyColors } from "@/services/weekly-colors";
@@ -173,6 +176,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
   const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarRestDayPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionNonDonePilotEnabled = isReliableMutationsPilotEnabled();
+  const calendarProposalSchedulingPilotEnabled = isReliableMutationsPilotEnabled();
   const athleteGroupMemberPilotEnabled = isReliableMutationsPilotEnabled();
   const athleteGroupCreatePilotEnabled = isReliableMutationsPilotEnabled();
   const athleteGroupDeletePilotEnabled = isReliableMutationsPilotEnabled();
@@ -219,6 +223,19 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     operation: ({ nonDone, workoutId }, context) =>
       calendarSessionService.saveNonDone({ nonDone, workoutId }, context.signal),
     type: "calendar-session.non-done.save",
+  });
+  const calendarProposalSchedulingMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "calendar-proposal.schedule",
+    operation: ({ proposalId }, context) =>
+      calendarProposalSchedulingService.schedule(proposalId, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "calendar-proposal.schedule",
   });
   const athleteGroupMemberMutation = useReliableMutation({
     concurrency: "parallel",
@@ -1667,6 +1684,34 @@ async function updateWeekNote(year, week, value) {
   const sessionsFor = (date) => calendarSessionsForDate(activeSessions, dateKey(date));
   const proposalsFor = (date) => calendarProposalsForDate(activeProposals, dateKey(date));
  const programProposal = async (proposal) => {
+  if (calendarProposalSchedulingPilotEnabled) {
+    const result = await calendarProposalSchedulingMutation.mutate({
+      proposalId: proposal.id,
+    });
+
+    if (result.state === "success" && result.data) {
+      setSessions((items) => ({
+        ...items,
+        [result.data.athleteId]: (items[result.data.athleteId] || []).some(
+          (session) => session.id === result.data.session.id,
+        )
+          ? items[result.data.athleteId]
+          : [...(items[result.data.athleteId] || []), result.data.session],
+      }));
+      setProposals((items) =>
+        items.map((item) =>
+          item.id === result.data.proposalId
+            ? { ...item, status: result.data.status }
+            : item,
+        ),
+      );
+    } else if (result.state === "error") {
+      alert("Impossible de programmer cette proposition. Réessaie.");
+    }
+
+    return;
+  }
+
   const alreadyExists = activeSessions.some(
     (session) => session.sourceProposalId === proposal.id
   );
@@ -1830,7 +1875,7 @@ async function validateAthleteGoalUpdate(goalValues) {
         validateGoalUpdate={validateAthleteGoalUpdate}
       />
     )}
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending, nonDonePending: calendarSessionNonDonePilotEnabled && calendarSessionNonDoneMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, setWeekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
+    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending, nonDonePending: calendarSessionNonDonePilotEnabled && calendarSessionNonDoneMutation.pending, proposalSchedulingPending: calendarProposalSchedulingPilotEnabled && calendarProposalSchedulingMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, setWeekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions }} />}
    {auth?.role === "athlete" && view === "athleteStats" && (
   <AthleteStatsPage
     athlete={athleteActive}

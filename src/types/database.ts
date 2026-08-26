@@ -8,6 +8,7 @@
  * Source: supabase/migrations/20260716000000_secure_athlete_invites_v2.sql (5f8ee0889662e491256b92244e8f8fc288ecc8c243f19f9681d33d08ea643535)
  * Source: supabase/migrations/20260811000000_athlete_lifecycle_v2.sql (03106e71a7e01b2decd1617acfddc568cb715cabb7d3958eaed979f59e09a9d1)
  * Source: supabase/migrations/20260826000000_complete_workout_with_feedback_v2.sql (ec47204486977b0779b348af6760c7a5ccf4dc8f164ebe7a843eacb27e816225)
+ * Source: supabase/migrations/20260827000000_schedule_athlete_proposals_v2.sql (325d5e6b20d3d3b6ddab5e5943bade38ef808e364be913d02940e9458aa53153)
  * Regenerate: npm run generate:types
  */
 
@@ -452,7 +453,8 @@ export type Database = {
           "expected_specific_duration": string | null,
           "expected_rpe_specific": number | null,
           "adjusted_specific_duration": string | null,
-          "athlete_seen_at": string | null
+          "athlete_seen_at": string | null,
+          "source_proposal_id": string | null
         }
         Insert: {
           "id"?: string
@@ -477,6 +479,7 @@ export type Database = {
           "expected_rpe_specific"?: number | null
           "adjusted_specific_duration"?: string | null
           "athlete_seen_at"?: string | null
+          "source_proposal_id"?: string | null
         }
         Update: {
           "id"?: string
@@ -501,6 +504,7 @@ export type Database = {
           "expected_rpe_specific"?: number | null
           "adjusted_specific_duration"?: string | null
           "athlete_seen_at"?: string | null
+          "source_proposal_id"?: string | null
         }
         Relationships: [
           {
@@ -508,6 +512,13 @@ export type Database = {
             columns: ["athlete_id"]
             isOneToOne: false
             referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_workouts_source_proposal_id_fkey"
+            columns: ["source_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "athlete_proposals"
             referencedColumns: ["id"]
           }
         ]
@@ -1076,6 +1087,12 @@ export type Database = {
         Args: {
           "p_invite_id": string
           "p_coach_membership_id": string
+        }
+        Returns: Json
+      }
+      "schedule_athlete_proposal_v2": {
+        Args: {
+          "p_proposal_id": string
         }
         Returns: Json
       }
