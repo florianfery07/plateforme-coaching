@@ -52,11 +52,14 @@ proportionnés.
 - L01 à L13 sont terminés: baseline Supabase, qualité, feature flags, Access
   Control V2, typage, lectures pilotes, mutations fiables, Groups V2,
   invitations, cycle de vie athlète et extraction ciblée du calendrier.
-- L14a, L14b, L14d, L14e, L14f, L14g, L14h, L14i, L14j et L14k sont terminés: sauvegardes ciblées de
+- L14 est terminé: L14a, L14b, L14d à L14k et le sous-lot final de création
+  de bibliothèque ont remplacé les rechargements globaux évitables par des
+  mises à jour locales confirmées dans leurs pilotes respectifs. Cela couvre les sauvegardes ciblées de
   feedback, de bibliothèque, de programmation individuelle, d'ajustement de
   durée spécifique, de repos individuel, de justification de séance non faite
   et de notes hebdomadaires au calendrier, ainsi que les modifications, la
-  création et la suppression de groupes legacy.
+  création et la suppression de groupes legacy. La création de séance de
+  bibliothèque est désormais elle aussi ciblée.
 - L14c a été volontairement abandonné après mesure: la sauvegarde du planning
   hebdomadaire réalise déjà une écriture ciblée, sans lecture globale ni
   `loadAllData`.
@@ -72,9 +75,11 @@ La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 - L11 sécurise les invitations athlètes V2; L12 remplace, pour son pilote,
   la suppression destructive par l'archivage atomique et sa restauration.
 - L13 a extrait des lectures legacy du calendrier sans changement observable.
-- L14 privilégie les sauvegardes ciblées mesurées: L14a, L14b, L14d, L14e, L14f,
-  L14g, L14h, L14i, L14j et L14k sont intégrés; L14c ne crée rien lorsque la baseline
-  est déjà optimale.
+- L14 est clos: les sauvegardes ciblées mesurées sont intégrées pour les
+  candidats proportionnés, y compris la création de séance de bibliothèque;
+  L14c ne crée rien lorsque la baseline est déjà optimale. Les parcours
+  restants qui exigent des écritures atomiques multi-ressources ou une décision
+  métier sont reportés à L15, sans poursuivre L14.
 
 ## Domaines métier
 

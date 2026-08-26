@@ -43,6 +43,13 @@ export type WorkoutLibraryRepository = {
 };
 
 export type WorkoutLibraryWriteRepository = {
+  insert: (
+    workout: WorkoutLibraryPersistence,
+    signal?: AbortSignal,
+  ) => Promise<{
+    data: WorkoutLibraryReadRow | null;
+    error: unknown;
+  }>;
   update: (
     workoutId: string,
     workout: WorkoutLibraryPersistence,
@@ -59,7 +66,7 @@ export type WorkoutLibraryLoadResult =
 
 export type WorkoutLibrarySaveInput = {
   workout: WorkoutLibraryItem;
-  workoutId: string;
+  workoutId?: string;
 };
 
 export type WorkoutLibraryPersistence = Pick<
@@ -162,15 +169,14 @@ export function createWorkoutLibraryService(
 ): WorkoutLibraryService {
   return {
     async save(input, signal) {
-      if (!input.workoutId || !input.workout.title.trim()) {
+      if (!input.workout.title.trim()) {
         throw { kind: "validation", retryable: false };
       }
 
-      const { data, error } = await repository.update(
-        input.workoutId,
-        toWorkoutLibraryPersistence(input.workout),
-        signal,
-      );
+      const workout = toWorkoutLibraryPersistence(input.workout);
+      const { data, error } = input.workoutId
+        ? await repository.update(input.workoutId, workout, signal)
+        : await repository.insert(workout, signal);
 
       if (error) throw error;
       if (!data) throw { kind: "unknown", retryable: false };

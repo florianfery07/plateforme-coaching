@@ -29,6 +29,19 @@ export const workoutLibraryRepository: WorkoutLibraryRepository & WorkoutLibrary
       )
       .single();
   },
+  async insert(workout, signal) {
+    const query = supabase
+      .from("workout_library")
+      .insert(workout);
+
+    if (signal) query.abortSignal(signal);
+
+    return query
+      .select(
+        "id, category, subcategory, title, total_duration, expected_rpe, expected_rpe_global, expected_specific_duration, expected_rpe_specific, description, blocks, created_at",
+      )
+      .single();
+  },
 };
 
 export const workoutLibraryService = createWorkoutLibraryService(

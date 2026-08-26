@@ -197,8 +197,9 @@ describe("workout library targeted save", () => {
 
   function repository(
     update = vi.fn().mockResolvedValue({ data: workout(), error: null }),
+    insert = vi.fn().mockResolvedValue({ data: workout(), error: null }),
   ): WorkoutLibraryWriteRepository {
-    return { update };
+    return { insert, update };
   }
 
   it("keeps the existing editor payload limited to workout_library fields", () => {
@@ -242,17 +243,42 @@ describe("workout library targeted save", () => {
     );
   });
 
-  it("rejects an invalid save before any persistence write", async () => {
+  it("creates one workout and returns the confirmed row without an additional read", async () => {
     const update = vi.fn();
+    const insert = vi.fn().mockResolvedValue({
+      data: workout({ id: "created-workout", title: "Créée" }),
+      error: null,
+    });
 
     await expect(
-      createWorkoutLibraryService(repository(update)).save({
+      createWorkoutLibraryService(repository(update, insert)).save({ workout: item }),
+    ).resolves.toMatchObject({ id: "created-workout", title: "Créée" });
+
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: item.category,
+        subcategory: item.subcategory,
+        title: item.title,
+      }),
+      undefined,
+    );
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid save before any persistence write", async () => {
+    const update = vi.fn();
+    const insert = vi.fn();
+
+    await expect(
+      createWorkoutLibraryService(repository(update, insert)).save({
         workout: { ...item, title: " " },
         workoutId: item.id,
       }),
     ).rejects.toMatchObject({ kind: "validation" });
 
     expect(update).not.toHaveBeenCalled();
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it("preserves the repository error for the reliable mutation boundary", async () => {
@@ -265,5 +291,18 @@ describe("workout library targeted save", () => {
         workoutId: item.id,
       }),
     ).rejects.toBe(failure);
+  });
+
+  it("preserves a creation error without producing a local workout", async () => {
+    const failure = { code: "42501" };
+    const update = vi.fn();
+    const insert = vi.fn().mockResolvedValue({ data: null, error: failure });
+
+    await expect(
+      createWorkoutLibraryService(repository(update, insert)).save({ workout: item }),
+    ).rejects.toBe(failure);
+
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(update).not.toHaveBeenCalled();
   });
 });

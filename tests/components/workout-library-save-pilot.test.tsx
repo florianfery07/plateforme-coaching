@@ -46,6 +46,14 @@ describe("workout library save pilot UI", () => {
     expect(screen.getByRole("button", { name: "Mettre à jour" })).toBeDisabled();
   });
 
+  it("prevents a duplicate creation click while the targeted write is pending", () => {
+    render(<CreatePage {...props} editingId={null} savePending />);
+
+    expect(
+      screen.getByRole("button", { name: "Enregistrer dans la bibliothèque" }),
+    ).toBeDisabled();
+  });
+
   it("keeps the legacy save callback callable when no targeted write is pending", () => {
     render(<CreatePage {...props} savePending={false} />);
 

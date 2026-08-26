@@ -1064,29 +1064,31 @@ function cleanRpe(value) {
 
   console.log("SAVE_WORKOUT", workoutData);
 
-  if (editingId) {
-    if (workoutLibraryPilotEnabled) {
-      const result = await workoutLibrarySaveMutation.mutate({
-        workout: draft,
-        workoutId: editingId,
-      });
+  if (workoutLibraryPilotEnabled) {
+    const result = await workoutLibrarySaveMutation.mutate({
+      workout: draft,
+      workoutId: editingId || undefined,
+    });
 
-      if (result.state === "success" && result.data) {
-        setLibrary((items) =>
-          items.map((workout) =>
-            workout.id === result.data.id ? result.data : workout,
-          ),
-        );
-        setDraft(blankWorkout());
-        setEditingId(null);
-        setView("library");
-      } else if (result.state === "error") {
-        alert("Impossible d'enregistrer cette séance. Réessaie.");
-      }
-
-      return;
+    if (result.state === "success" && result.data) {
+      setLibrary((items) =>
+        editingId
+          ? items.map((workout) =>
+              workout.id === result.data.id ? result.data : workout,
+            )
+          : [result.data, ...items],
+      );
+      setDraft(blankWorkout());
+      setEditingId(null);
+      setView("library");
+    } else if (result.state === "error") {
+      alert("Impossible d'enregistrer cette séance. Réessaie.");
     }
 
+    return;
+  }
+
+  if (editingId) {
     const { error } = await supabase
       .from("workout_library")
       .update(workoutData)
@@ -1846,7 +1848,7 @@ async function validateAthleteGoalUpdate(goalValues) {
     subcategories={subcategories}
   />
 )}
-    {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && !!editingId && workoutLibrarySaveMutation.pending }} />}
+    {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && workoutLibrarySaveMutation.pending }} />}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, athleteGroupCreatePending: athleteGroupCreatePilotEnabled && athleteGroupCreateMutation.pending, athleteGroupDeletePilotEnabled, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
