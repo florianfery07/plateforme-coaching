@@ -2,15 +2,17 @@ import { supabase } from "../lib/supabase";
 
 import {
   createCalendarFeedbackService,
+  createCalendarWorkoutCompletionService,
   createCalendarSessionService,
   type CalendarSessionAdjustmentRepository,
   type CalendarSessionNonDoneRepository,
   type CalendarFeedbackRepository,
+  type CalendarWorkoutCompletionRepository,
   type CalendarSessionsRepository,
   type CalendarSessionWriteRepository,
 } from "./calendar-sessions";
 
-export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository & CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository = {
+export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository & CalendarWorkoutCompletionRepository & CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository = {
   async list() {
     return supabase
       .from("calendar_workouts")
@@ -29,6 +31,22 @@ export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFe
     return query
       .select("workout_id, rpe, rpe_global, rpe_specific, motivation, pleasure, comment, real_duration")
       .single();
+  },
+  async completeWithFeedback(feedback, signal) {
+    const query = supabase.rpc("complete_workout_with_feedback_v2", {
+      p_actual_time: feedback.real_duration,
+      p_comment: feedback.comment,
+      p_motivation: feedback.motivation,
+      p_pleasure: feedback.pleasure,
+      p_rpe: feedback.rpe,
+      p_rpe_global: feedback.rpe_global,
+      p_rpe_specific: feedback.rpe_specific,
+      p_workout_id: feedback.workout_id,
+    });
+
+    if (signal) query.abortSignal(signal);
+
+    return query;
   },
   async insert(session, signal) {
     const query = supabase
@@ -68,4 +86,5 @@ export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFe
 };
 
 export const calendarFeedbackService = createCalendarFeedbackService(calendarSessionsRepository);
+export const calendarWorkoutCompletionService = createCalendarWorkoutCompletionService(calendarSessionsRepository);
 export const calendarSessionService = createCalendarSessionService(calendarSessionsRepository);

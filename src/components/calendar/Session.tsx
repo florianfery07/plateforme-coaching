@@ -8,7 +8,10 @@ import { statusLabel, statusStyle } from "@/lib/platformDefaults";
 import { isReliableMutationsPilotEnabled } from "@/lib/features/reliable-mutations-pilot";
 import { supabase } from "@/lib/supabase";
 import { useReliableMutation } from "@/hooks/use-reliable-mutation";
-import { calendarFeedbackService } from "@/services/calendar-sessions-repository";
+import {
+  calendarFeedbackService,
+  calendarWorkoutCompletionService,
+} from "@/services/calendar-sessions-repository";
 
 import {
   Btn,
@@ -69,6 +72,20 @@ export default function Session({
     type: "calendar-feedback.save",
   });
 
+  const completionMutation = useReliableMutation({
+    concurrency: "reject",
+    key: `calendar-session-completion:${session.id}`,
+    operation: ({ feedback }, context) =>
+      calendarWorkoutCompletionService.complete({ feedback, workoutId: session.id }, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "calendar-session.complete",
+  });
+
   const savePilotFeedback = (field, value) => {
     const previousFeedback = session.feedback;
     const feedback = {
@@ -84,7 +101,31 @@ export default function Session({
     });
   };
 
+  const completePilotWorkout = () => {
+    if (feedbackMutation.pending || completionMutation.pending) return;
+
+    void completionMutation.mutate({ feedback: session.feedback }).then((result) => {
+      if (result.state === "success" && result.data) {
+        patch((item) => ({
+          ...item,
+          feedback: result.data.feedback,
+          nonDone: { ...item.nonDone, validated: false },
+        }));
+        return;
+      }
+
+      if (result.state === "error") {
+        alert("Impossible de valider la séance. Réessaie.");
+      }
+    });
+  };
+
   const changeFeedback = (field, value) => {
+    if (feedbackPilotEnabled && field === "validated" && value === true) {
+      completePilotWorkout();
+      return;
+    }
+
     if (feedbackPilotEnabled && field !== "validated") {
       draftFeedback(field, value);
       return;
@@ -542,9 +583,9 @@ function changeActualTimePart(part, value) {
 
           <Btn
             variant="primary"
-            disabled={!ready || session.feedback?.validated}
+            disabled={!ready || session.feedback?.validated || feedbackMutation.pending || completionMutation.pending}
             className={
-              !ready || session.feedback?.validated
+              !ready || session.feedback?.validated || feedbackMutation.pending || completionMutation.pending
                 ? "opacity-40"
                 : ""
             }

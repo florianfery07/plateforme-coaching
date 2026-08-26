@@ -5,6 +5,7 @@ import Session from "../../src/components/calendar/Session";
 
 const pilotEnabled = vi.hoisted(() => vi.fn());
 const save = vi.hoisted(() => vi.fn());
+const complete = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/features/reliable-mutations-pilot", () => ({
   isReliableMutationsPilotEnabled: pilotEnabled,
@@ -12,6 +13,7 @@ vi.mock("@/lib/features/reliable-mutations-pilot", () => ({
 
 vi.mock("@/services/calendar-sessions-repository", () => ({
   calendarFeedbackService: { save },
+  calendarWorkoutCompletionService: { complete },
 }));
 
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
@@ -127,7 +129,7 @@ describe("Session feedback reliable mutation pilot", () => {
   });
 
   it("keeps validation on the untouched legacy atomicity boundary", () => {
-    pilotEnabled.mockReturnValue(true);
+    pilotEnabled.mockReturnValue(false);
     const { updateFeedback } = renderSession();
     const validation = screen.getByRole("button", { name: "Valider séance réalisée" });
 
@@ -135,6 +137,72 @@ describe("Session feedback reliable mutation pilot", () => {
 
     expect(updateFeedback).toHaveBeenCalledWith("session-1", "validated", true);
     expect(save).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+  });
+
+  it("uses one atomic completion and no legacy writer when the pilot is enabled", async () => {
+    pilotEnabled.mockReturnValue(true);
+    complete.mockResolvedValue({
+      completed: true,
+      feedback: { ...session.feedback, validated: true },
+      workoutId: "session-1",
+    });
+    const { updateFeedback, updateSession } = renderSession();
+
+    fireEvent.click(screen.getByRole("button", { name: "Valider séance réalisée" }));
+
+    await waitFor(() => expect(complete).toHaveBeenCalledTimes(1));
+    expect(complete).toHaveBeenCalledWith(expect.objectContaining({
+      workoutId: "session-1",
+      feedback: expect.objectContaining({ comment: "Ready" }),
+    }), expect.any(AbortSignal));
+    expect(updateFeedback).not.toHaveBeenCalled();
+    expect(updateSession).toHaveBeenCalledTimes(1);
+    const patchedSessions = updateSession.mock.calls[0][0]([session]);
+    expect(patchedSessions[0]).toMatchObject({
+      feedback: { validated: true },
+      nonDone: { validated: false },
+    });
+  });
+
+  it("locks the completion action while its single RPC is pending", async () => {
+    pilotEnabled.mockReturnValue(true);
+    let resolveCompletion: (value: unknown) => void;
+    complete.mockReturnValue(new Promise((resolve) => {
+      resolveCompletion = resolve;
+    }));
+    const { updateFeedback, updateSession } = renderSession();
+    const completion = screen.getByRole("button", { name: "Valider séance réalisée" });
+
+    fireEvent.click(completion);
+
+    await waitFor(() => expect(completion).toBeDisabled());
+    fireEvent.click(completion);
+    expect(complete).toHaveBeenCalledTimes(1);
+    expect(updateFeedback).not.toHaveBeenCalled();
+    expect(updateSession).not.toHaveBeenCalled();
+
+    resolveCompletion!({
+      completed: true,
+      feedback: { ...session.feedback, validated: true },
+      workoutId: "session-1",
+    });
+  });
+
+  it("rejects a double click and keeps the local session unchanged after an RPC failure", async () => {
+    pilotEnabled.mockReturnValue(true);
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+    complete.mockRejectedValue({ code: "42501" });
+    const { updateFeedback, updateSession } = renderSession();
+    const completion = screen.getByRole("button", { name: "Valider séance réalisée" });
+
+    fireEvent.click(completion);
+    fireEvent.click(completion);
+
+    await waitFor(() => expect(alert).toHaveBeenCalledWith("Impossible de valider la séance. Réessaie."));
+    expect(complete).toHaveBeenCalledTimes(1);
+    expect(updateFeedback).not.toHaveBeenCalled();
+    expect(updateSession).not.toHaveBeenCalled();
   });
 
   it("rolls back a failed pilot write and shows a safe error", async () => {

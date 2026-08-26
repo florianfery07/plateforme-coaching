@@ -4,7 +4,20 @@ insert into auth.users (id, instance_id, aud, role, email, encrypted_password, e
   ('90000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'l10-athlete-one@example.test', crypt('L10-local-only-password', gen_salt('bf')), now(), '', '{"provider":"email","providers":["email"]}', '{}', now(), now(), false, false),
   ('90000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'l10-athlete-two@example.test', crypt('L10-local-only-password', gen_salt('bf')), now(), '', '{"provider":"email","providers":["email"]}', '{}', now(), now(), false, false)
 on conflict (id) do update set encrypted_password = excluded.encrypted_password, confirmation_token = excluded.confirmation_token, email_confirmed_at = excluded.email_confirmed_at;
-update auth.users set recovery_token = '', email_change_token_new = '', email_change = '', email_change_token_current = '', phone_change = '', phone_change_token = '', reauthentication_token = '' where id = '90000000-0000-0000-0000-000000000001';
+update auth.users
+set
+  recovery_token = '',
+  email_change_token_new = '',
+  email_change = '',
+  email_change_token_current = '',
+  phone_change = '',
+  phone_change_token = '',
+  reauthentication_token = ''
+where id in (
+  '90000000-0000-0000-0000-000000000001',
+  '90000000-0000-0000-0000-000000000002',
+  '90000000-0000-0000-0000-000000000003'
+);
 insert into auth.identities (id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at) values
   ('90000000-0000-0000-0000-000000000001', 'l10-coach@example.test', '90000000-0000-0000-0000-000000000001', '{"sub":"90000000-0000-0000-0000-000000000001","email":"l10-coach@example.test","email_verified":true}', 'email', now(), now(), now()),
   ('90000000-0000-0000-0000-000000000002', 'l10-athlete-one@example.test', '90000000-0000-0000-0000-000000000002', '{"sub":"90000000-0000-0000-0000-000000000002","email":"l10-athlete-one@example.test","email_verified":true}', 'email', now(), now(), now()),
@@ -28,7 +41,7 @@ insert into access_control.organization_memberships (id, organization_id, user_i
 insert into access_control.coach_athlete_access (id, organization_id, coach_membership_id, athlete_membership_id, access_role, status) values
   ('96000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000002', 'coach', 'active'),
   ('96000000-0000-0000-0000-000000000002', '91000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000003', 'coach', 'active') on conflict (id) do update set status = excluded.status;
-insert into access_control.pilots (id, user_id, status) values ('97000000-0000-0000-0000-000000000001', '90000000-0000-0000-0000-000000000001', 'active') on conflict (id) do update set status = excluded.status;
+insert into access_control.pilots (id, organization_id, status) values ('97000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', 'active') on conflict (id) do update set organization_id = excluded.organization_id, status = excluded.status;
 insert into access_control.legacy_group_links (legacy_group_id, organization_id, status, verification_method, verified_by_user_id) values ('94000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', 'active', 'manual', '90000000-0000-0000-0000-000000000001') on conflict (legacy_group_id) do update set status = excluded.status;
 insert into access_control.legacy_athlete_links (legacy_athlete_id, organization_id, athlete_membership_id, status, verification_method, verified_by_user_id) values
   ('93000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000002', 'active', 'manual', '90000000-0000-0000-0000-000000000001'),

@@ -188,6 +188,26 @@ export type CalendarFeedbackService = {
   ) => Promise<CalendarFeedbackPersistence>;
 };
 
+export type CalendarWorkoutCompletion = {
+  completed: true;
+  feedback: CalendarFeedback;
+  workoutId: string;
+};
+
+export type CalendarWorkoutCompletionRepository = {
+  completeWithFeedback: (
+    feedback: CalendarFeedbackPersistence,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: unknown }>;
+};
+
+export type CalendarWorkoutCompletionService = {
+  complete: (
+    input: CalendarFeedbackSaveInput,
+    signal?: AbortSignal,
+  ) => Promise<CalendarWorkoutCompletion>;
+};
+
 function cleanFeedbackRpe(value: unknown): number | null {
   const match = String(value || "").replace(",", ".").match(/[0-9.]+/);
   return match ? Number(match[0]) : null;
@@ -362,6 +382,85 @@ export function createCalendarFeedbackService(
       if (!data) throw { kind: "unknown", retryable: false };
 
       return data;
+    },
+  };
+}
+
+function isFeedbackScore(value: number | null, maximum: number): value is number {
+  return value !== null && value >= 0 && value <= maximum;
+}
+
+function completionResult(value: unknown): CalendarWorkoutCompletion | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+
+  const result = value as {
+    completed?: unknown;
+    feedback?: Record<string, unknown>;
+    workoutId?: unknown;
+  };
+  const feedback = result.feedback;
+
+  if (
+    result.completed !== true
+    || typeof result.workoutId !== "string"
+    || !feedback
+    || typeof feedback.actualTime !== "string"
+    || typeof feedback.comment !== "string"
+    || typeof feedback.rpe !== "number"
+    || typeof feedback.rpeGlobal !== "number"
+    || typeof feedback.rpeSpecific !== "number"
+    || typeof feedback.motivation !== "number"
+    || typeof feedback.pleasure !== "number"
+  ) return null;
+
+  return {
+    completed: true,
+    workoutId: result.workoutId,
+    feedback: {
+      actualTime: feedback.actualTime,
+      comment: feedback.comment,
+      motivation: String(feedback.motivation),
+      pleasure: String(feedback.pleasure),
+      rpe: String(feedback.rpe),
+      rpeGlobal: String(feedback.rpeGlobal),
+      rpeSpecific: String(feedback.rpeSpecific),
+      validated: true,
+    },
+  };
+}
+
+/** Completes the existing feedback/session pair through one server transaction. */
+export function createCalendarWorkoutCompletionService(
+  repository: CalendarWorkoutCompletionRepository,
+): CalendarWorkoutCompletionService {
+  return {
+    async complete(input, signal) {
+      if (!input.workoutId) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const feedback = toCalendarFeedbackPersistence(input);
+      if (
+        !feedback.real_duration.trim()
+        || !feedback.comment.trim()
+        || !isFeedbackScore(feedback.rpe, 10)
+        || !isFeedbackScore(feedback.rpe_global, 10)
+        || !isFeedbackScore(feedback.rpe_specific, 10)
+        || !isFeedbackScore(feedback.motivation, 10)
+        || !isFeedbackScore(feedback.pleasure, 5)
+      ) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.completeWithFeedback(feedback, signal);
+      if (error) throw error;
+
+      const result = completionResult(data);
+      if (!result || result.workoutId !== input.workoutId) {
+        throw { kind: "unknown", retryable: false };
+      }
+
+      return result;
     },
   };
 }

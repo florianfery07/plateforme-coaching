@@ -7,6 +7,7 @@
  * Source: supabase/migrations/20260715010000_groups_v2_mapping_bridge.sql (71d91feacd980283d9ee23807ee21dc6e53ff570071a5e12cd6c59d04acf9358)
  * Source: supabase/migrations/20260716000000_secure_athlete_invites_v2.sql (5f8ee0889662e491256b92244e8f8fc288ecc8c243f19f9681d33d08ea643535)
  * Source: supabase/migrations/20260811000000_athlete_lifecycle_v2.sql (03106e71a7e01b2decd1617acfddc568cb715cabb7d3958eaed979f59e09a9d1)
+ * Source: supabase/migrations/20260826000000_complete_workout_with_feedback_v2.sql (ec47204486977b0779b348af6760c7a5ccf4dc8f164ebe7a843eacb27e816225)
  * Regenerate: npm run generate:types
  */
 
@@ -970,6 +971,19 @@ export type Database = {
         Args: {
           "p_group_session_id": string
           "p_expected_version": number
+        }
+        Returns: Json
+      }
+      "complete_workout_with_feedback_v2": {
+        Args: {
+          "p_workout_id": string
+          "p_actual_time": string
+          "p_rpe": number
+          "p_rpe_global": number
+          "p_rpe_specific": number
+          "p_motivation": number
+          "p_pleasure": number
+          "p_comment": string
         }
         Returns: Json
       }
