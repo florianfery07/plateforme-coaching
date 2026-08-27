@@ -19,6 +19,7 @@
     "test:athlete-lifecycle-v2:sql": "node scripts/test-athlete-lifecycle-v2-sql.mjs",
     "test:workout-completion-v2:sql": "node scripts/test-workout-completion-v2-sql.mjs",
     "test:proposal-scheduling-v2:sql": "node scripts/test-proposal-scheduling-v2-sql.mjs",
+    "test:workout-taxonomy-v2:sql": "node scripts/test-workout-taxonomy-v2-sql.mjs",
     "local:groups-v2:bootstrap": "node scripts/bootstrap-groups-v2-local.mjs"
   },
   "dependencies": {

@@ -2,6 +2,8 @@ import { supabase } from "../lib/supabase";
 
 import {
   createWorkoutLibraryService,
+  createWorkoutTaxonomyService,
+  type WorkoutTaxonomyRepository,
   type WorkoutLibraryRepository,
   type WorkoutLibraryWriteRepository,
 } from "./workout-library";
@@ -46,4 +48,47 @@ export const workoutLibraryRepository: WorkoutLibraryRepository & WorkoutLibrary
 
 export const workoutLibraryService = createWorkoutLibraryService(
   workoutLibraryRepository,
+);
+
+export const workoutTaxonomyRepository: WorkoutTaxonomyRepository = {
+  async renameCategory(input, signal) {
+    const query = supabase.rpc("rename_workout_category_v2", {
+      p_category_id: input.taxonomyId,
+      p_new_color: input.color ?? null,
+      p_new_name: input.name,
+    });
+
+    if (signal) query.abortSignal(signal);
+    return query;
+  },
+  async renameSubcategory(input, signal) {
+    const query = supabase.rpc("rename_workout_subcategory_v2", {
+      p_new_color: input.color ?? null,
+      p_new_name: input.name,
+      p_subcategory_id: input.taxonomyId,
+    });
+
+    if (signal) query.abortSignal(signal);
+    return query;
+  },
+  async deleteCategory(input, signal) {
+    const query = supabase.rpc("delete_workout_category_v2", {
+      p_category_name: input.name,
+    });
+
+    if (signal) query.abortSignal(signal);
+    return query;
+  },
+  async deleteSubcategory(input, signal) {
+    const query = supabase.rpc("delete_workout_subcategory_v2", {
+      p_subcategory_name: input.name,
+    });
+
+    if (signal) query.abortSignal(signal);
+    return query;
+  },
+};
+
+export const workoutTaxonomyService = createWorkoutTaxonomyService(
+  workoutTaxonomyRepository,
 );

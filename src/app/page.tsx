@@ -47,7 +47,11 @@ import { loadWeeklyColors } from "@/services/weekly-colors";
 import { weeklyColorsRepository } from "@/services/weekly-colors-repository";
 import { loadWeekNotes, supabaseWeekNoteRepository } from "@/services/week-notes";
 import { filterWorkoutLibrary, loadWorkoutLibrary } from "@/services/workout-library";
-import { workoutLibraryRepository, workoutLibraryService } from "@/services/workout-library-repository";
+import {
+  workoutLibraryRepository,
+  workoutLibraryService,
+  workoutTaxonomyService,
+} from "@/services/workout-library-repository";
 import { useReliableMutation } from "@/hooks/use-reliable-mutation";
 import { createAthletesRepository, loadLegacyAthleteDirectory } from "@/services/athletes";
 import { reportPilotReadDiagnostic } from "@/features/auth-athletes/pilot-read-controller";
@@ -172,6 +176,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const athleteLifecycleLocksRef = useRef(new Set());
 	const athleteGroupMemberLocksRef = useRef(new Set());
   const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
+  const workoutTaxonomyPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionImportPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarRestDayPilotEnabled = isReliableMutationsPilotEnabled();
@@ -192,6 +197,32 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     },
     timeoutMs: 10_000,
     type: "workout-library.save",
+  });
+  const workoutTaxonomyRenameMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "workout-taxonomy.rename",
+    operation: ({ color, kind, name, taxonomyId }, context) =>
+      workoutTaxonomyService.rename({ color, kind, name, taxonomyId }, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "workout-taxonomy.rename",
+  });
+  const workoutTaxonomyDeleteMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "workout-taxonomy.delete",
+    operation: ({ kind, name }, context) =>
+      workoutTaxonomyService.delete({ kind, name }, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "workout-taxonomy.delete",
   });
   const calendarSessionImportMutation = useReliableMutation({
     concurrency: "reject",
@@ -1495,7 +1526,7 @@ await loadAllData();
   }
 }
 
-async function rename(kind, oldName, newName) {
+async function rename(kind, oldName, newName, newColor) {
   const name = newName.trim();
 
   if (!name) return;
@@ -1513,6 +1544,50 @@ async function rename(kind, oldName, newName) {
   const previousName = currentItem?.name;
 
   if (!previousName || previousName === name) return;
+
+  if (workoutTaxonomyPilotEnabled) {
+    const result = await workoutTaxonomyRenameMutation.mutate({
+      color: newColor,
+      kind: isCategory ? "category" : "subcategory",
+      name,
+      taxonomyId: oldName,
+    });
+
+    if (result.state !== "success" || !result.data) {
+      if (result.state === "error") {
+        alert("Impossible de renommer cet élément. Réessaie.");
+      }
+      return false;
+    }
+
+    const updateTaxonomy = (items) =>
+      items.map((item) =>
+        item.id === result.data.taxonomyId
+          ? { ...item, color: result.data.color ?? item.color, name: result.data.name }
+          : item,
+      );
+    const libraryField = isCategory ? "category" : "subcategory";
+
+    if (isCategory) {
+      setCategories(updateTaxonomy);
+    } else {
+      setSubcategories(updateTaxonomy);
+    }
+    setLibrary((items) =>
+      items.map((workout) =>
+        workout[libraryField] === previousName
+          ? { ...workout, [libraryField]: result.data.name }
+          : workout,
+      ),
+    );
+    setFilter((current) =>
+      isCategory
+        ? { ...current, category: result.data.name }
+        : { ...current, subcategory: result.data.name },
+    );
+
+    return { colorHandled: true };
+  }
 
   const { error } = await supabase
     .from(table)
@@ -1571,6 +1646,38 @@ async function removeItem(kind, name) {
   );
 
   if (!ok) return;
+
+  if (workoutTaxonomyPilotEnabled) {
+    const result = await workoutTaxonomyDeleteMutation.mutate({
+      kind: isCategory ? "category" : "subcategory",
+      name,
+    });
+
+    if (result.state !== "success" || !result.data) {
+      if (result.state === "error") {
+        alert("Impossible de supprimer cet élément. Réessaie.");
+      }
+      return false;
+    }
+
+    const updateTaxonomy = (items) => items.filter((item) => item.name !== name);
+
+    if (isCategory) {
+      setCategories(updateTaxonomy);
+    } else {
+      setSubcategories(updateTaxonomy);
+    }
+    setLibrary((items) =>
+      items.filter((workout) => workout[workoutField] !== name),
+    );
+    setFilter((current) =>
+      isCategory
+        ? { ...current, category: "", subcategory: "" }
+        : { ...current, subcategory: "" },
+    );
+
+    return true;
+  }
 
   if (linkedWorkouts.length) {
     const { error: libraryError } = await supabase
@@ -1894,7 +2001,7 @@ async function validateAthleteGoalUpdate(goalValues) {
   />
 )}
     {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && workoutLibrarySaveMutation.pending }} />}
-    {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem }} />}
+    {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem, taxonomyPending: workoutTaxonomyPilotEnabled && (workoutTaxonomyRenameMutation.pending || workoutTaxonomyDeleteMutation.pending) }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, athleteGroupCreatePending: athleteGroupCreatePilotEnabled && athleteGroupCreateMutation.pending, athleteGroupDeletePilotEnabled, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
     {auth?.role === "coach" && <DevChecks />}

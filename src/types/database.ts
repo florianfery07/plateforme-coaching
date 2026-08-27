@@ -9,6 +9,7 @@
  * Source: supabase/migrations/20260811000000_athlete_lifecycle_v2.sql (03106e71a7e01b2decd1617acfddc568cb715cabb7d3958eaed979f59e09a9d1)
  * Source: supabase/migrations/20260826000000_complete_workout_with_feedback_v2.sql (ec47204486977b0779b348af6760c7a5ccf4dc8f164ebe7a843eacb27e816225)
  * Source: supabase/migrations/20260827000000_schedule_athlete_proposals_v2.sql (325d5e6b20d3d3b6ddab5e5943bade38ef808e364be913d02940e9458aa53153)
+ * Source: supabase/migrations/20260828000000_workout_taxonomy_atomic_v2.sql (e3406248413c188aec4c2e3e0cee2ecff4bfd77642bf1619b12e92e3f8392a9d)
  * Regenerate: npm run generate:types
  */
 
@@ -1027,6 +1028,18 @@ export type Database = {
         }
         Returns: Json
       }
+      "delete_workout_category_v2": {
+        Args: {
+          "p_category_name": string
+        }
+        Returns: Json
+      }
+      "delete_workout_subcategory_v2": {
+        Args: {
+          "p_subcategory_name": string
+        }
+        Returns: Json
+      }
       "duplicate_group_session_v2": {
         Args: {
           "p_group_session_id": string
@@ -1068,6 +1081,22 @@ export type Database = {
           "p_group_session_id": string
           "p_expected_version": number
           "p_athlete_membership_id": string
+        }
+        Returns: Json
+      }
+      "rename_workout_category_v2": {
+        Args: {
+          "p_category_id": string
+          "p_new_name": string
+          "p_new_color": string
+        }
+        Returns: Json
+      }
+      "rename_workout_subcategory_v2": {
+        Args: {
+          "p_subcategory_id": string
+          "p_new_name": string
+          "p_new_color": string
         }
         Returns: Json
       }

@@ -90,6 +90,73 @@ export type WorkoutLibraryService = {
   ) => Promise<WorkoutLibraryItem>;
 };
 
+export type WorkoutTaxonomyKind = "category" | "subcategory";
+
+export type WorkoutTaxonomyRenameInput = {
+  color?: string;
+  kind: WorkoutTaxonomyKind;
+  name: string;
+  taxonomyId: string;
+};
+
+export type WorkoutTaxonomyRenameResult = {
+  changed: boolean;
+  color: string | null;
+  kind: WorkoutTaxonomyKind;
+  name: string;
+  taxonomyId: string;
+  updatedWorkoutCount: number;
+};
+
+export type WorkoutTaxonomyDeleteInput = {
+  kind: WorkoutTaxonomyKind;
+  name: string;
+};
+
+export type WorkoutTaxonomyDeleteResult = {
+  changed: boolean;
+  deletedTaxonomyCount: number;
+  deletedWorkoutCount: number;
+  kind: WorkoutTaxonomyKind;
+  name: string;
+};
+
+type WorkoutTaxonomyRpcError = {
+  code?: string;
+  message?: string;
+  status?: number;
+};
+
+export type WorkoutTaxonomyRepository = {
+  deleteCategory: (
+    input: WorkoutTaxonomyDeleteInput,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: WorkoutTaxonomyRpcError | null }>;
+  deleteSubcategory: (
+    input: WorkoutTaxonomyDeleteInput,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: WorkoutTaxonomyRpcError | null }>;
+  renameCategory: (
+    input: WorkoutTaxonomyRenameInput,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: WorkoutTaxonomyRpcError | null }>;
+  renameSubcategory: (
+    input: WorkoutTaxonomyRenameInput,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: WorkoutTaxonomyRpcError | null }>;
+};
+
+export type WorkoutTaxonomyService = {
+  delete: (
+    input: WorkoutTaxonomyDeleteInput,
+    signal?: AbortSignal,
+  ) => Promise<WorkoutTaxonomyDeleteResult>;
+  rename: (
+    input: WorkoutTaxonomyRenameInput,
+    signal?: AbortSignal,
+  ) => Promise<WorkoutTaxonomyRenameResult>;
+};
+
 /** Preserves the legacy workout-library shape while keeping read preparation independent from React. */
 export function mapWorkoutLibrary(
   rows: WorkoutLibraryReadRow[],
@@ -182,6 +249,125 @@ export function createWorkoutLibraryService(
       if (!data) throw { kind: "unknown", retryable: false };
 
       return mapWorkoutLibrary([data])[0];
+    },
+  };
+}
+
+function taxonomyFailure(error: WorkoutTaxonomyRpcError | null) {
+  if (/fetch|network/i.test(error?.message ?? "")) {
+    return { kind: "network", retryable: true };
+  }
+  if (error?.code === "42501" || error?.status === 401 || error?.status === 403
+    || error?.message === "workout_taxonomy_permission_denied") {
+    return { kind: "permission", retryable: false };
+  }
+  if (error?.message === "workout_taxonomy_validation_failed") {
+    return { kind: "validation", retryable: false };
+  }
+  if (error?.message === "workout_taxonomy_target_unavailable") {
+    return { kind: "conflict", retryable: false };
+  }
+  return { kind: "unknown", retryable: false };
+}
+
+function taxonomyObject(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function isTaxonomyKind(value: unknown): value is WorkoutTaxonomyKind {
+  return value === "category" || value === "subcategory";
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function parseTaxonomyRenameResult(value: unknown): WorkoutTaxonomyRenameResult | null {
+  const result = taxonomyObject(value);
+
+  if (!result
+    || !isTaxonomyKind(result.kind)
+    || typeof result.taxonomyId !== "string"
+    || typeof result.name !== "string"
+    || (typeof result.color !== "string" && result.color !== null)
+    || typeof result.changed !== "boolean"
+    || !isNonNegativeInteger(result.updatedWorkoutCount)) {
+    return null;
+  }
+
+  return {
+    changed: result.changed,
+    color: result.color,
+    kind: result.kind,
+    name: result.name,
+    taxonomyId: result.taxonomyId,
+    updatedWorkoutCount: result.updatedWorkoutCount,
+  };
+}
+
+function parseTaxonomyDeleteResult(value: unknown): WorkoutTaxonomyDeleteResult | null {
+  const result = taxonomyObject(value);
+
+  if (!result
+    || !isTaxonomyKind(result.kind)
+    || typeof result.name !== "string"
+    || typeof result.changed !== "boolean"
+    || !isNonNegativeInteger(result.deletedWorkoutCount)
+    || !isNonNegativeInteger(result.deletedTaxonomyCount)) {
+    return null;
+  }
+
+  return {
+    changed: result.changed,
+    deletedTaxonomyCount: result.deletedTaxonomyCount,
+    deletedWorkoutCount: result.deletedWorkoutCount,
+    kind: result.kind,
+    name: result.name,
+  };
+}
+
+/** Executes the four explicit server-side taxonomy commands used by the local pilot. */
+export function createWorkoutTaxonomyService(
+  repository: WorkoutTaxonomyRepository,
+): WorkoutTaxonomyService {
+  return {
+    async rename(input, signal) {
+      if (!input.taxonomyId || !input.name.trim()) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const response = input.kind === "category"
+        ? await repository.renameCategory(input, signal)
+        : await repository.renameSubcategory(input, signal);
+
+      if (response.error) throw taxonomyFailure(response.error);
+
+      const result = parseTaxonomyRenameResult(response.data);
+      if (!result || result.kind !== input.kind || result.taxonomyId !== input.taxonomyId) {
+        throw { kind: "unknown", retryable: false };
+      }
+
+      return result;
+    },
+    async delete(input, signal) {
+      if (!input.name.trim()) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const response = input.kind === "category"
+        ? await repository.deleteCategory(input, signal)
+        : await repository.deleteSubcategory(input, signal);
+
+      if (response.error) throw taxonomyFailure(response.error);
+
+      const result = parseTaxonomyDeleteResult(response.data);
+      if (!result || result.kind !== input.kind || result.name !== input.name.trim()) {
+        throw { kind: "unknown", retryable: false };
+      }
+
+      return result;
     },
   };
 }

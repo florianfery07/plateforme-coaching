@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createWorkoutLibraryService,
+  createWorkoutTaxonomyService,
   filterWorkoutLibrary,
   loadWorkoutLibrary,
   mapWorkoutLibrary,
@@ -10,6 +11,7 @@ import {
   type WorkoutLibraryReadRow,
   type WorkoutLibraryRepository,
   type WorkoutLibraryWriteRepository,
+  type WorkoutTaxonomyRepository,
 } from "./workout-library";
 
 function workout(
@@ -304,5 +306,104 @@ describe("workout library targeted save", () => {
 
     expect(insert).toHaveBeenCalledTimes(1);
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe("workout taxonomy atomic pilot", () => {
+  function taxonomyRepository(): WorkoutTaxonomyRepository {
+    return {
+      deleteCategory: vi.fn(),
+      deleteSubcategory: vi.fn(),
+      renameCategory: vi.fn(),
+      renameSubcategory: vi.fn(),
+    };
+  }
+
+  it("dispatches one confirmed category rename without a follow-up read", async () => {
+    const repository = taxonomyRepository();
+    const renameCategory = vi.mocked(repository.renameCategory).mockResolvedValue({
+      data: {
+        changed: true,
+        color: "bg-indigo-500",
+        kind: "category",
+        name: "Route V2",
+        taxonomyId: "category-1",
+        updatedWorkoutCount: 2,
+      },
+      error: null,
+    });
+
+    await expect(
+      createWorkoutTaxonomyService(repository).rename({
+        color: "bg-indigo-500",
+        kind: "category",
+        name: "Route V2",
+        taxonomyId: "category-1",
+      }),
+    ).resolves.toMatchObject({ changed: true, updatedWorkoutCount: 2 });
+
+    expect(renameCategory).toHaveBeenCalledTimes(1);
+    expect(repository.renameSubcategory).not.toHaveBeenCalled();
+    expect(repository.deleteCategory).not.toHaveBeenCalled();
+    expect(repository.deleteSubcategory).not.toHaveBeenCalled();
+  });
+
+  it("dispatches one confirmed subcategory deletion with the legacy text key", async () => {
+    const repository = taxonomyRepository();
+    const deleteSubcategory = vi.mocked(repository.deleteSubcategory).mockResolvedValue({
+      data: {
+        changed: true,
+        deletedTaxonomyCount: 1,
+        deletedWorkoutCount: 3,
+        kind: "subcategory",
+        name: "Endurance",
+      },
+      error: null,
+    });
+
+    await expect(
+      createWorkoutTaxonomyService(repository).delete({
+        kind: "subcategory",
+        name: "Endurance",
+      }),
+    ).resolves.toMatchObject({ changed: true, deletedWorkoutCount: 3 });
+
+    expect(deleteSubcategory).toHaveBeenCalledTimes(1);
+    expect(deleteSubcategory).toHaveBeenCalledWith(
+      { kind: "subcategory", name: "Endurance" },
+      undefined,
+    );
+    expect(repository.deleteCategory).not.toHaveBeenCalled();
+  });
+
+  it("does not expose a server permission error as a retryable failure", async () => {
+    const repository = taxonomyRepository();
+    vi.mocked(repository.renameCategory).mockResolvedValue({
+      data: null,
+      error: { message: "workout_taxonomy_permission_denied" },
+    });
+
+    await expect(
+      createWorkoutTaxonomyService(repository).rename({
+        kind: "category",
+        name: "Refusée",
+        taxonomyId: "category-1",
+      }),
+    ).rejects.toMatchObject({ kind: "permission", retryable: false });
+  });
+
+  it("rejects malformed server data rather than mutating local state", async () => {
+    const repository = taxonomyRepository();
+    vi.mocked(repository.deleteCategory).mockResolvedValue({
+      data: { changed: true },
+      error: null,
+    });
+
+    await expect(
+      createWorkoutTaxonomyService(repository).delete({
+        kind: "category",
+        name: "Route",
+      }),
+    ).rejects.toMatchObject({ kind: "unknown", retryable: false });
   });
 });

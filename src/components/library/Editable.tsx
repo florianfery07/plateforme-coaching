@@ -13,6 +13,7 @@ export default function Editable({
   kind,
   rename,
   removeItem,
+  taxonomyPending,
 }) {
   const [editing, setEditing] = useState({});
 
@@ -33,11 +34,13 @@ export default function Editable({
 
     if (!name) return;
 
+    let renameResult;
     if (name !== row.name) {
-      await rename(kind, row.id, name);
+      renameResult = await rename(kind, row.id, name, draft.color);
+      if (renameResult === false) return;
     }
 
-    if (draft.color !== row.color) {
+    if (draft.color !== row.color && !renameResult?.colorHandled) {
       const table =
         kind === "category"
           ? "workout_categories"
@@ -120,6 +123,7 @@ export default function Editable({
                     <Btn
                       variant="primary"
                       onClick={() => startEdit(row)}
+                      disabled={taxonomyPending}
                     >
                       Modifier
                     </Btn>
@@ -127,6 +131,7 @@ export default function Editable({
                     <Btn
                       variant="danger"
                       onClick={() => confirmRemove(row)}
+                      disabled={taxonomyPending}
                     >
                       Supprimer
                     </Btn>
@@ -162,6 +167,7 @@ export default function Editable({
                       onClick={() =>
                         validateEdit(row)
                       }
+                      disabled={taxonomyPending}
                     >
                       Valider
                     </Btn>
@@ -170,6 +176,7 @@ export default function Editable({
                       onClick={() =>
                         cancelEdit(row.id)
                       }
+                      disabled={taxonomyPending}
                     >
                       Annuler
                     </Btn>

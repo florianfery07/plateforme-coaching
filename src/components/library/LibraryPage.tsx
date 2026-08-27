@@ -26,6 +26,7 @@ export default function LibraryPage({
   library,
   rename,
   removeItem,
+  taxonomyPending,
 }) {
   async function deleteWorkout(workout) {
     const ok = window.confirm(
@@ -190,7 +191,7 @@ export default function LibraryPage({
             items={categories}
             setItems={setCategories}
             kind="category"
-            {...{ rename, removeItem }}
+            {...{ rename, removeItem, taxonomyPending }}
           />
 
           <Editable
@@ -198,7 +199,7 @@ export default function LibraryPage({
             items={subcategories}
             setItems={setSubcategories}
             kind="subcategory"
-            {...{ rename, removeItem }}
+            {...{ rename, removeItem, taxonomyPending }}
           />
         </div>
       </details>
