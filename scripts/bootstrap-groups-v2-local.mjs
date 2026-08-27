@@ -21,6 +21,7 @@ const bootstrapFiles = [
   "supabase/tests/groups-v2-local-fixture.sql",
   "supabase/tests/athlete-invites-v2-local-fixture.sql",
   "supabase/tests/reliable-mutations-v2-local-fixture.sql",
+  "supabase/tests/calendar-group-deletion-local-fixture.sql",
   "supabase/tests/proposal-scheduling-v2-local-fixture.sql",
   "supabase/tests/workout-taxonomy-v2-fixture.sql",
 ];

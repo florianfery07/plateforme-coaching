@@ -113,6 +113,28 @@ export default function CoachingPlatformMockup() {
   const ok = window.confirm("Retirer cette séance uniquement pour cet athlète ?");
   if (!ok) return;
 
+  if (calendarGroupDeletePilotEnabled) {
+    const result = await calendarGroupMemberDeleteMutation.mutate({
+      workoutIds: [referenceSession?.id],
+    });
+
+    if (result.state === "success" && result.data) {
+      setSessions((items) => Object.fromEntries(
+        Object.entries(items).map(([athleteId, athleteSessions]) => [
+          athleteId,
+          athleteSessions.filter((session) => session.id !== referenceSession.id),
+        ]),
+      ));
+      return result;
+    }
+
+    if (result.state === "error") {
+      alert("Impossible de retirer cette séance. Réessaie.");
+    }
+
+    return result;
+  }
+
   const result = await deleteAthleteWorkoutFromGroupDayApi(referenceSession);
 
   if (!result.success) {
@@ -128,6 +150,32 @@ async function deleteGroupDayWorkouts(date = selectedDate) {
     "Retirer toutes les séances de tous les athlètes du groupe pour cette journée ?"
   );
   if (!ok) return;
+
+  if (calendarGroupDeletePilotEnabled) {
+    const workoutIds = selectedGroupAthleteIds.flatMap((athleteId) =>
+      (sessions[athleteId] || [])
+        .filter((session) => session.date === dateKey(date))
+        .map((session) => session.id),
+    );
+    const result = await calendarGroupDayDeleteMutation.mutate({ workoutIds });
+
+    if (result.state === "success" && result.data) {
+      const workoutIdsToRemove = new Set(result.data);
+      setSessions((items) => Object.fromEntries(
+        Object.entries(items).map(([athleteId, athleteSessions]) => [
+          athleteId,
+          athleteSessions.filter((session) => !workoutIdsToRemove.has(session.id)),
+        ]),
+      ));
+      return result;
+    }
+
+    if (result.state === "error") {
+      alert("Impossible de retirer les séances du groupe. Réessaie.");
+    }
+
+    return result;
+  }
 
   const result = await deleteGroupDayWorkoutsApi({
     date: dateKey(date),
@@ -181,6 +229,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
   const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarRestDayPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionNonDonePilotEnabled = isReliableMutationsPilotEnabled();
+  const calendarGroupDeletePilotEnabled = isReliableMutationsPilotEnabled();
   const calendarProposalSchedulingPilotEnabled = isReliableMutationsPilotEnabled();
   const athleteGroupMemberPilotEnabled = isReliableMutationsPilotEnabled();
   const athleteGroupCreatePilotEnabled = isReliableMutationsPilotEnabled();
@@ -254,6 +303,32 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     operation: ({ nonDone, workoutId }, context) =>
       calendarSessionService.saveNonDone({ nonDone, workoutId }, context.signal),
     type: "calendar-session.non-done.save",
+  });
+  const calendarGroupMemberDeleteMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "calendar-session.group-member.delete",
+    operation: ({ workoutIds }, context) =>
+      calendarSessionService.remove({ workoutIds }, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "calendar-session.group-member.delete",
+  });
+  const calendarGroupDayDeleteMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "calendar-session.group-day.delete",
+    operation: ({ workoutIds }, context) =>
+      calendarSessionService.remove({ workoutIds }, context.signal),
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "calendar-session.group-day.delete",
   });
   const calendarProposalSchedulingMutation = useReliableMutation({
     concurrency: "reject",

@@ -6,13 +6,14 @@ import {
   createCalendarSessionService,
   type CalendarSessionAdjustmentRepository,
   type CalendarSessionNonDoneRepository,
+  type CalendarSessionDeleteRepository,
   type CalendarFeedbackRepository,
   type CalendarWorkoutCompletionRepository,
   type CalendarSessionsRepository,
   type CalendarSessionWriteRepository,
 } from "./calendar-sessions";
 
-export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository & CalendarWorkoutCompletionRepository & CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository = {
+export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository & CalendarWorkoutCompletionRepository & CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository & CalendarSessionDeleteRepository = {
   async list() {
     return supabase
       .from("calendar_workouts")
@@ -82,6 +83,16 @@ export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFe
     return query
       .select("*")
       .single();
+  },
+  async remove(workoutIds, signal) {
+    const query = supabase
+      .from("calendar_workouts")
+      .delete()
+      .in("id", workoutIds);
+
+    if (signal) query.abortSignal(signal);
+
+    return query.select("id");
   },
 };
 

@@ -6,6 +6,7 @@ import {
   toCalendarSessionPersistence,
   type CalendarSessionCreateInput,
   type CalendarSessionAdjustmentRepository,
+  type CalendarSessionDeleteRepository,
   type CalendarSessionNonDoneRepository,
   type CalendarSessionWriteRepository,
 } from "../../src/services/calendar-sessions";
@@ -56,8 +57,9 @@ function repository(
   insert = vi.fn().mockResolvedValue({ data: row, error: null }),
   updateAdjustment = vi.fn().mockResolvedValue({ data: row, error: null }),
   updateNonDone = vi.fn().mockResolvedValue({ data: row, error: null }),
-): CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository {
-  return { insert, updateAdjustment, updateNonDone };
+  remove = vi.fn().mockResolvedValue({ data: [{ id: "workout-1" }], error: null }),
+): CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository & CalendarSessionDeleteRepository {
+  return { insert, updateAdjustment, updateNonDone, remove };
 }
 
 describe("calendar session targeted create service", () => {
@@ -279,5 +281,51 @@ describe("calendar session targeted create service", () => {
     })).rejects.toMatchObject({ kind: "validation" });
 
     expect(updateNonDone).not.toHaveBeenCalled();
+  });
+
+  it("removes explicit session identifiers through one confirmed repository write", async () => {
+    const remove = vi.fn().mockResolvedValue({
+      data: [{ id: "workout-1" }, { id: "workout-2" }],
+      error: null,
+    });
+    const signal = new AbortController().signal;
+
+    await expect(createCalendarSessionService(repository(undefined, undefined, undefined, remove)).remove({
+      workoutIds: ["workout-1", "workout-1", "workout-2"],
+    }, signal)).resolves.toEqual(["workout-1", "workout-2"]);
+
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(remove).toHaveBeenCalledWith(["workout-1", "workout-2"], signal);
+  });
+
+  it("does not attempt a deletion without an explicit target", async () => {
+    const remove = vi.fn();
+
+    await expect(createCalendarSessionService(repository(undefined, undefined, undefined, remove)).remove({
+      workoutIds: [],
+    })).rejects.toMatchObject({ kind: "validation" });
+
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("preserves a deletion failure for the reliable mutation executor", async () => {
+    const failure = { code: "42501" };
+    const remove = vi.fn().mockResolvedValue({ error: failure });
+
+    await expect(createCalendarSessionService(repository(undefined, undefined, undefined, remove)).remove({
+      workoutIds: ["workout-1"],
+    })).rejects.toBe(failure);
+
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not confirm a local removal when the database did not delete every target", async () => {
+    const remove = vi.fn().mockResolvedValue({ data: [{ id: "workout-1" }], error: null });
+
+    await expect(createCalendarSessionService(repository(undefined, undefined, undefined, remove)).remove({
+      workoutIds: ["workout-1", "workout-2"],
+    })).rejects.toMatchObject({ kind: "unknown" });
+
+    expect(remove).toHaveBeenCalledTimes(1);
   });
 });

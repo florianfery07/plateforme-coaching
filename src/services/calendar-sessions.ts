@@ -94,6 +94,10 @@ export type CalendarSessionNonDoneSaveInput = {
   workoutId: string;
 };
 
+export type CalendarSessionDeleteInput = {
+  workoutIds: string[];
+};
+
 export type CalendarRestDayInput = {
   athleteId: string;
   date: string;
@@ -129,6 +133,13 @@ export type CalendarSessionNonDoneRepository = {
   ) => Promise<{ data: WorkoutRow | null; error: unknown }>;
 };
 
+export type CalendarSessionDeleteRepository = {
+  remove: (
+    workoutIds: string[],
+    signal?: AbortSignal,
+  ) => Promise<{ data: Pick<WorkoutRow, "id">[] | null; error: unknown }>;
+};
+
 export type CalendarSessionService = {
   create: (
     input: CalendarSessionCreateInput,
@@ -146,6 +157,10 @@ export type CalendarSessionService = {
     input: CalendarSessionNonDoneSaveInput,
     signal?: AbortSignal,
   ) => Promise<CalendarSession>;
+  remove: (
+    input: CalendarSessionDeleteInput,
+    signal?: AbortSignal,
+  ) => Promise<string[]>;
 };
 
 export type CalendarFeedback = {
@@ -273,7 +288,8 @@ export function mapCalendarSession(row: WorkoutRow): CalendarSession {
 export function createCalendarSessionService(
   repository: CalendarSessionWriteRepository
     & CalendarSessionAdjustmentRepository
-    & CalendarSessionNonDoneRepository,
+    & CalendarSessionNonDoneRepository
+    & CalendarSessionDeleteRepository,
 ): CalendarSessionService {
   return {
     async create(input, signal) {
@@ -345,6 +361,24 @@ export function createCalendarSessionService(
       if (!data) throw { kind: "unknown", retryable: false };
 
       return mapCalendarSession(data);
+    },
+    async remove(input, signal) {
+      const workoutIds = [...new Set(input.workoutIds.filter(Boolean))];
+
+      if (!workoutIds.length) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.remove(workoutIds, signal);
+
+      if (error) throw error;
+
+      const confirmedIds = new Set(data?.map((session) => session.id));
+      if (confirmedIds.size !== workoutIds.length || workoutIds.some((id) => !confirmedIds.has(id))) {
+        throw { kind: "unknown", retryable: false };
+      }
+
+      return workoutIds;
     },
   };
 }
