@@ -63,6 +63,10 @@ proportionnés.
 - L14c a été volontairement abandonné après mesure: la sauvegarde du planning
   hebdomadaire réalise déjà une écriture ciblée, sans lecture globale ni
   `loadAllData`.
+- L16b fournit la fondation Objectifs V2: workflow et versions immuables,
+  RPC atomiques, lecture sécurisée et flag désactivé. Aucun écran ne l’utilise
+  encore; le legacy Objectifs reste intégralement la source active jusqu’au
+  pilote explicitement approuvé de L16c.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 
@@ -84,9 +88,9 @@ La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 ## Domaines métier
 
 Les domaines actuels sont Auth, Calendar, Workout Library, Week Notes, Weekly
-Planning, Athlete Lifecycle, Invitations, Groups et Statistics. Les frontières
-et contrats existants se trouvent dans `src/services/`, `src/types/` et les
-documents de `docs/architecture/` et `docs/development/`.
+Planning, Athlete Lifecycle, Invitations, Goals V2, Groups et Statistics. Les
+frontières et contrats existants se trouvent dans `src/services/`, `src/types/`
+et les documents de `docs/architecture/` et `docs/development/`.
 
 Étendre le domaine propriétaire déjà présent avant de créer un service,
 repository, hook ou couche parallèle. Les décisions spécifiques aux pilotes
@@ -104,6 +108,7 @@ défaut. Leur contrat détaillé est dans
 | `groupsV2` | Fondations et programmation pilote de groupes V2. |
 | `athleteInvitesV2` | Invitations athlètes V2, dépend de `accessControlV2`. |
 | `athleteLifecycleV2` | Archivage/restauration athlète, dépend de `accessControlV2`. |
+| `athleteGoalsV2` | Fondation Objectifs V2, dépend de `accessControlV2`; aucun écran L16b ne l’active. |
 | `reliableMutationsV2` | Pilotes locaux de mutations fiables. |
 
 Un flag public ne constitue jamais une autorisation. Les pilotes L11 et L12 ne

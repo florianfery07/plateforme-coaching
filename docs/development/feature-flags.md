@@ -20,6 +20,7 @@ The registry is defined in `src/lib/features/flags.ts`.
 | `accessControlV2` | `NEXT_PUBLIC_FEATURE_ACCESS_CONTROL_V2` | `false` | `pilot` | Pilot-only typed Auth and athlete-read verification beside legacy. |
 | `athleteInvitesV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_INVITES_V2` | `false` | `pilot` | L11 secure athlete invitation pilot; requires `accessControlV2` and server-side V2 authorization. |
 | `athleteLifecycleV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_LIFECYCLE_V2` | `false` | `pilot` | L12 atomic athlete archive and restore pilot; requires `accessControlV2`, a server-confirmed pilot and explicit athlete mapping. |
+| `athleteGoalsV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_GOALS_V2` | `false` | `pilot` | L16 Goals V2 foundation; future adoption requires `accessControlV2`, a server-confirmed pilot and an explicit athlete mapping. L16b does not connect it to any UI. |
 | `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Local-only L08b pilot for the `WeekDetail` weekly-note autosave; future mutation reliability flows. |
 
 `accessControlV2` is consumed only by the L07b session-restoration pilot. It

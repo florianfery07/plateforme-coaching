@@ -16,6 +16,7 @@ describe("feature flags", () => {
       accessControlV2: false,
       athleteInvitesV2: false,
       athleteLifecycleV2: false,
+      athleteGoalsV2: false,
       reliableMutationsV2: false,
     });
   });

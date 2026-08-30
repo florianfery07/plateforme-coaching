@@ -47,6 +47,14 @@ export const featureFlagRegistry = {
     removal: "Remove after the audited athlete lifecycle has replaced the legacy destructive flow.",
     stage: "pilot",
   },
+  athleteGoalsV2: {
+    description: "Pilot-only athlete goals workflow backed by Access Control V2.",
+    defaultValue: false,
+    environmentVariable: "NEXT_PUBLIC_FEATURE_ATHLETE_GOALS_V2",
+    owner: "Platform",
+    removal: "Remove after Goals V2 has replaced the audited legacy objective workflow.",
+    stage: "pilot",
+  },
   reliableMutationsV2: {
     description: "Future progressive replacement for legacy mutation reliability flows.",
     defaultValue: false,

@@ -10,6 +10,7 @@
  * Source: supabase/migrations/20260826000000_complete_workout_with_feedback_v2.sql (ec47204486977b0779b348af6760c7a5ccf4dc8f164ebe7a843eacb27e816225)
  * Source: supabase/migrations/20260827000000_schedule_athlete_proposals_v2.sql (325d5e6b20d3d3b6ddab5e5943bade38ef808e364be913d02940e9458aa53153)
  * Source: supabase/migrations/20260828000000_workout_taxonomy_atomic_v2.sql (e3406248413c188aec4c2e3e0cee2ecff4bfd77642bf1619b12e92e3f8392a9d)
+ * Source: supabase/migrations/20260830000000_athlete_goals_v2_foundation.sql (706397e1e226a8445a1fb41c96f3f59367e15109be7c7765b92275448ff8f765)
  * Regenerate: npm run generate:types
  */
 
@@ -56,6 +57,159 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "athletes"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      "athlete_goal_requests_v2": {
+        Row: {
+          "id": string,
+          "organization_id": string,
+          "athlete_membership_id": string,
+          "legacy_athlete_id": string,
+          "requested_by_user_id": string,
+          "idempotency_key": string,
+          "status": string,
+          "submitted_at": string | null,
+          "reviewed_at": string | null,
+          "reviewed_by_user_id": string | null,
+          "review_note": string | null,
+          "closed_at": string | null,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "id"?: string
+          "organization_id": string
+          "athlete_membership_id": string
+          "legacy_athlete_id": string
+          "requested_by_user_id": string
+          "idempotency_key": string
+          "status"?: string
+          "submitted_at"?: string | null
+          "reviewed_at"?: string | null
+          "reviewed_by_user_id"?: string | null
+          "review_note"?: string | null
+          "closed_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "organization_id"?: string
+          "athlete_membership_id"?: string
+          "legacy_athlete_id"?: string
+          "requested_by_user_id"?: string
+          "idempotency_key"?: string
+          "status"?: string
+          "submitted_at"?: string | null
+          "reviewed_at"?: string | null
+          "reviewed_by_user_id"?: string | null
+          "review_note"?: string | null
+          "closed_at"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_goal_requests_v2_organization_id_athlete_membershi_fkey"
+            columns: ["organization_id","athlete_membership_id"]
+            isOneToOne: false
+            referencedRelation: "organization_memberships"
+            referencedColumns: ["organization_id","id"]
+          },
+          {
+            foreignKeyName: "athlete_goal_requests_v2_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_goal_requests_v2_requested_by_user_id_fkey"
+            columns: ["requested_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_goal_requests_v2_reviewed_by_user_id_fkey"
+            columns: ["reviewed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      "athlete_goal_versions_v2": {
+        Row: {
+          "id": string,
+          "request_id": string,
+          "revision_number": number,
+          "source": string,
+          "short_goal": string | null,
+          "medium_goal": string | null,
+          "long_goal": string | null,
+          "submitted_by_user_id": string | null,
+          "idempotency_key": string | null,
+          "submitted_at": string,
+          "review_outcome": string | null,
+          "reviewed_at": string | null,
+          "reviewed_by_user_id": string | null,
+          "review_note": string | null
+        }
+        Insert: {
+          "id"?: string
+          "request_id": string
+          "revision_number": number
+          "source": string
+          "short_goal"?: string | null
+          "medium_goal"?: string | null
+          "long_goal"?: string | null
+          "submitted_by_user_id"?: string | null
+          "idempotency_key"?: string | null
+          "submitted_at"?: string
+          "review_outcome"?: string | null
+          "reviewed_at"?: string | null
+          "reviewed_by_user_id"?: string | null
+          "review_note"?: string | null
+        }
+        Update: {
+          "id"?: string
+          "request_id"?: string
+          "revision_number"?: number
+          "source"?: string
+          "short_goal"?: string | null
+          "medium_goal"?: string | null
+          "long_goal"?: string | null
+          "submitted_by_user_id"?: string | null
+          "idempotency_key"?: string | null
+          "submitted_at"?: string
+          "review_outcome"?: string | null
+          "reviewed_at"?: string | null
+          "reviewed_by_user_id"?: string | null
+          "review_note"?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_goal_versions_v2_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "athlete_goal_requests_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_goal_versions_v2_reviewed_by_user_id_fkey"
+            columns: ["reviewed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_goal_versions_v2_submitted_by_user_id_fkey"
+            columns: ["submitted_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
           }
         ]
       }
@@ -965,6 +1119,13 @@ export type Database = {
     }
     Views: Record<string, never>
     Functions: {
+      "accept_athlete_goal_request_v2": {
+        Args: {
+          "p_request_id": string
+          "p_review_note": string
+        }
+        Returns: Json
+      }
       "add_group_session_participant_v2": {
         Args: {
           "p_group_session_id": string
@@ -976,6 +1137,12 @@ export type Database = {
       "archive_legacy_athlete_v2": {
         Args: {
           "p_legacy_athlete_id": string
+        }
+        Returns: Json
+      }
+      "cancel_athlete_goal_request_v2": {
+        Args: {
+          "p_request_id": string
         }
         Returns: Json
       }
@@ -1052,6 +1219,12 @@ export type Database = {
         Args: Record<string, never>
         Returns: Json
       }
+      "get_athlete_current_goal_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+        }
+        Returns: Json
+      }
       "is_coach": {
         Args: Record<string, never>
         Returns: boolean
@@ -1069,10 +1242,23 @@ export type Database = {
         }
         Returns: string
       }
+      "list_athlete_goal_history_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+        }
+        Returns: Json
+      }
       "list_athlete_invites_v2": {
         Args: {
           "p_legacy_athlete_id": string
           "p_coach_membership_id": string
+        }
+        Returns: Json
+      }
+      "open_athlete_goal_request_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+          "p_idempotency_key": string
         }
         Returns: Json
       }
@@ -1100,6 +1286,13 @@ export type Database = {
         }
         Returns: Json
       }
+      "request_athlete_goal_changes_v2": {
+        Args: {
+          "p_request_id": string
+          "p_review_note": string
+        }
+        Returns: Json
+      }
       "resolve_legacy_group_bridge_v2": {
         Args: {
           "p_legacy_group_id": string
@@ -1122,6 +1315,16 @@ export type Database = {
       "schedule_athlete_proposal_v2": {
         Args: {
           "p_proposal_id": string
+        }
+        Returns: Json
+      }
+      "submit_athlete_goal_version_v2": {
+        Args: {
+          "p_request_id": string
+          "p_short_goal": string
+          "p_medium_goal": string
+          "p_long_goal": string
+          "p_idempotency_key": string
         }
         Returns: Json
       }
@@ -1678,6 +1881,12 @@ export type Database = {
       "current_user_is_platform_admin": {
         Args: Record<string, never>
         Returns: boolean
+      }
+      "resolve_active_goal_target_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+        }
+        Returns: string
       }
     }
     Enums: Record<string, never>
