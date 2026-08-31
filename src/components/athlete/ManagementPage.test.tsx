@@ -78,7 +78,7 @@ function renderGroupsPage({
     />,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Groupes" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Groupes" }));
   return { addAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember };
 }
 
@@ -197,5 +197,18 @@ describe("ManagementPage athlete lifecycle V2", () => {
     expect(deleteAthleteGroup).toHaveBeenCalledTimes(1);
 
     resolveDeletion?.();
+  });
+
+  it("exposes management sections as keyboard-operable tabs", () => {
+    renderPage();
+
+    const athletesTab = screen.getByRole("tab", { name: "Athlètes" });
+    const groupsTab = screen.getByRole("tab", { name: "Groupes" });
+    expect(athletesTab).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(athletesTab, { key: "ArrowRight" });
+
+    expect(groupsTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel", { name: "Groupes" })).toBeVisible();
   });
 });

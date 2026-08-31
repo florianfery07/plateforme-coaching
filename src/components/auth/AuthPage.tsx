@@ -4,23 +4,29 @@
 import { useEffect, useState } from "react";
 import { useReliableMutation } from "@/hooks/use-reliable-mutation";
 import { isFeatureEnabled } from "@/lib/features";
+import { StatusMessage } from "@/components/ui/ui";
 
-function PasswordInput({ value, onChange, placeholder }) {
+const focusRing =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500";
+
+function PasswordInput({ id, value, onChange, placeholder, autoComplete }) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div className="flex overflow-hidden rounded-2xl border border-zinc-300 bg-white">
       <input
-        className="min-h-12 flex-1 px-4 text-base text-zinc-950 outline-none"
+        id={id}
+        className={`min-h-12 flex-1 px-4 text-base text-zinc-950 placeholder:text-zinc-500 ${focusRing}`}
         type={visible ? "text" : "password"}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        autoComplete={autoComplete}
       />
 
       <button
         type="button"
-        className="border-l border-zinc-300 px-3 text-sm font-semibold text-zinc-700"
+        className={`min-h-12 border-l border-zinc-300 px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 ${focusRing}`}
         onClick={() => setVisible((current) => !current)}
       >
         {visible ? "Masquer" : "Voir"}
@@ -172,30 +178,45 @@ export default function AuthPage({
             </div>
 
             {inviteMessage && (
-              <div className="mb-4 rounded-2xl bg-zinc-100 p-3 text-sm font-medium text-zinc-800">
+              <StatusMessage variant={inviteMessage.startsWith("Compte créé") ? "success" : "error"} className="mb-4">
                 {inviteMessage}
-              </div>
+              </StatusMessage>
             )}
 
             {(invitedAthlete || v2InviteEnabled) && (
               <form onSubmit={submitInvite} className="space-y-4">
-                <input
-                  className="min-h-12 w-full rounded-2xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none"
-                  type="email"
-                  placeholder="Email athlète"
-                  value={inviteEmail}
-                  onChange={(event) => setInviteEmail(event.target.value)}
-                />
+                <div>
+                  <label htmlFor="invite-email" className="mb-1.5 block text-sm font-semibold text-zinc-800">
+                    Email athlète
+                  </label>
+                  <input
+                    id="invite-email"
+                    className={`min-h-12 w-full rounded-2xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 placeholder:text-zinc-500 ${focusRing}`}
+                    type="email"
+                    placeholder="athlete@exemple.fr"
+                    value={inviteEmail}
+                    onChange={(event) => setInviteEmail(event.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
 
-                <PasswordInput
-                  placeholder="Créer un mot de passe"
-                  value={invitePassword}
-                  onChange={(event) => setInvitePassword(event.target.value)}
-                />
+                <div>
+                  <label htmlFor="invite-password" className="mb-1.5 block text-sm font-semibold text-zinc-800">
+                    Créer un mot de passe
+                  </label>
+                  <PasswordInput
+                    id="invite-password"
+                    placeholder="Choisir un mot de passe"
+                    value={invitePassword}
+                    onChange={(event) => setInvitePassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
 
                 <button
-                  className="min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white"
+                  className={`min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
                   type="submit"
+                  disabled={inviteMutation.pending}
                 >
                   {inviteMutation.pending ? "Création..." : "Créer mon compte athlète"}
                 </button>
@@ -226,9 +247,9 @@ export default function AuthPage({
           </div>
 
           {error && (
-            <div className="mb-4 rounded-2xl bg-red-100 p-3 text-sm font-semibold text-red-800">
+            <StatusMessage variant="error" className="mb-4">
               {error}
-            </div>
+            </StatusMessage>
           )}
 
           <form onSubmit={submitCoach} className="space-y-4">
@@ -236,22 +257,36 @@ export default function AuthPage({
               Coach
             </h2>
 
-            <input
-              className="min-h-12 w-full rounded-2xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none"
-              type="email"
-              placeholder="Email coach"
-              value={coachEmail}
-              onChange={(event) => setCoachEmail(event.target.value)}
-            />
+            <div>
+              <label htmlFor="coach-email" className="mb-1.5 block text-sm font-semibold text-zinc-800">
+                Email coach
+              </label>
+              <input
+                id="coach-email"
+                className={`min-h-12 w-full rounded-2xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 placeholder:text-zinc-500 ${focusRing}`}
+                type="email"
+                placeholder="coach@exemple.fr"
+                value={coachEmail}
+                onChange={(event) => setCoachEmail(event.target.value)}
+                autoComplete="email"
+              />
+            </div>
 
-            <PasswordInput
-              placeholder="Mot de passe coach"
-              value={coachPassword}
-              onChange={(event) => setCoachPassword(event.target.value)}
-            />
+            <div>
+              <label htmlFor="coach-password" className="mb-1.5 block text-sm font-semibold text-zinc-800">
+                Mot de passe coach
+              </label>
+              <PasswordInput
+                id="coach-password"
+                placeholder="Saisir votre mot de passe"
+                value={coachPassword}
+                onChange={(event) => setCoachPassword(event.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
 
             <button
-              className="min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white"
+              className={`min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white transition hover:bg-zinc-800 ${focusRing}`}
               type="submit"
             >
               Se connecter coach
@@ -265,22 +300,36 @@ export default function AuthPage({
               Athlète
             </h2>
 
-            <input
-              className="min-h-12 w-full rounded-2xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none"
-              type="email"
-              placeholder="Email athlète"
-              value={athleteEmail}
-              onChange={(event) => setAthleteEmail(event.target.value)}
-            />
+            <div>
+              <label htmlFor="athlete-email" className="mb-1.5 block text-sm font-semibold text-zinc-800">
+                Email athlète
+              </label>
+              <input
+                id="athlete-email"
+                className={`min-h-12 w-full rounded-2xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 placeholder:text-zinc-500 ${focusRing}`}
+                type="email"
+                placeholder="athlete@exemple.fr"
+                value={athleteEmail}
+                onChange={(event) => setAthleteEmail(event.target.value)}
+                autoComplete="email"
+              />
+            </div>
 
-            <PasswordInput
-              placeholder="Mot de passe athlète"
-              value={athletePassword}
-              onChange={(event) => setAthletePassword(event.target.value)}
-            />
+            <div>
+              <label htmlFor="athlete-password" className="mb-1.5 block text-sm font-semibold text-zinc-800">
+                Mot de passe athlète
+              </label>
+              <PasswordInput
+                id="athlete-password"
+                placeholder="Saisir votre mot de passe"
+                value={athletePassword}
+                onChange={(event) => setAthletePassword(event.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
 
             <button
-              className="min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white"
+              className={`min-h-12 w-full rounded-2xl bg-zinc-950 px-4 text-base font-bold text-white transition hover:bg-zinc-800 ${focusRing}`}
               type="submit"
             >
               Se connecter athlète

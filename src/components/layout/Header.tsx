@@ -16,8 +16,11 @@ export default function Header({ view, setView, auth, logout }) {
         ];
 
   return (
-    <header className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <header className="flex flex-col gap-5 border-b border-zinc-800 pb-5 xl:flex-row xl:items-end xl:justify-between">
       <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">
+          {auth?.role === "coach" ? "Espace coach" : "Espace athlète"}
+        </p>
         <h1 className="text-2xl font-bold sm:text-3xl xl:text-4xl">
           Ma Plateforme Coaching Cycliste
         </h1>
@@ -26,15 +29,17 @@ export default function Header({ view, setView, auth, logout }) {
         </p>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:gap-3">
+      <nav aria-label="Navigation principale" className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-3">
         {nav.map(([key, label]) => (
           <button
             key={key}
+            type="button"
             onClick={() => setView(key)}
-            className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold sm:px-5 sm:text-base ${
+            aria-current={view === key ? "page" : undefined}
+            className={`min-h-11 rounded-2xl px-4 py-3 text-sm font-semibold transition sm:px-5 sm:text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
               view === key
                 ? "bg-white text-black"
-                : "border border-zinc-800 bg-zinc-900 hover:bg-zinc-800"
+                : "border border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
             }`}
           >
             {label}
@@ -42,12 +47,13 @@ export default function Header({ view, setView, auth, logout }) {
         ))}
 
         <button
+          type="button"
           onClick={logout}
-          className="shrink-0 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold text-zinc-300 sm:px-5 sm:text-base"
+          className="min-h-11 rounded-2xl border border-zinc-600 bg-zinc-900 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800 sm:px-5 sm:text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
         >
           Déconnexion
         </button>
-      </div>
+      </nav>
     </header>
   );
 }

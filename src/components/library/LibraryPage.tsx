@@ -1,6 +1,7 @@
 // @ts-nocheck
 "use client";
 
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -28,21 +29,26 @@ export default function LibraryPage({
   removeItem,
   taxonomyPending,
 }) {
+  const [workoutToDelete, setWorkoutToDelete] = useState(null);
+  const [deletingWorkoutId, setDeletingWorkoutId] = useState(null);
+
   async function deleteWorkout(workout) {
-    const ok = window.confirm(
-      `Supprimer définitivement "${workout.title}" de la bibliothèque ?`
-    );
+    if (deletingWorkoutId) return;
 
-    if (!ok) return;
+    setDeletingWorkoutId(workout.id);
+    try {
+      await supabase
+        .from("workout_library")
+        .delete()
+        .eq("id", workout.id);
 
-    await supabase
-      .from("workout_library")
-      .delete()
-      .eq("id", workout.id);
-
-    setLibrary(
-      library.filter((row) => row.id !== workout.id)
-    );
+      setLibrary(
+        library.filter((row) => row.id !== workout.id)
+      );
+      setWorkoutToDelete(null);
+    } finally {
+      setDeletingWorkoutId(null);
+    }
   }
 
   const sortedLibrary = [...filteredLibrary].sort((a, b) => {
@@ -154,7 +160,7 @@ export default function LibraryPage({
                 )}
               </div>
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Btn
                   variant="primary"
                   className="flex-1 py-2 text-sm"
@@ -166,10 +172,37 @@ export default function LibraryPage({
                 <Btn
                   variant="danger"
                   className="flex-1 py-2 text-sm"
-                  onClick={() => deleteWorkout(workout)}
+                  onClick={() => setWorkoutToDelete(workout)}
                 >
                   Supprimer
                 </Btn>
+
+                {workoutToDelete?.id === workout.id && (
+                  <div
+                    role="region"
+                    aria-labelledby={`delete-workout-${workout.id}`}
+                    className="mt-2 basis-full rounded-2xl border border-red-400/60 bg-zinc-950 p-4"
+                  >
+                    <p id={`delete-workout-${workout.id}`} className="text-sm font-semibold text-white">
+                      Supprimer définitivement « {workout.title || "cette séance"} » ?
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      Cette action retire la séance de la bibliothèque.
+                    </p>
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                      <Btn
+                        variant="danger"
+                        onClick={() => deleteWorkout(workout)}
+                        disabled={deletingWorkoutId === workout.id}
+                      >
+                        {deletingWorkoutId === workout.id ? "Suppression..." : "Supprimer définitivement"}
+                      </Btn>
+                      <Btn onClick={() => setWorkoutToDelete(null)} disabled={deletingWorkoutId === workout.id}>
+                        Annuler
+                      </Btn>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -1,32 +1,35 @@
 // @ts-nocheck
 "use client";
 
-import { Btn, ColorSelect, Input } from "@/components/ui/ui";
+import { Btn, ColorSelect, Field, Input } from "@/components/ui/ui";
 
 function QuickCreateCard({ title, value, setValue, onAdd }) {
   return (
     <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3">
       <div className="mb-2 text-sm font-semibold">{title}</div>
 
-      <div className="flex gap-2">
-        <Input
-          value={value.name}
-          onChange={(event) =>
-            setValue({ ...value, name: event.target.value })
-          }
-          placeholder="Nom"
-        />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_auto] sm:items-end">
+        <Field label="Nom">
+          <Input
+            value={value.name}
+            onChange={(event) =>
+              setValue({ ...value, name: event.target.value })
+            }
+            placeholder="Nom"
+          />
+        </Field>
 
-        <ColorSelect
-          value={value.color}
-          onChange={(event) =>
-            setValue({ ...value, color: event.target.value })
-          }
-          className="max-w-28"
-        />
+        <Field label="Couleur">
+          <ColorSelect
+            value={value.color}
+            onChange={(event) =>
+              setValue({ ...value, color: event.target.value })
+            }
+          />
+        </Field>
 
-        <Btn variant="primary" onClick={onAdd}>
-          +
+        <Btn variant="primary" onClick={onAdd} aria-label={title}>
+          Ajouter
         </Btn>
       </div>
     </div>

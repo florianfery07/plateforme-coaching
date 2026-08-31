@@ -2190,8 +2190,16 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
 
   if (!auth) return <AuthPage athletes={athletes} loginCoach={loginCoach} loginAthlete={loginAthlete} acceptInvite={acceptInvite} />;
 
-  return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6"><div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+  return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6">
+    <a
+      href="#main-content"
+      className="sr-only fixed left-4 top-4 z-50 rounded-xl bg-white px-4 py-3 font-semibold text-zinc-950 focus:not-sr-only focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-amber-400"
+    >
+      Aller au contenu principal
+    </a>
+    <div className="mx-auto max-w-7xl">
     <Header view={view} setView={setView} auth={auth} logout={logout} />
+    <main id="main-content" tabIndex="-1" className="mt-4 space-y-4 focus:outline focus:outline-2 focus:outline-offset-4 focus:outline-amber-400 sm:mt-6 sm:space-y-6">
     <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} planningTargetType={planningTargetType} setPlanningTargetType={setPlanningTargetType} athleteGroups={athleteGroups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} />
     {auth?.role === "athlete" && athleteGoalsV2TargetEnabled && (
       <AthleteGoalsV2Panel state={athleteGoalsV2State} onSubmit={submitAthleteGoalsV2} />
@@ -2226,5 +2234,6 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories, goalsV2Enabled: athleteGoalsV2TargetEnabled, goalsV2State: athleteGoalsV2State, openGoalRequestV2: openAthleteGoalRequestV2, cancelGoalRequestV2: cancelAthleteGoalRequestV2, acceptGoalRequestV2: acceptAthleteGoalRequestV2, requestGoalChangesV2: requestAthleteGoalChangesV2 }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, athleteGroupCreatePending: athleteGroupCreatePilotEnabled && athleteGroupCreateMutation.pending, athleteGroupDeletePilotEnabled, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
     {auth?.role === "coach" && <DevChecks />}
+    </main>
   </div></div>;
 }

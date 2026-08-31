@@ -34,22 +34,30 @@ export default function AthleteSelector({
     <div className="rounded-3xl border border-zinc-800 bg-zinc-900 px-4 py-3 shadow-xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative w-full max-w-md">
-          <div className="mb-2 inline-flex rounded-xl bg-zinc-900 p-1 border border-zinc-700">
+          <div role="group" aria-label="Cible de planification" className="mb-2 inline-flex rounded-xl border border-zinc-700 bg-zinc-900 p-1">
             <button
               type="button"
               onClick={() => setPlanningTargetType?.("athlete")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold ${planningTargetType === "athlete" ? "bg-white text-black" : "text-zinc-300"}`}
-            >Athlète</button>
+              aria-pressed={planningTargetType === "athlete"}
+              className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${planningTargetType === "athlete" ? "bg-white text-black" : "text-zinc-300 hover:bg-zinc-800"}`}
+            >
+              Athlète
+            </button>
             <button
               type="button"
               onClick={() => setPlanningTargetType?.("group")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold ${planningTargetType === "group" ? "bg-white text-black" : "text-zinc-300"}`}
-            >Groupes</button>
+              aria-pressed={planningTargetType === "group"}
+              className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${planningTargetType === "group" ? "bg-white text-black" : "text-zinc-300 hover:bg-zinc-800"}`}
+            >
+              Groupes
+            </button>
           </div>
           <button
             type="button"
             onClick={() => setOpen(!open)}
-            className="flex w-full items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-left transition hover:bg-zinc-700"
+            aria-expanded={open}
+            aria-controls="planning-target-options"
+            className="flex min-h-11 w-full items-center justify-between rounded-2xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-left transition hover:bg-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
           >
             <div>
               <div className="text-[11px] text-zinc-500">{planningTargetType === "group" ? "Groupe sélectionné" : "Athlète sélectionné"}</div>
@@ -68,7 +76,7 @@ export default function AthleteSelector({
           </button>
 
           {open && (
-            <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl">
+            <div id="planning-target-options" role="group" aria-label={planningTargetType === "group" ? "Groupes disponibles" : "Athlètes disponibles"} className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl">
               {planningTargetType === "athlete"
                 ? athletes.map((a) => (
                     <button
@@ -78,7 +86,8 @@ export default function AthleteSelector({
                         setActiveId(a.id);
                         setOpen(false);
                       }}
-                      className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition hover:bg-zinc-800 ${activeId === a.id ? "bg-zinc-800" : ""}`}
+                      aria-pressed={activeId === a.id}
+                      className={`flex min-h-11 w-full items-center justify-between px-4 py-2.5 text-left transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-amber-400 ${activeId === a.id ? "bg-zinc-800" : ""}`}
                     >
                       <span className="flex items-center gap-2">
                         <span className={`h-3 w-3 rounded-full ${getColorClass(a.color)}`} />
@@ -95,7 +104,8 @@ export default function AthleteSelector({
                         setSelectedGroupId(g.id);
                         setOpen(false);
                       }}
-                      className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition hover:bg-zinc-800 ${selectedGroupId === g.id ? "bg-zinc-800" : ""}`}
+                      aria-pressed={selectedGroupId === g.id}
+                      className={`flex min-h-11 w-full items-center justify-between px-4 py-2.5 text-left transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-amber-400 ${selectedGroupId === g.id ? "bg-zinc-800" : ""}`}
                     >
                       <span>{g.name}</span>
                       {selectedGroupId === g.id && <span>✓</span>}

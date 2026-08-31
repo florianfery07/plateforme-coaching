@@ -33,51 +33,56 @@ export default function AthletePage({
 }) {
   const a = athleteActive;
   const [tab, setTab] = useState("profile");
+  const tabs = [
+    ["profile", "Profil athlète"],
+    ["stats", "Statistiques annuelles"],
+    ["weekly", "Suivi hebdo"],
+  ];
+
+  const moveTab = (event, key) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+
+    event.preventDefault();
+    const currentIndex = tabs.findIndex(([tabKey]) => tabKey === key);
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+      ? tabs.length - 1
+      : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    const nextKey = tabs[nextIndex][0];
+
+    setTab(nextKey);
+    document.getElementById(`athlete-tab-${nextKey}`)?.focus();
+  };
 
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-3">
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => setTab("profile")}
-            className={`rounded-2xl px-4 py-3 text-sm font-bold ${
-              tab === "profile"
-                ? "bg-white text-zinc-950"
-                : "bg-zinc-800 text-zinc-300"
-            }`}
-          >
-            Profil athlète
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("stats")}
-            className={`rounded-2xl px-4 py-3 text-sm font-bold ${
-              tab === "stats"
-                ? "bg-white text-zinc-950"
-                : "bg-zinc-800 text-zinc-300"
-            }`}
-          >
-            Statistiques annuelles
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("weekly")}
-            className={`rounded-2xl px-4 py-3 text-sm font-bold ${
-              tab === "weekly"
-                ? "bg-white text-zinc-950"
-                : "bg-zinc-800 text-zinc-300"
-            }`}
-          >
-            Suivi hebdo
-          </button>
+        <div role="tablist" aria-label="Sections de la fiche athlète" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {tabs.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              id={`athlete-tab-${key}`}
+              aria-controls={`athlete-panel-${key}`}
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              onKeyDown={(event) => moveTab(event, key)}
+              className={`min-h-11 rounded-2xl px-4 py-3 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+                tab === key
+                  ? "bg-white text-zinc-950"
+                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
       {tab === "profile" && (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div role="tabpanel" id="athlete-panel-profile" aria-labelledby="athlete-tab-profile" className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <section className="space-y-6 xl:col-span-3">
             <AthleteProfilePage
               athlete={a}
@@ -95,7 +100,7 @@ export default function AthletePage({
       )}
 
       {tab === "stats" && (
-        <div className="grid grid-cols-1 gap-6">
+        <div role="tabpanel" id="athlete-panel-stats" aria-labelledby="athlete-tab-stats" className="grid grid-cols-1 gap-6">
           <AthleteStatsPage
             activeId={activeId}
             calendarYear={calendarYear}
@@ -113,19 +118,21 @@ export default function AthletePage({
       )}
 
       {tab === "weekly" && (
-        <WeeklyReviewPage
-          sessions={activeSessions}
-          athleteId={activeId}
-          calendarYear={calendarYear}
-          weekColors={weekColors}
-          setWeekColors={setWeekColors}
-          weekNotes={weekNotes}
-          setWeekNotes={setWeekNotes}
-          weekPlanning={weekPlanning}
-          updateWeekPlanning={updateWeekPlanning}
-          categories={categories}
-          subcategories={subcategories}
-        />
+        <div role="tabpanel" id="athlete-panel-weekly" aria-labelledby="athlete-tab-weekly">
+          <WeeklyReviewPage
+            sessions={activeSessions}
+            athleteId={activeId}
+            calendarYear={calendarYear}
+            weekColors={weekColors}
+            setWeekColors={setWeekColors}
+            weekNotes={weekNotes}
+            setWeekNotes={setWeekNotes}
+            weekPlanning={weekPlanning}
+            updateWeekPlanning={updateWeekPlanning}
+            categories={categories}
+            subcategories={subcategories}
+          />
+        </div>
       )}
     </div>
   );

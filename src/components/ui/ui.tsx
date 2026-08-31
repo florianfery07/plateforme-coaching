@@ -2,6 +2,9 @@
 
 import { APP_COLORS } from "@/lib/colors";
 
+const focusRing =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400";
+
 export function Field({ label, children }) {
   return (
     <label className="flex h-full flex-col">
@@ -17,7 +20,7 @@ export function Input({ className = "", ...props }) {
   return (
     <input
       {...props}
-      className={`w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`}
+      className={`min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base text-white transition placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2 ${focusRing} ${className}`}
     />
   );
 }
@@ -26,7 +29,7 @@ export function Textarea({ className = "", ...props }) {
   return (
     <textarea
       {...props}
-      className={`w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`}
+      className={`w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base text-white transition placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2 ${focusRing} ${className}`}
     />
   );
 }
@@ -35,7 +38,7 @@ export function Select({ children, className = "", ...props }) {
   return (
     <select
       {...props}
-      className={`w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base outline-none sm:py-2 ${className}`}
+      className={`min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base text-white transition disabled:cursor-not-allowed disabled:opacity-50 sm:py-2 ${focusRing} ${className}`}
     >
       {children}
     </select>
@@ -62,7 +65,7 @@ export function Badge({ children, className = "" }) {
 
 export function Btn({ children, variant = "secondary", className = "", ...props }) {
   const base =
-    "rounded-xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed sm:py-2 sm:text-base";
+    `min-h-11 rounded-xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:py-2 sm:text-base ${focusRing}`;
 
   const styles = {
     primary: "bg-white text-black hover:opacity-90",
@@ -82,8 +85,29 @@ export function Btn({ children, variant = "secondary", className = "", ...props 
 
 export function Empty({ text }) {
   return (
-    <div className="rounded-2xl border border-dashed border-zinc-600 bg-zinc-800 p-8 text-center text-zinc-500">
+    <div
+      role="status"
+      className="rounded-2xl border border-dashed border-zinc-600 bg-zinc-800 p-8 text-center text-zinc-400"
+    >
       {text}
+    </div>
+  );
+}
+
+export function StatusMessage({ children, variant = "info", className = "" }) {
+  const styles = {
+    info: "border-zinc-700 bg-zinc-800 text-zinc-200",
+    success: "border-emerald-400/40 bg-emerald-500/10 text-emerald-100",
+    error: "border-red-400/40 bg-red-500/10 text-red-100",
+  };
+
+  return (
+    <div
+      role={variant === "error" ? "alert" : "status"}
+      aria-live={variant === "error" ? "assertive" : "polite"}
+      className={`rounded-2xl border p-3 text-sm font-medium ${styles[variant]} ${className}`}
+    >
+      {children}
     </div>
   );
 }

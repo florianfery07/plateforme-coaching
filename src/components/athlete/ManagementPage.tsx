@@ -34,6 +34,7 @@ const [archivePending, setArchivePending] = useState(false);
 const [confirmGroupDelete, setConfirmGroupDelete] = useState(null);
 const [groupDeleteSubmitting, setGroupDeleteSubmitting] = useState(null);
 const [managementTab, setManagementTab] = useState("athletes");
+  const managementTabs = ["athletes", "groups"];
   const [selectedAthleteId, setSelectedAthleteId] = useState(
     athletes?.[0]?.id || null
   );
@@ -51,6 +52,22 @@ const [managementTab, setManagementTab] = useState("athletes");
     updateAthlete(field, value, selectedAthlete.id);
   };
 
+  const moveManagementTab = (event, tab) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+
+    event.preventDefault();
+    const currentIndex = managementTabs.indexOf(tab);
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+      ? managementTabs.length - 1
+      : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + managementTabs.length) % managementTabs.length;
+    const nextTab = managementTabs[nextIndex];
+
+    setManagementTab(nextTab);
+    document.getElementById(`management-tab-${nextTab}`)?.focus();
+  };
+
   return (
     <Panel>
       <h2 className="mb-2 text-2xl font-semibold">Paramètres athlètes</h2>
@@ -58,11 +75,16 @@ const [managementTab, setManagementTab] = useState("athletes");
         Gérez les athlètes, leurs calendriers, leurs groupes et leurs réglages individuels.
       </p>
 
-      <div className="mb-6 flex gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-1">
+      <div role="tablist" aria-label="Gestion des athlètes" className="mb-6 flex gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-1">
         <button
           type="button"
+          role="tab"
+          id="management-tab-athletes"
+          aria-controls="management-panel-athletes"
+          aria-selected={managementTab === "athletes"}
           onClick={() => setManagementTab("athletes")}
-          className={`flex-1 rounded-xl px-4 py-2 text-sm font-bold ${
+          onKeyDown={(event) => moveManagementTab(event, "athletes")}
+          className={`min-h-11 flex-1 rounded-xl px-4 py-2 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
             managementTab === "athletes"
               ? "bg-white text-zinc-950"
               : "text-zinc-400 hover:text-white"
@@ -73,8 +95,13 @@ const [managementTab, setManagementTab] = useState("athletes");
 
         <button
           type="button"
+          role="tab"
+          id="management-tab-groups"
+          aria-controls="management-panel-groups"
+          aria-selected={managementTab === "groups"}
           onClick={() => setManagementTab("groups")}
-          className={`flex-1 rounded-xl px-4 py-2 text-sm font-bold ${
+          onKeyDown={(event) => moveManagementTab(event, "groups")}
+          className={`min-h-11 flex-1 rounded-xl px-4 py-2 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
             managementTab === "groups"
               ? "bg-white text-zinc-950"
               : "text-zinc-400 hover:text-white"
@@ -85,11 +112,12 @@ const [managementTab, setManagementTab] = useState("athletes");
       </div>
 
       {managementTab === "athletes" && (
-        <>
+        <div role="tabpanel" id="management-panel-athletes" aria-labelledby="management-tab-athletes">
           <div className="mb-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
             <h3 className="mb-3 text-lg font-semibold">Ajouter un athlète</h3>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Input
+                aria-label="Nom du nouvel athlète"
                 value={newAthlete}
                 onChange={(event) => setNewAthlete(event.target.value)}
                 placeholder="Nom de l’athlète"
@@ -134,7 +162,8 @@ const [managementTab, setManagementTab] = useState("athletes");
                             key={color}
                             type="button"
                             onClick={() => updateSelectedAthlete("color", color)}
-                            className={`h-9 w-9 rounded-full border-2 ${getColorClass(color)} ${
+                            aria-pressed={selectedAthlete.color === color}
+                            className={`min-h-11 min-w-11 rounded-full border-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${getColorClass(color)} ${
                               selectedAthlete.color === color
                                 ? "border-white ring-2 ring-white/40"
                                 : "border-zinc-700"
@@ -163,7 +192,7 @@ const [managementTab, setManagementTab] = useState("athletes");
                           onClick={() => setAthleteActive
                             ? setAthleteActive(selectedAthlete.id, selectedAthlete.active === false)
                             : updateSelectedAthlete("active", selectedAthlete.active === false)}
-                          className={`rounded-2xl px-4 py-2 text-sm font-bold ${
+                          className={`min-h-11 rounded-2xl px-4 py-2 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
                             selectedAthlete.active === false
                               ? "bg-zinc-700 text-zinc-200"
                               : "bg-green-500/20 text-green-300"
@@ -184,19 +213,20 @@ const [managementTab, setManagementTab] = useState("athletes");
                         </p>
                       </div>
 
-                      <button
-                        type="button"
+                        <button
+                          type="button"
                         onClick={() =>
                           updateSelectedAthlete(
                             "goalUpdateRequested",
                             !selectedAthlete.goalUpdateRequested
                           )
                         }
-                        className={
+                        aria-pressed={Boolean(selectedAthlete.goalUpdateRequested)}
+                        className={`min-h-11 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
                           selectedAthlete.goalUpdateRequested
                             ? "rounded-2xl border border-amber-500/40 px-4 py-2 text-sm font-bold text-amber-300"
                             : "rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
-                        }
+                        }`}
                       >
                         {selectedAthlete.goalUpdateRequested ? "Annuler la demande" : "Envoyer"}
                       </button>
@@ -215,8 +245,8 @@ const [managementTab, setManagementTab] = useState("athletes");
                     </Btn>
 
                     {confirmDelete === selectedAthlete.id && (
-                      <div className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4">
-                        <div className="text-sm text-zinc-300">
+                      <div role="region" aria-labelledby="athlete-delete-confirmation" className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4">
+                        <div id="athlete-delete-confirmation" className="text-sm text-zinc-300">
                           {athleteLifecycleV2Enabled
                             ? <>Archiver <b>{selectedAthlete.name}</b> ? Ses données seront conservées.</>
                             : <>Confirmer la suppression de <b>{selectedAthlete.name}</b> ?</>}
@@ -252,11 +282,11 @@ const [managementTab, setManagementTab] = useState("athletes");
               )}
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {managementTab === "groups" && (
-        <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
+        <div role="tabpanel" id="management-panel-groups" aria-labelledby="management-tab-groups" className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Groupes d’athlètes</h3>
             <p className="mt-1 text-sm text-zinc-400">
@@ -268,6 +298,7 @@ const [managementTab, setManagementTab] = useState("athletes");
             <h4 className="mb-3 font-semibold">Créer un groupe</h4>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Input
+                aria-label="Nom du nouveau groupe"
                 value={newGroupName || ""}
                 onChange={(event) => setNewGroupName(event.target.value)}
                 placeholder="Ex : Cadets, Stage VTT, Groupe route"
@@ -311,6 +342,7 @@ const [managementTab, setManagementTab] = useState("athletes");
                     <div className="min-w-0 flex-1">
                       <div className="mb-2 text-xs text-zinc-500">Nom du groupe</div>
                       <Input
+                        aria-label={`Nom du groupe ${group.name || "sans nom"}`}
                         value={group.name || ""}
                         onChange={(event) => renameAthleteGroup(group.id, event.target.value)}
                         onBlur={(event) => renameAthleteGroup(group.id, event.target.value)}
@@ -332,7 +364,7 @@ const [managementTab, setManagementTab] = useState("athletes");
   <button
     type="button"
     onClick={() => setConfirmGroupDelete(group.id)}
-    className="rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300 hover:bg-red-500/10"
+    className="min-h-11 rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300 transition hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
   >
     Supprimer
   </button>
@@ -340,8 +372,8 @@ const [managementTab, setManagementTab] = useState("athletes");
                   </div>
 
                   {confirmGroupDelete === group.id && (
-  <div className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4">
-    <div className="text-sm text-zinc-300">
+  <div role="region" aria-labelledby={`group-delete-confirmation-${group.id}`} className="mt-4 rounded-2xl border border-red-500 bg-zinc-950 p-4">
+    <div id={`group-delete-confirmation-${group.id}`} className="text-sm text-zinc-300">
       Confirmer la suppression du groupe <b>{group.name}</b> ?
     </div>
     <p className="mt-1 text-xs text-zinc-500">
@@ -399,7 +431,7 @@ const [managementTab, setManagementTab] = useState("athletes");
                         return (
                           <label
                             key={athlete.id}
-                            className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-sm ${
+                            className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border p-3 text-sm transition focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-amber-400 ${
                               checked
                                 ? "border-white bg-zinc-900 text-white"
                                 : "border-zinc-700 bg-zinc-900/60 text-zinc-300"
@@ -416,7 +448,7 @@ const [managementTab, setManagementTab] = useState("athletes");
                                 )
                               }
                               disabled={membershipPending}
-                              className="h-4 w-4 accent-white"
+                              className="h-5 w-5 accent-white"
                             />
                             <span className="font-medium">{athlete.name}</span>
                           </label>
@@ -455,7 +487,8 @@ function AthleteList({ title, athletes, selectedAthlete, setSelectedAthleteId, s
               setSelectedAthleteId(athleteItem.id);
               setConfirmDelete(null);
             }}
-            className={`w-full rounded-2xl border p-4 text-left ${
+            aria-pressed={selectedAthlete?.id === athleteItem.id}
+            className={`min-h-11 w-full rounded-2xl border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
               selectedAthlete?.id === athleteItem.id
                 ? "border-white bg-zinc-950"
                 : "border-zinc-700 bg-zinc-900"
@@ -485,10 +518,12 @@ function AthleteList({ title, athletes, selectedAthlete, setSelectedAthleteId, s
 }
 
 function FieldInput({ label, value, onChange }) {
+  const id = `athlete-field-${label.toLowerCase().replaceAll(" ", "-")}`;
+
   return (
     <div>
-      <div className="mb-2 text-xs text-zinc-500">{label}</div>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} />
+      <label htmlFor={id} className="mb-2 block text-xs text-zinc-500">{label}</label>
+      <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} />
     </div>
   );
 }
