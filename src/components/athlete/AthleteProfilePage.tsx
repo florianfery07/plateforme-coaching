@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/ui";
 
 import CP from "@/components/athlete/CP";
+import { CoachGoalsV2Panel } from "@/components/athlete/AthleteGoalsV2Panel";
 import AthleteInviteV2Panel from "@/components/athlete/AthleteInviteV2Panel";
 import { supabase } from "@/lib/supabase";
 
@@ -19,6 +20,12 @@ export default function AthleteProfilePage({
   athlete,
   updateAthlete,
   cpData,
+  goalsV2Enabled = false,
+  goalsV2State,
+  openGoalRequestV2,
+  cancelGoalRequestV2,
+  acceptGoalRequestV2,
+  requestGoalChangesV2,
 }) {
   const a = athlete;
 
@@ -357,6 +364,15 @@ export default function AthleteProfilePage({
         )}
       </Panel>
 
+      {goalsV2Enabled && goalsV2State ? (
+        <CoachGoalsV2Panel
+          state={goalsV2State}
+          onOpen={openGoalRequestV2}
+          onCancel={cancelGoalRequestV2}
+          onAccept={acceptGoalRequestV2}
+          onRequestChanges={requestGoalChangesV2}
+        />
+      ) : (
       <Panel>
         <SectionHeader sectionKey="goals" title="Objectifs coach et contexte" />
 
@@ -487,6 +503,7 @@ export default function AthleteProfilePage({
           </>
         )}
       </Panel>
+      )}
 
       <Panel>
         <SectionHeader sectionKey="tests" title="Tests principaux" />

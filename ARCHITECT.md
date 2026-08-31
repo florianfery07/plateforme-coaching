@@ -63,10 +63,10 @@ proportionnés.
 - L14c a été volontairement abandonné après mesure: la sauvegarde du planning
   hebdomadaire réalise déjà une écriture ciblée, sans lecture globale ni
   `loadAllData`.
-- L16b fournit la fondation Objectifs V2: workflow et versions immuables,
-  RPC atomiques, lecture sécurisée et flag désactivé. Aucun écran ne l’utilise
-  encore; le legacy Objectifs reste intégralement la source active jusqu’au
-  pilote explicitement approuvé de L16c.
+- L16c pilote Objectifs V2: workflow coach-athlète complet, historique
+  immuable et lecture d’état ciblée en une RPC. `athleteGoalsV2` reste
+  désactivé par défaut; hors pilote serveur et mapping explicite, le legacy
+  Objectifs reste intégralement actif, sans dual-write.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 
@@ -108,7 +108,7 @@ défaut. Leur contrat détaillé est dans
 | `groupsV2` | Fondations et programmation pilote de groupes V2. |
 | `athleteInvitesV2` | Invitations athlètes V2, dépend de `accessControlV2`. |
 | `athleteLifecycleV2` | Archivage/restauration athlète, dépend de `accessControlV2`. |
-| `athleteGoalsV2` | Fondation Objectifs V2, dépend de `accessControlV2`; aucun écran L16b ne l’active. |
+| `athleteGoalsV2` | Pilote UI Objectifs V2, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
 | `reliableMutationsV2` | Pilotes locaux de mutations fiables. |
 
 Un flag public ne constitue jamais une autorisation. Les pilotes L11 et L12 ne

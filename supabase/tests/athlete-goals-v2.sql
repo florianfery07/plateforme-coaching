@@ -7,6 +7,7 @@ declare
   v_result jsonb;
   v_history jsonb;
   v_current jsonb;
+  v_state jsonb;
   v_baseline_version_id uuid;
   v_before_legacy jsonb;
 begin
@@ -20,6 +21,7 @@ begin
   end if;
   if has_function_privilege('anon', 'public.open_athlete_goal_request_v2(uuid, uuid)', 'execute')
     or has_function_privilege('anon', 'public.list_athlete_goal_history_v2(uuid)', 'execute')
+    or has_function_privilege('anon', 'public.get_athlete_goal_state_v2(uuid)', 'execute')
     or not has_function_privilege('authenticated', 'public.submit_athlete_goal_version_v2(uuid, text, text, text, uuid)', 'execute') then
     raise exception 'Goal V2 RPC privileges are not minimal';
   end if;
@@ -97,7 +99,12 @@ begin
     raise exception 'Opening must be idempotent and allow only one open request';
   end if;
   v_current := public.get_athlete_current_goal_v2('10000000-0000-0000-0000-000000000021');
-  if v_current->'current'->>'shortGoal' <> 'Legacy court' then
+  v_state := public.get_athlete_goal_state_v2('10000000-0000-0000-0000-000000000021');
+  if v_current->'current'->>'shortGoal' <> 'Legacy court'
+    or v_state->'openRequest'->>'requestId' <> v_request_id::text
+    or v_state->'openRequest'->>'status' <> 'requested'
+    or v_state->'openRequest'->'latestVersion'->>'source' <> 'legacy_baseline'
+    or jsonb_array_length(v_state->'history') <> 1 then
     raise exception 'The initial V2 current goal must be the read-only legacy baseline';
   end if;
 
@@ -147,8 +154,12 @@ begin
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', false);
   v_current := public.get_athlete_current_goal_v2('10000000-0000-0000-0000-000000000021');
   v_history := public.list_athlete_goal_history_v2('10000000-0000-0000-0000-000000000021');
+  v_state := public.get_athlete_goal_state_v2('10000000-0000-0000-0000-000000000021');
   if v_current->'current'->>'shortGoal' <> 'Court V2'
     or jsonb_array_length(v_history) <> 3
+    or v_state->>'openRequest' is not null
+    or v_state->'current'->>'shortGoal' <> 'Court V2'
+    or jsonb_array_length(v_state->'history') <> 3
     or exists (select 1 from public.athlete_goal_versions_v2 where request_id = v_request_id and source = 'athlete_submission' and review_outcome is null)
     or v_before_legacy <> (select jsonb_build_object('short', short_goal, 'medium', medium_goal, 'long', long_goal) from public.athletes where id = '10000000-0000-0000-0000-000000000021') then
     raise exception 'Acceptance must make only the approved V2 version current and leave legacy untouched';

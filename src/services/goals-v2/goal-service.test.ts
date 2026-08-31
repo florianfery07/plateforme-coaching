@@ -17,6 +17,7 @@ function repository(overrides: Partial<GoalsV2Repository> = {}): GoalsV2Reposito
     accept: success,
     requestChanges: success,
     getCurrent: async () => ({ data: { legacyAthleteId: athleteId, current: null }, error: null }),
+    getState: async () => ({ data: { legacyAthleteId: athleteId, current: null, openRequest: null, history: [] }, error: null }),
     listHistory: async () => ({ data: [], error: null }),
     ...overrides,
   };
@@ -93,5 +94,32 @@ describe("Goals V2 service", () => {
 
     await expect(service.getCurrent(athleteId)).resolves.toMatchObject({ versionId, source: "athlete_submission", shortGoal: "Court" });
     await expect(service.listHistory(athleteId)).resolves.toHaveLength(1);
+  });
+
+  it("reads one validated UI state including a request without a submitted version", async () => {
+    const service = createGoalsV2Service(repository({
+      getState: async () => ({
+        data: {
+          legacyAthleteId: athleteId,
+          current: null,
+          openRequest: {
+            requestId,
+            status: "requested",
+            reviewNote: null,
+            requestedAt: "2026-08-30T10:00:00Z",
+            updatedAt: "2026-08-30T10:00:00Z",
+            latestVersion: null,
+          },
+          history: [],
+        },
+        error: null,
+      }),
+    }));
+
+    await expect(service.getState(athleteId)).resolves.toMatchObject({
+      legacyAthleteId: athleteId,
+      openRequest: { requestId, status: "requested", latestVersion: null },
+      history: [],
+    });
   });
 });

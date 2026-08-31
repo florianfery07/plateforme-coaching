@@ -7,8 +7,10 @@ import type {
   GoalRequestStatus,
   GoalRpcError,
   GoalRpcResponse,
+  GoalState,
   GoalsV2Repository,
   GoalsV2Service,
+  OpenGoalRequest,
 } from "./types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -116,6 +118,39 @@ function parseHistoryItem(value: unknown): GoalHistoryItem {
   };
 }
 
+function parseOpenRequest(value: unknown): OpenGoalRequest | null {
+  if (value === null) return null;
+  if (!isRecord(value)
+    || !isUuid(value.requestId)
+    || (value.status !== "requested" && value.status !== "submitted" && value.status !== "changes_requested")
+    || typeof value.requestedAt !== "string"
+    || typeof value.updatedAt !== "string") {
+    throw new Error("La réponse Objectifs V2 est invalide.");
+  }
+  return {
+    requestId: value.requestId,
+    status: value.status,
+    requestedAt: value.requestedAt,
+    updatedAt: value.updatedAt,
+    reviewNote: nullableText(value.reviewNote),
+    latestVersion: value.latestVersion === null ? null : parseHistoryItem(value.latestVersion),
+  };
+}
+
+function parseState(value: unknown, expectedAthleteId: string): GoalState {
+  if (!isRecord(value)
+    || value.legacyAthleteId !== expectedAthleteId
+    || !Array.isArray(value.history)) {
+    throw new Error("La réponse Objectifs V2 est invalide.");
+  }
+  return {
+    legacyAthleteId: expectedAthleteId,
+    current: parseCurrent(value),
+    openRequest: parseOpenRequest(value.openRequest),
+    history: value.history.map(parseHistoryItem),
+  };
+}
+
 function assertUuid(value: string, message: string): void {
   if (!isUuid(value)) throw new Error(message);
 }
@@ -165,6 +200,10 @@ export function createGoalsV2Service(repository: GoalsV2Repository): GoalsV2Serv
     async getCurrent(legacyAthleteId) {
       assertUuid(legacyAthleteId, "L’athlète sélectionné est invalide.");
       return parseCurrent(await unwrap(repository.getCurrent(legacyAthleteId)));
+    },
+    async getState(legacyAthleteId) {
+      assertUuid(legacyAthleteId, "L’athlète sélectionné est invalide.");
+      return parseState(await unwrap(repository.getState(legacyAthleteId)), legacyAthleteId);
     },
     async listHistory(legacyAthleteId) {
       assertUuid(legacyAthleteId, "L’athlète sélectionné est invalide.");

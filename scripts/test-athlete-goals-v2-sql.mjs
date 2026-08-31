@@ -11,6 +11,7 @@ const files = [
   "supabase/migrations/20260715010000_groups_v2_mapping_bridge.sql",
   "supabase/migrations/20260811000000_athlete_lifecycle_v2.sql",
   "supabase/migrations/20260830000000_athlete_goals_v2_foundation.sql",
+  "supabase/migrations/20260830010000_athlete_goals_v2_state_read.sql",
   "supabase/tests/athlete-goals-v2-fixture.sql",
   "supabase/tests/athlete-goals-v2.sql",
 ];

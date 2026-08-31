@@ -22,6 +22,7 @@ export type GoalsV2Repository = {
   accept: (requestId: string, reviewNote?: string | null) => Promise<GoalRpcResponse>;
   cancel: (requestId: string) => Promise<GoalRpcResponse>;
   getCurrent: (legacyAthleteId: string) => Promise<GoalRpcResponse>;
+  getState: (legacyAthleteId: string) => Promise<GoalRpcResponse>;
   listHistory: (legacyAthleteId: string) => Promise<GoalRpcResponse>;
   open: (input: OpenGoalRequestInput) => Promise<GoalRpcResponse>;
   requestChanges: (input: ReviewGoalRequestInput) => Promise<GoalRpcResponse>;
@@ -80,10 +81,27 @@ export type GoalHistoryItem = {
   versionId: string;
 };
 
+export type OpenGoalRequest = {
+  latestVersion: GoalHistoryItem | null;
+  requestId: string;
+  requestedAt: string;
+  reviewNote: string | null;
+  status: Exclude<GoalRequestStatus, "accepted" | "cancelled">;
+  updatedAt: string;
+};
+
+export type GoalState = {
+  current: CurrentGoal | null;
+  history: GoalHistoryItem[];
+  legacyAthleteId: string;
+  openRequest: OpenGoalRequest | null;
+};
+
 export type GoalsV2Service = {
   accept: (requestId: string, reviewNote?: string | null) => Promise<GoalRequestResult>;
   cancel: (requestId: string) => Promise<GoalRequestResult>;
   getCurrent: (legacyAthleteId: string) => Promise<CurrentGoal | null>;
+  getState: (legacyAthleteId: string) => Promise<GoalState>;
   listHistory: (legacyAthleteId: string) => Promise<GoalHistoryItem[]>;
   open: (input: OpenGoalRequestInput) => Promise<GoalRequestResult>;
   requestChanges: (input: ReviewGoalRequestInput) => Promise<GoalRequestResult>;

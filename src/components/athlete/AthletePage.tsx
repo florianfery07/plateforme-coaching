@@ -24,6 +24,12 @@ export default function AthletePage({
   updateWeekPlanning,
   categories,
   subcategories,
+  goalsV2Enabled,
+  goalsV2State,
+  openGoalRequestV2,
+  cancelGoalRequestV2,
+  acceptGoalRequestV2,
+  requestGoalChangesV2,
 }) {
   const a = athleteActive;
   const [tab, setTab] = useState("profile");
@@ -77,6 +83,12 @@ export default function AthletePage({
               athlete={a}
               updateAthlete={updateAthlete}
               cpData={cpData}
+              goalsV2Enabled={goalsV2Enabled}
+              goalsV2State={goalsV2State}
+              openGoalRequestV2={openGoalRequestV2}
+              cancelGoalRequestV2={cancelGoalRequestV2}
+              acceptGoalRequestV2={acceptGoalRequestV2}
+              requestGoalChangesV2={requestGoalChangesV2}
             />
           </section>
         </div>

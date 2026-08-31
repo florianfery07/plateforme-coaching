@@ -47,6 +47,9 @@ export const goalsV2Repository: GoalsV2Repository = {
   getCurrent(legacyAthleteId: string) {
     return response(supabase.rpc("get_athlete_current_goal_v2", { p_legacy_athlete_id: legacyAthleteId }));
   },
+  getState(legacyAthleteId: string) {
+    return response(supabase.rpc("get_athlete_goal_state_v2", { p_legacy_athlete_id: legacyAthleteId }));
+  },
   listHistory(legacyAthleteId: string) {
     return response(supabase.rpc("list_athlete_goal_history_v2", { p_legacy_athlete_id: legacyAthleteId }));
   },

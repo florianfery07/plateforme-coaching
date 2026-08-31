@@ -11,6 +11,7 @@
  * Source: supabase/migrations/20260827000000_schedule_athlete_proposals_v2.sql (325d5e6b20d3d3b6ddab5e5943bade38ef808e364be913d02940e9458aa53153)
  * Source: supabase/migrations/20260828000000_workout_taxonomy_atomic_v2.sql (e3406248413c188aec4c2e3e0cee2ecff4bfd77642bf1619b12e92e3f8392a9d)
  * Source: supabase/migrations/20260830000000_athlete_goals_v2_foundation.sql (706397e1e226a8445a1fb41c96f3f59367e15109be7c7765b92275448ff8f765)
+ * Source: supabase/migrations/20260830010000_athlete_goals_v2_state_read.sql (3b86d609daa8b1a7533634ce2df355fecb6dc4c4e1b014839646038ac47ab70b)
  * Regenerate: npm run generate:types
  */
 
@@ -1220,6 +1221,12 @@ export type Database = {
         Returns: Json
       }
       "get_athlete_current_goal_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+        }
+        Returns: Json
+      }
+      "get_athlete_goal_state_v2": {
         Args: {
           "p_legacy_athlete_id": string
         }

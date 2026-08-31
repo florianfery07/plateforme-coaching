@@ -460,10 +460,12 @@ export default function CalendarPageOld(props) {
       >
         {!props.isCoach && (
           <>
-            <AthleteGoalUpdateBanner
-              athlete={props.athleteActive}
-              updateAthlete={props.updateAthlete}
-            />
+            {!props.athleteGoalsV2Enabled && (
+              <AthleteGoalUpdateBanner
+                athlete={props.athleteActive}
+                updateAthlete={props.updateAthlete}
+              />
+            )}
 
             <AthleteNotificationsBanner
               sessions={props.activeSessions}
