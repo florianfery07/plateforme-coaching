@@ -98,6 +98,38 @@ try {
   if (proof !== '{"accepted_requests" : 1, "accepted_submissions" : 1, "legacy_goal_unchanged" : true}') {
     throw new Error(`Concurrent goal review left an unexpected durable state: ${proof}`);
   }
+
+  const submissionRequestId = run("docker", ["exec", "-i", "--user", "postgres", containerName, "psql", "-At", "--set", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], `
+    select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', false);
+    select public.open_athlete_goal_request_v2('10000000-0000-0000-0000-000000000021', '70000000-0000-0000-0000-000000000011')->>'requestId';
+  `).trim().split("\n").at(-1);
+  const firstSubmission = executeSqlAsync(`
+    begin;
+    select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', false);
+    select public.submit_athlete_goal_version_v2('${submissionRequestId}', 'Concurrent athlete court', 'Concurrent athlete medium', 'Concurrent athlete long', '71000000-0000-0000-0000-000000000008');
+    select pg_sleep(0.4);
+    commit;
+  `);
+  await new Promise((resolve) => setTimeout(resolve, 75));
+  const secondSubmission = await executeSqlAsync(`
+    begin;
+    select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', false);
+    select public.submit_athlete_goal_version_v2('${submissionRequestId}', 'Concurrent athlete duplicate', null, null, '71000000-0000-0000-0000-000000000009');
+    commit;
+  `);
+  const firstSubmissionResult = await firstSubmission;
+  if (firstSubmissionResult.status !== 0 || secondSubmission.status === 0 || !secondSubmission.stderr.includes('athlete_goal_state_conflict')) {
+    throw new Error(`Concurrent athlete submissions did not preserve one revision\n${firstSubmissionResult.stderr}${secondSubmission.stderr}`);
+  }
+  const submissionProof = run("docker", ["exec", "-i", "--user", "postgres", containerName, "psql", "-At", "--set", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"], `
+    select json_build_object(
+      'submitted_requests', (select count(*) from public.athlete_goal_requests_v2 where id = '${submissionRequestId}' and status = 'submitted'),
+      'submitted_versions', (select count(*) from public.athlete_goal_versions_v2 where request_id = '${submissionRequestId}' and source = 'athlete_submission')
+    );
+  `).trim();
+  if (submissionProof !== '{"submitted_requests" : 1, "submitted_versions" : 1}') {
+    throw new Error(`Concurrent athlete submissions left an unexpected durable state: ${submissionProof}`);
+  }
   console.log("Athlete goals V2 SQL migration test passed.");
 } finally {
   spawnSync("docker", ["rm", "-f", containerName], { stdio: "ignore" });

@@ -63,10 +63,12 @@ proportionnés.
 - L14c a été volontairement abandonné après mesure: la sauvegarde du planning
   hebdomadaire réalise déjà une écriture ciblée, sans lecture globale ni
   `loadAllData`.
-- L16c pilote Objectifs V2: workflow coach-athlète complet, historique
-  immuable et lecture d’état ciblée en une RPC. `athleteGoalsV2` reste
-  désactivé par défaut; hors pilote serveur et mapping explicite, le legacy
-  Objectifs reste intégralement actif, sans dual-write.
+- L16 est terminé: Objectifs V2 possède une fondation atomique, un pilote UI
+  coach-athlète, un historique immuable, une lecture d’état ciblée et des
+  preuves de concurrence. `athleteGoalsV2` reste désactivé par défaut; hors
+  pilote serveur et mapping explicite, le legacy Objectifs reste intégralement
+  actif, sans dual-write. Son rollout et son retour arrière sont documentés
+  dans `docs/development/athlete-goals-v2.md`.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 

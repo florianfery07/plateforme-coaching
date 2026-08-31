@@ -111,4 +111,75 @@ describe("Goals V2 pilot panels", () => {
     await waitFor(() => expect(onRequestChanges).toHaveBeenCalledWith(requestId, "Précisez le calendrier."));
     expect(onAccept).not.toHaveBeenCalled();
   });
+
+  it("keeps a cancellation single-shot and exposes terminal history without another athlete action", async () => {
+    const onCancel = vi.fn(() => new Promise<void>(() => undefined));
+    const accepted = {
+      versionId: "30000000-0000-4000-8000-000000000012",
+      requestId,
+      requestStatus: "accepted" as const,
+      revisionNumber: 2,
+      source: "athlete_submission" as const,
+      shortGoal: "Objectif validé",
+      mediumGoal: null,
+      longGoal: null,
+      acceptedAt: "2026-08-30T11:00:00Z",
+      submittedAt: "2026-08-30T10:00:00Z",
+      reviewOutcome: "accepted" as const,
+      reviewedAt: "2026-08-30T11:00:00Z",
+      reviewNote: null,
+    };
+    const { rerender } = render(
+      <CoachGoalsV2Panel
+        state={state()}
+        onOpen={vi.fn()}
+        onCancel={onCancel}
+        onAccept={vi.fn()}
+        onRequestChanges={vi.fn()}
+      />,
+    );
+
+    const cancel = screen.getByRole("button", { name: "Annuler la demande" });
+    fireEvent.click(cancel);
+    fireEvent.click(cancel);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(cancel).toBeDisabled();
+
+    rerender(<AthleteGoalsV2Panel state={state({ openRequest: null, current: accepted, history: [accepted] })} onSubmit={vi.fn()} />);
+    expect(screen.getByText("Objectif actuellement validé")).toBeInTheDocument();
+    expect(screen.getByText("Aucune demande de mise à jour n’est en attente.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Envoyer mes objectifs" })).not.toBeInTheDocument();
+  });
+
+  it("pre-fills the latest immutable version when changes are requested", () => {
+    render(
+      <AthleteGoalsV2Panel
+        state={state({
+          openRequest: {
+            ...state().openRequest!,
+            status: "changes_requested",
+            reviewNote: "Ajouter un objectif de récupération.",
+            latestVersion: {
+              versionId: "30000000-0000-4000-8000-000000000013",
+              requestId,
+              requestStatus: "changes_requested",
+              revisionNumber: 1,
+              source: "athlete_submission",
+              shortGoal: "Course V1",
+              mediumGoal: null,
+              longGoal: null,
+              submittedAt: "2026-08-30T10:00:00Z",
+              reviewOutcome: "changes_requested",
+              reviewedAt: "2026-08-30T11:00:00Z",
+              reviewNote: "Ajouter un objectif de récupération.",
+            },
+          },
+        })}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Ajouter un objectif de récupération.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Court terme (~6 mois)")).toHaveValue("Course V1");
+  });
 });

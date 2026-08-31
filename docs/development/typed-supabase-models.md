@@ -36,7 +36,7 @@ athlete row would repeat the authorization flaw identified in L04/L05.
 | Workouts | Generated `calendar_workouts` row and `WorkoutSummary` mapper. | Calendar query adoption. |
 | Feedbacks | Generated `workout_feedbacks` row and narrow mapper. | Legacy feedback mutations. |
 | Groups | Generated group rows and `GroupSummary` mapper. | Group membership services and authorization transition. |
-| Goals | Generated legacy goal-history row, V2 workflow/version rows and typed Goal V2 RPCs. | L16c adopts the bounded `src/services/goals-v2/` domain for one explicit pilot only; legacy remains the default. |
+| Goals | Generated legacy goal-history row, V2 workflow/version rows and typed Goal V2 RPCs. | L16 closes the bounded `src/services/goals-v2/` pilot; legacy remains the default until a separately approved rollout. |
 | Observations | Generated observation row. | No domain model yet. |
 | Tests | Generated test-history row. | No domain model yet. |
 | Statistics | Generated source rows only. | Derived calculation contracts remain legacy. |

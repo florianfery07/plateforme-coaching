@@ -227,7 +227,6 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const [athleteGoalsV2State, setAthleteGoalsV2State] = useState(null);
 	const [athleteLifecyclePendingAthleteId, setAthleteLifecyclePendingAthleteId] = useState(null);
 	const athleteLifecycleLocksRef = useRef(new Set());
-	const athleteGoalsV2LockRef = useRef(false);
 	const athleteGroupMemberLocksRef = useRef(new Set());
   const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
   const workoutTaxonomyPilotEnabled = isReliableMutationsPilotEnabled();
@@ -398,6 +397,31 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     key: "athlete-group.delete",
     operation: ({ groupId }) => removeAthleteGroup(groupId),
     type: "athlete-group.delete",
+  });
+  const athleteGoalsV2Mutation = useReliableMutation({
+    concurrency: "reject",
+    key: `athlete-goals-v2:${activeId || "none"}`,
+    operation: (input) => {
+      switch (input.action) {
+        case "open":
+          return goalsV2Service.open(input);
+        case "cancel":
+          return goalsV2Service.cancel(input.requestId);
+        case "accept":
+          return goalsV2Service.accept(input.requestId, input.reviewNote);
+        case "requestChanges":
+          return goalsV2Service.requestChanges(input);
+        case "submit":
+          return goalsV2Service.submit(input);
+      }
+    },
+    retry: {
+      attempts: 2,
+      delayMs: 500,
+      shouldRetry: (error) => error.kind === "network",
+    },
+    timeoutMs: 10_000,
+    type: "athlete-goals.workflow",
   });
 
 async function loadAllData() {
@@ -2105,54 +2129,63 @@ async function refreshAthleteGoalsV2(athleteId = athleteActive?.id) {
   }
 }
 
-async function runAthleteGoalsV2Mutation(operation) {
+async function runAthleteGoalsV2Mutation(input) {
   if (!athleteGoalsV2TargetEnabled || !athleteActive?.id) {
     throw new Error("Les objectifs V2 ne sont pas disponibles pour cet athlète.");
   }
-  if (athleteGoalsV2LockRef.current) {
-    throw new Error("Une modification des objectifs est déjà en cours.");
-  }
-  athleteGoalsV2LockRef.current = true;
-  try {
-    await operation();
+
+  const result = await athleteGoalsV2Mutation.mutate(input);
+  if (result.state === "success") {
     await refreshAthleteGoalsV2(athleteActive.id);
-  } finally {
-    athleteGoalsV2LockRef.current = false;
+    return;
   }
+
+  // A response can be lost after PostgreSQL has committed. Re-read only this
+  // athlete's projection before surfacing the safe client error.
+  try {
+    await refreshAthleteGoalsV2(athleteActive.id);
+  } catch {
+    // The mutation error below remains the user-facing source of truth.
+  }
+
+  if (result.state === "superseded") return;
+  throw new Error("La modification des objectifs a échoué. Réessayez.");
 }
 
 async function openAthleteGoalRequestV2() {
   if (auth?.role !== "coach") throw new Error("Vous n’êtes pas autorisé à modifier ces objectifs.");
-  await runAthleteGoalsV2Mutation(() => goalsV2Service.open({
+  await runAthleteGoalsV2Mutation({
+    action: "open",
     legacyAthleteId: athleteActive.id,
     idempotencyKey: crypto.randomUUID(),
-  }));
+  });
 }
 
 async function cancelAthleteGoalRequestV2(requestId) {
   if (auth?.role !== "coach") throw new Error("Vous n’êtes pas autorisé à modifier ces objectifs.");
-  await runAthleteGoalsV2Mutation(() => goalsV2Service.cancel(requestId));
+  await runAthleteGoalsV2Mutation({ action: "cancel", requestId });
 }
 
 async function acceptAthleteGoalRequestV2(requestId, reviewNote) {
   if (auth?.role !== "coach") throw new Error("Vous n’êtes pas autorisé à modifier ces objectifs.");
-  await runAthleteGoalsV2Mutation(() => goalsV2Service.accept(requestId, reviewNote || null));
+  await runAthleteGoalsV2Mutation({ action: "accept", requestId, reviewNote: reviewNote || null });
 }
 
 async function requestAthleteGoalChangesV2(requestId, reviewNote) {
   if (auth?.role !== "coach") throw new Error("Vous n’êtes pas autorisé à modifier ces objectifs.");
-  await runAthleteGoalsV2Mutation(() => goalsV2Service.requestChanges({ requestId, reviewNote }));
+  await runAthleteGoalsV2Mutation({ action: "requestChanges", requestId, reviewNote });
 }
 
 async function submitAthleteGoalsV2(requestId, goalValues) {
   if (auth?.role !== "athlete") throw new Error("Vous n’êtes pas autorisé à modifier ces objectifs.");
-  await runAthleteGoalsV2Mutation(() => goalsV2Service.submit({
+  await runAthleteGoalsV2Mutation({
+    action: "submit",
     requestId,
     shortGoal: goalValues.shortGoal,
     mediumGoal: goalValues.mediumGoal,
     longGoal: goalValues.longGoal,
     idempotencyKey: crypto.randomUUID(),
-  }));
+  });
 }
 
   if (!auth) return <AuthPage athletes={athletes} loginCoach={loginCoach} loginAthlete={loginAthlete} acceptInvite={acceptInvite} />;

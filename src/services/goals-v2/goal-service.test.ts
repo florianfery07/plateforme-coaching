@@ -42,6 +42,14 @@ describe("Goals V2 service", () => {
       memberships: [],
       athletePermissions: [],
     }, true)).toBe(true);
+    expect(shouldUseGoalsV2({
+      userId: athleteId,
+      accountStatus: "active",
+      isPilot: true,
+      isPlatformAdministrator: false,
+      memberships: [],
+      athletePermissions: [],
+    }, false)).toBe(false);
   });
 
   it("validates idempotent inputs before calling the repository", async () => {
