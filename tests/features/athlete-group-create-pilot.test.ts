@@ -27,7 +27,8 @@ describe("athlete group creation reliable mutation pilot", () => {
 
     expect(pilotBranch).toContain("setAthleteGroups((current) => [...current, result.data])");
     expect(pilotBranch).not.toContain("loadAllData");
-    expect(pilotBranch).toContain('alert("Impossible de créer ce groupe. Réessaie.")');
+    expect(pilotBranch).toContain("return false;");
+    expect(pilotBranch).not.toContain("alert(");
     expect(pilotBranch).not.toContain("error?.message");
   });
 

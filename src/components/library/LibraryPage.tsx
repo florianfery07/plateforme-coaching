@@ -224,6 +224,7 @@ export default function LibraryPage({
             items={categories}
             setItems={setCategories}
             kind="category"
+            workouts={library}
             {...{ rename, removeItem, taxonomyPending }}
           />
 
@@ -232,6 +233,7 @@ export default function LibraryPage({
             items={subcategories}
             setItems={setSubcategories}
             kind="subcategory"
+            workouts={library}
             {...{ rename, removeItem, taxonomyPending }}
           />
         </div>

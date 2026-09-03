@@ -3,10 +3,10 @@
 
 import { Btn, ColorSelect, Field, Input } from "@/components/ui/ui";
 
-function QuickCreateCard({ title, value, setValue, onAdd }) {
+function QuickCreateCard({ title, actionLabel, value, setValue, onAdd }) {
   return (
-    <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3">
-      <div className="mb-2 text-sm font-semibold">{title}</div>
+    <section className="rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:p-4">
+      <div className="mb-3 text-sm font-semibold">{title}</div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_auto] sm:items-end">
         <Field label="Nom">
@@ -29,10 +29,10 @@ function QuickCreateCard({ title, value, setValue, onAdd }) {
         </Field>
 
         <Btn variant="primary" onClick={onAdd} aria-label={title}>
-          Ajouter
+          {actionLabel}
         </Btn>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -44,14 +44,13 @@ export default function QuickCreate({
   addItem,
 }) {
   return (
-    <div className="mt-8 rounded-2xl border border-zinc-700 bg-zinc-800 p-4">
-      <h3 className="mb-3 text-base font-semibold">
-        Gestion des disciplines & thèmes
-      </h3>
+    <section aria-labelledby="quick-taxonomy-title" className="mt-8 rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
+      <div className="mb-4"><p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Bibliothèque</p><h3 id="quick-taxonomy-title" className="mt-1 text-lg font-semibold">Ajouter une discipline ou un thème</h3><p className="mt-1 text-sm text-zinc-400">Ces éléments seront disponibles lors de la création et du filtrage des séances.</p></div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <QuickCreateCard
           title="Ajouter une discipline"
+          actionLabel="Ajouter"
           value={newCat}
           setValue={setNewCat}
           onAdd={() => addItem("cat")}
@@ -59,11 +58,12 @@ export default function QuickCreate({
 
         <QuickCreateCard
           title="Ajouter un thème"
+          actionLabel="Ajouter"
           value={newSub}
           setValue={setNewSub}
           onAdd={() => addItem("sub")}
         />
       </div>
-    </div>
+    </section>
   );
 }

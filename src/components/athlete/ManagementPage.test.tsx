@@ -11,7 +11,6 @@ const athletes = [
 type GroupsPageOptions = {
   addAthleteGroup?: ReturnType<typeof vi.fn>;
   athleteGroupCreatePending?: boolean;
-  athleteGroupDeletePilotEnabled?: boolean;
   athleteGroupMemberPendingKeys?: string[];
   athleteGroupMemberPilotEnabled?: boolean;
   deleteAthleteGroup?: ReturnType<typeof vi.fn>;
@@ -45,7 +44,6 @@ function renderPage(deleteAthlete = vi.fn().mockResolvedValue(true)) {
 function renderGroupsPage({
   addAthleteGroup = vi.fn(),
   athleteGroupCreatePending = false,
-  athleteGroupDeletePilotEnabled = false,
   athleteGroupMemberPendingKeys = [],
   athleteGroupMemberPilotEnabled = false,
   deleteAthleteGroup = vi.fn(),
@@ -68,7 +66,6 @@ function renderGroupsPage({
       athleteGroupMemberPilotEnabled={athleteGroupMemberPilotEnabled}
       athleteGroupMemberPendingKeys={athleteGroupMemberPendingKeys as unknown as never[]}
       athleteGroupCreatePending={athleteGroupCreatePending}
-      athleteGroupDeletePilotEnabled={athleteGroupDeletePilotEnabled}
       newGroupName={newGroupName}
       setNewGroupName={vi.fn()}
       addAthleteGroup={addAthleteGroup}
@@ -99,13 +96,14 @@ describe("ManagementPage athlete lifecycle V2", () => {
   });
 
   it("keeps the existing destructive wording when the pilot flag is disabled", () => {
+    const deleteAthlete = vi.fn();
     render(
       <ManagementPage
         athletes={athletes}
         newAthlete=""
         setNewAthlete={vi.fn()}
         addAthlete={vi.fn()}
-        deleteAthlete={vi.fn()}
+        deleteAthlete={deleteAthlete}
         updateAthlete={vi.fn()}
         setAthleteActive={vi.fn()}
         athleteGroups={[]}
@@ -120,6 +118,10 @@ describe("ManagementPage athlete lifecycle V2", () => {
     );
 
     expect(screen.getByRole("button", { name: "Supprimer cet athlète" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer cet athlète" }));
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer définitivement" }));
+
+    expect(deleteAthlete).toHaveBeenCalledWith("athlete-1", true);
   });
 
   it("keeps the existing group membership callback available when the pilot is disabled", () => {
@@ -148,9 +150,18 @@ describe("ManagementPage athlete lifecycle V2", () => {
     const addAthleteGroup = vi.fn();
     renderGroupsPage({ addAthleteGroup, newGroupName: "Synthetic group" });
 
-    fireEvent.click(screen.getByRole("button", { name: "+ Créer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Créer le groupe" }));
 
     expect(addAthleteGroup).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows an accessible error when the existing group operation fails", async () => {
+    const addAthleteGroup = vi.fn().mockResolvedValue(false);
+    renderGroupsPage({ addAthleteGroup, newGroupName: "Synthetic group" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Créer le groupe" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Le groupe n’a pas pu être créé.");
   });
 
   it("prevents a duplicate group creation while the reliable mutation is pending", () => {
@@ -161,7 +172,7 @@ describe("ManagementPage athlete lifecycle V2", () => {
       newGroupName: "Synthetic group",
     });
 
-    const create = screen.getByRole("button", { name: "+ Créer" });
+    const create = screen.getByRole("button", { name: "Créer le groupe" });
     expect(create).toBeDisabled();
     fireEvent.click(create);
 
@@ -175,15 +186,15 @@ describe("ManagementPage athlete lifecycle V2", () => {
     fireEvent.click(screen.getByRole("button", { name: "Supprimer le groupe" }));
 
     expect(deleteAthleteGroup).toHaveBeenCalledTimes(1);
-    expect(deleteAthleteGroup).toHaveBeenCalledWith("group-1");
+    expect(deleteAthleteGroup).toHaveBeenCalledWith("group-1", true);
   });
 
-  it("submits a pilot group deletion only once while it is pending", () => {
+  it("submits a group deletion only once while it is pending", () => {
     let resolveDeletion: (() => void) | undefined;
     const deleteAthleteGroup = vi.fn(
       () => new Promise<void>((resolve) => { resolveDeletion = resolve; }),
     );
-    renderGroupsPage({ athleteGroupDeletePilotEnabled: true, deleteAthleteGroup });
+    renderGroupsPage({ deleteAthleteGroup });
 
     fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
     const remove = screen.getByRole("button", { name: "Supprimer le groupe" });
@@ -197,6 +208,17 @@ describe("ManagementPage athlete lifecycle V2", () => {
     expect(deleteAthleteGroup).toHaveBeenCalledTimes(1);
 
     resolveDeletion?.();
+  });
+
+  it("keeps the group confirmation open and reports an accessible error on failure", async () => {
+    const deleteAthleteGroup = vi.fn().mockResolvedValue(false);
+    renderGroupsPage({ deleteAthleteGroup });
+
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer le groupe" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Le groupe n’a pas pu être supprimé.");
+    expect(screen.getByRole("region", { name: "Confirmer la suppression du groupe Synthetic group ?" })).toBeVisible();
   });
 
   it("exposes management sections as keyboard-operable tabs", () => {

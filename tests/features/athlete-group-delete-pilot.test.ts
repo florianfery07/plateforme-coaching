@@ -28,7 +28,8 @@ describe("athlete group deletion reliable mutation pilot", () => {
     expect(pilotBranch).toContain("setAthleteGroups((items) => items.filter((group) => group.id !== groupId))");
     expect(pilotBranch).toContain("items.filter((member) => member.group_id !== groupId)");
     expect(pilotBranch).not.toContain("loadAllData");
-    expect(pilotBranch).toContain('alert("Impossible de supprimer ce groupe. Réessaie.")');
+    expect(pilotBranch).toContain("return false;");
+    expect(pilotBranch).not.toContain("alert(");
     expect(pilotBranch).not.toContain("error?.message");
   });
 

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Btn, Input, Panel } from "@/components/ui/ui";
+import { Badge, Btn, Empty, Field, Input, Panel, StatusMessage } from "@/components/ui/ui";
 import { APP_COLORS, getColorClass } from "@/lib/colors";
 
 export default function ManagementPage({
@@ -21,7 +21,6 @@ export default function ManagementPage({
   athleteGroupMemberPilotEnabled = false,
   athleteGroupMemberPendingKeys = [],
   athleteGroupCreatePending = false,
-  athleteGroupDeletePilotEnabled = false,
   newGroupName,
   setNewGroupName,
   addAthleteGroup,
@@ -34,6 +33,7 @@ const [archivePending, setArchivePending] = useState(false);
 const [confirmGroupDelete, setConfirmGroupDelete] = useState(null);
 const [groupDeleteSubmitting, setGroupDeleteSubmitting] = useState(null);
 const [managementTab, setManagementTab] = useState("athletes");
+  const [groupFeedback, setGroupFeedback] = useState(null);
   const managementTabs = ["athletes", "groups"];
   const [selectedAthleteId, setSelectedAthleteId] = useState(
     athletes?.[0]?.id || null
@@ -52,6 +52,64 @@ const [managementTab, setManagementTab] = useState("athletes");
     updateAthlete(field, value, selectedAthlete.id);
   };
 
+  async function createGroup() {
+    setGroupFeedback(null);
+    let result = false;
+    try {
+      result = await addAthleteGroup();
+    } catch {
+      result = false;
+    }
+    setGroupFeedback(
+      result === false
+        ? { variant: "error", message: "Le groupe n’a pas pu être créé. Réessayez." }
+        : { variant: "success", message: "Le groupe a été créé." },
+    );
+  }
+
+  async function persistGroupName(groupId, name) {
+    let result = false;
+    try {
+      result = await renameAthleteGroup(groupId, name);
+    } catch {
+      result = false;
+    }
+    if (result === false && String(name || "").trim()) {
+      setGroupFeedback({ variant: "error", message: "Le nom du groupe n’a pas pu être enregistré." });
+    }
+  }
+
+  async function confirmGroupDeletion(groupId) {
+    if (groupDeleteSubmitting === groupId) return;
+
+    setGroupDeleteSubmitting(groupId);
+    let result = false;
+    try {
+      result = await deleteAthleteGroup(groupId, true);
+    } catch {
+      result = false;
+    }
+    if (result === false) {
+      setGroupFeedback({ variant: "error", message: "Le groupe n’a pas pu être supprimé. Réessayez." });
+    } else {
+      setGroupFeedback({ variant: "success", message: "Le groupe a été supprimé." });
+      setConfirmGroupDelete(null);
+    }
+    setGroupDeleteSubmitting(null);
+  }
+
+  async function updateGroupMember(groupId, athleteId, checked) {
+    let result = false;
+    try {
+      result = await toggleAthleteGroupMember(groupId, athleteId, checked);
+    } catch {
+      result = false;
+    }
+    if (result === false) {
+      setGroupFeedback({ variant: "error", message: "Le membre du groupe n’a pas pu être mis à jour." });
+    }
+  }
+
   const moveManagementTab = (event, tab) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
 
@@ -69,13 +127,21 @@ const [managementTab, setManagementTab] = useState("athletes");
   };
 
   return (
-    <Panel>
-      <h2 className="mb-2 text-2xl font-semibold">Paramètres athlètes</h2>
-      <p className="mb-5 text-sm text-zinc-400">
-        Gérez les athlètes, leurs calendriers, leurs groupes et leurs réglages individuels.
-      </p>
+    <Panel className="space-y-6">
+      <div className="flex flex-col gap-4 border-b border-zinc-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Espace coach</p>
+          <h2 className="mt-1 text-2xl font-semibold sm:text-3xl">Gestion des athlètes</h2>
+          <p className="mt-2 max-w-2xl text-sm text-zinc-400">Organisez les accès, calendriers et groupes sans perdre le contexte de chaque athlète.</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center sm:flex sm:flex-wrap">
+          <Badge className="bg-emerald-500/15 text-emerald-200">{activeAthletes.length} actif{activeAthletes.length > 1 ? "s" : ""}</Badge>
+          <Badge className="bg-zinc-800 text-zinc-300">{inactiveAthletes.length} archivé{inactiveAthletes.length > 1 ? "s" : ""}</Badge>
+          <Badge className="bg-sky-500/15 text-sky-100">{athleteGroups.length} groupe{athleteGroups.length > 1 ? "s" : ""}</Badge>
+        </div>
+      </div>
 
-      <div role="tablist" aria-label="Gestion des athlètes" className="mb-6 flex gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-1">
+      <div role="tablist" aria-label="Gestion des athlètes" className="grid grid-cols-2 gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 p-1">
         <button
           type="button"
           role="tab"
@@ -113,18 +179,19 @@ const [managementTab, setManagementTab] = useState("athletes");
 
       {managementTab === "athletes" && (
         <div role="tabpanel" id="management-panel-athletes" aria-labelledby="management-tab-athletes">
-          <div className="mb-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-            <h3 className="mb-3 text-lg font-semibold">Ajouter un athlète</h3>
-            <div className="flex flex-col gap-3 sm:flex-row">
+          <form onSubmit={(event) => { event.preventDefault(); addAthlete(); }} className="mb-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h3 className="text-lg font-semibold">Ajouter un athlète</h3><p className="mt-1 text-sm text-zinc-400">Créez un calendrier individuel, puis complétez sa fiche depuis l’espace athlète.</p></div><Badge className="w-fit bg-zinc-900 text-zinc-300">Nouveau calendrier</Badge></div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1"><Field label="Nom de l’athlète">
               <Input
-                aria-label="Nom du nouvel athlète"
                 value={newAthlete}
                 onChange={(event) => setNewAthlete(event.target.value)}
                 placeholder="Nom de l’athlète"
               />
-              <Btn variant="primary" onClick={addAthlete}>+ Ajouter</Btn>
+              </Field></div>
+              <Btn variant="primary" type="submit" disabled={!String(newAthlete || "").trim()}>Ajouter l’athlète</Btn>
             </div>
-          </div>
+          </form>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <div className="space-y-4">
@@ -135,10 +202,8 @@ const [managementTab, setManagementTab] = useState("athletes");
             <div className="space-y-4 xl:col-span-2">
               {selectedAthlete && (
                 <>
-                  <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-                    <h3 className="mb-4 text-lg font-semibold">
-                      Paramètres de {selectedAthlete.name}
-                    </h3>
+                  <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Athlète sélectionné</p><h3 className="mt-1 text-xl font-semibold">{selectedAthlete.name}</h3></div><Badge className={selectedAthlete.active === false ? "bg-zinc-700 text-zinc-200" : "bg-emerald-500/15 text-emerald-200"}>{selectedAthlete.active === false ? "Archivé" : "Actif"}</Badge></div>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <FieldInput label="Nom de l’athlète" value={selectedAthlete.name || ""} onChange={(value) => updateSelectedAthlete("name", value)} />
@@ -256,7 +321,7 @@ const [managementTab, setManagementTab] = useState("athletes");
                             variant="danger"
                             onClick={() => {
                               if (!athleteLifecycleV2Enabled) {
-                                deleteAthlete(selectedAthlete.id);
+                                deleteAthlete(selectedAthlete.id, true);
                                 setConfirmDelete(null);
                                 return;
                               }
@@ -286,28 +351,25 @@ const [managementTab, setManagementTab] = useState("athletes");
       )}
 
       {managementTab === "groups" && (
-        <div role="tabpanel" id="management-panel-groups" aria-labelledby="management-tab-groups" className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">Groupes d’athlètes</h3>
-            <p className="mt-1 text-sm text-zinc-400">
-              Créez des groupes pour préparer ensuite des séances collectives, des stages ou des entraînements par catégorie.
-            </p>
+        <div role="tabpanel" id="management-panel-groups" aria-labelledby="management-tab-groups" className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Planification collective</p><h3 className="mt-1 text-xl font-semibold">Groupes d’athlètes</h3><p className="mt-1 text-sm text-zinc-400">Préparez les séances collectives, stages et catégories d’entraînement.</p></div>
+            <Badge className="w-fit bg-zinc-900 text-zinc-300">{athleteGroups.length} groupe{athleteGroups.length > 1 ? "s" : ""}</Badge>
           </div>
 
-          <div className="mb-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
-            <h4 className="mb-3 font-semibold">Créer un groupe</h4>
-            <div className="flex flex-col gap-3 sm:flex-row">
+          <form onSubmit={(event) => { event.preventDefault(); void createGroup(); }} className="mb-5 rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><h4 className="font-semibold">Créer un groupe</h4><p className="mt-1 text-sm text-zinc-400">Donnez un nom explicite pour le retrouver rapidement dans le calendrier.</p></div><Badge className="bg-zinc-800 text-zinc-300">Organisation</Badge></div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1"><Field label="Nom du groupe">
               <Input
-                aria-label="Nom du nouveau groupe"
                 value={newGroupName || ""}
                 onChange={(event) => setNewGroupName(event.target.value)}
                 placeholder="Ex : Cadets, Stage VTT, Groupe route"
               />
+              </Field></div>
               <Btn
                 variant="primary"
-                onClick={() => {
-                  addAthleteGroup();
-                }}
+                type="submit"
                 disabled={athleteGroupCreatePending || !String(newGroupName || "").trim()}
                 className={
                   athleteGroupCreatePending || !String(newGroupName || "").trim()
@@ -315,16 +377,21 @@ const [managementTab, setManagementTab] = useState("athletes");
                     : ""
                 }
               >
-                + Créer
+                Créer le groupe
               </Btn>
             </div>
-          </div>
+          </form>
 
-          {athleteGroups.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400">
-              Aucun groupe créé pour le moment.
-            </p>
+          {groupFeedback && (
+            <StatusMessage variant={groupFeedback.variant} className="mb-5">
+              <div className="flex items-start justify-between gap-3">
+                <span>{groupFeedback.message}</span>
+                <button type="button" aria-label="Fermer le message" onClick={() => setGroupFeedback(null)} className="min-h-7 min-w-7 rounded-lg text-current transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">×</button>
+              </div>
+            </StatusMessage>
           )}
+
+          {athleteGroups.length === 0 && <Empty text="Aucun groupe créé pour le moment. Créez le premier groupe pour préparer une séance collective." />}
 
           <div className="space-y-3">
             {athleteGroups.map((group) => {
@@ -336,38 +403,17 @@ const [managementTab, setManagementTab] = useState("athletes");
               return (
                 <div
                   key={group.id}
-                  className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4"
+                  className="rounded-2xl border border-zinc-700 bg-zinc-900 p-3 sm:p-4"
                 >
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 flex-1">
-                      <div className="mb-2 text-xs text-zinc-500">Nom du groupe</div>
-                      <Input
-                        aria-label={`Nom du groupe ${group.name || "sans nom"}`}
-                        value={group.name || ""}
-                        onChange={(event) => renameAthleteGroup(group.id, event.target.value)}
-                        onBlur={(event) => renameAthleteGroup(group.id, event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.currentTarget.blur();
-                          }
-                        }}
-                      />
-                      <div className="mt-2 text-xs text-zinc-500">
-                        {memberCount} athlète{memberCount > 1 ? "s" : ""} dans ce groupe
-                      </div>
+                      <Field label="Nom du groupe"><Input aria-label={`Nom du groupe ${group.name || "sans nom"}`} value={group.name || ""} onChange={(event) => void persistGroupName(group.id, event.target.value)} onBlur={(event) => void persistGroupName(group.id, event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></Field>
+                      <p className="mt-2 text-sm text-zinc-400">{memberCount ? `${memberCount} athlète${memberCount > 1 ? "s" : ""} dans ce groupe.` : "Aucun membre pour le moment."}</p>
                     </div>
 
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-  <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
-    Groupe
-  </span>
-  <button
-    type="button"
-    onClick={() => setConfirmGroupDelete(group.id)}
-    className="min-h-11 rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300 transition hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
-  >
-    Supprimer
-  </button>
+                    <div className="flex shrink-0 flex-row items-center justify-between gap-2 sm:flex-col sm:items-end">
+  <Badge className="bg-zinc-800 text-zinc-300">{memberCount} membre{memberCount > 1 ? "s" : ""}</Badge>
+  <Btn variant="danger" onClick={() => setConfirmGroupDelete(group.id)}>Supprimer</Btn>
 </div>
                   </div>
 
@@ -382,24 +428,10 @@ const [managementTab, setManagementTab] = useState("athletes");
     <div className="mt-3 flex flex-col gap-2 sm:flex-row">
       <Btn
         variant="danger"
-        onClick={() => {
-          if (!athleteGroupDeletePilotEnabled) {
-            deleteAthleteGroup(group.id);
-            setConfirmGroupDelete(null);
-            return;
-          }
-
-          if (groupDeleteSubmitting === group.id) return;
-
-          setGroupDeleteSubmitting(group.id);
-          void deleteAthleteGroup(group.id).then(
-            () => setConfirmGroupDelete(null),
-            () => undefined,
-          ).finally(() => setGroupDeleteSubmitting(null));
-        }}
-        disabled={athleteGroupDeletePilotEnabled && groupDeleteSubmitting === group.id}
+        onClick={() => void confirmGroupDeletion(group.id)}
+        disabled={groupDeleteSubmitting === group.id}
       >
-        {athleteGroupDeletePilotEnabled && groupDeleteSubmitting === group.id
+        {groupDeleteSubmitting === group.id
           ? "Suppression..."
           : "Supprimer le groupe"}
       </Btn>
@@ -408,14 +440,10 @@ const [managementTab, setManagementTab] = useState("athletes");
   </div>
 )}
 
-                  <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-950 p-4">
-                    <div className="mb-3 font-semibold">Membres du groupe</div>
+                    <div className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-950 p-3 sm:p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><div className="font-semibold">Membres du groupe</div><p className="mt-1 text-sm text-zinc-400">Sélectionnez les athlètes qui participeront aux séances collectives.</p></div><Badge className="bg-zinc-800 text-zinc-300">{memberCount} sélectionné{memberCount > 1 ? "s" : ""}</Badge></div>
 
-                    {activeAthletes.length === 0 && (
-                      <p className="text-sm text-zinc-400">
-                        Aucun athlète actif disponible.
-                      </p>
-                    )}
+                    {activeAthletes.length === 0 && <Empty text="Aucun athlète actif disponible pour ce groupe." />}
 
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {activeAthletes.map((athlete) => {
@@ -441,7 +469,7 @@ const [managementTab, setManagementTab] = useState("athletes");
                               type="checkbox"
                               checked={checked}
                               onChange={(event) =>
-                                toggleAthleteGroupMember(
+                                void updateGroupMember(
                                   group.id,
                                   athlete.id,
                                   event.target.checked
@@ -468,16 +496,10 @@ const [managementTab, setManagementTab] = useState("athletes");
 
 function AthleteList({ title, athletes, selectedAthlete, setSelectedAthleteId, setConfirmDelete }) {
   return (
-    <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
-      <h3 className="mb-3 text-lg font-semibold">
-        {title} ({athletes.length})
-      </h3>
+    <section aria-label={title} className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-lg font-semibold">{title}</h3><Badge className="bg-zinc-900 text-zinc-300">{athletes.length}</Badge></div>
       <div className="space-y-3">
-        {athletes.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400">
-            Aucun athlète.
-          </p>
-        )}
+        {athletes.length === 0 && <Empty text="Aucun athlète dans cette liste." />}
 
         {athletes.map((athleteItem) => (
           <button
@@ -488,7 +510,7 @@ function AthleteList({ title, athletes, selectedAthlete, setSelectedAthleteId, s
               setConfirmDelete(null);
             }}
             aria-pressed={selectedAthlete?.id === athleteItem.id}
-            className={`min-h-11 w-full rounded-2xl border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+            className={`min-h-11 w-full rounded-2xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
               selectedAthlete?.id === athleteItem.id
                 ? "border-white bg-zinc-950"
                 : "border-zinc-700 bg-zinc-900"
@@ -497,23 +519,23 @@ function AthleteList({ title, athletes, selectedAthlete, setSelectedAthleteId, s
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className={`h-3 w-3 shrink-0 rounded-full ${getColorClass(athleteItem.color)}`} />
-                <div>
-                  <b>{athleteItem.name}</b>
+                <div className="min-w-0">
+                  <b className="block truncate">{athleteItem.name}</b>
                   <div className="mt-1 text-xs text-zinc-500">{athleteItem.calendarName}</div>
                 </div>
               </div>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+              <Badge className={`shrink-0 ${
                 athleteItem.active === false
                   ? "bg-zinc-700 text-zinc-300"
                   : "bg-green-500/20 text-green-300"
               }`}>
                 {athleteItem.active === false ? "Archivé" : "Actif"}
-              </span>
+              </Badge>
             </div>
           </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

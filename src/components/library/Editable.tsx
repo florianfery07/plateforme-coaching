@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 
-import { Btn, ColorSelect, Input } from "@/components/ui/ui";
+import { Badge, Btn, ColorSelect, Empty, Field, Input, StatusMessage } from "@/components/ui/ui";
 import { supabase } from "@/lib/supabase";
 
 export default function Editable({
@@ -14,8 +14,11 @@ export default function Editable({
   rename,
   removeItem,
   taxonomyPending,
+  workouts = [],
 }) {
   const [editing, setEditing] = useState({});
+  const [pendingRemoval, setPendingRemoval] = useState(null);
+  const [feedback, setFeedback] = useState(null);
 
   function updateDraft(row, field, value) {
     setEditing((current) => ({
@@ -37,7 +40,10 @@ export default function Editable({
     let renameResult;
     if (name !== row.name) {
       renameResult = await rename(kind, row.id, name, draft.color);
-      if (renameResult === false) return;
+      if (renameResult === false) {
+        setFeedback({ variant: "error", message: "La modification n’a pas pu être enregistrée." });
+        return;
+      }
     }
 
     if (draft.color !== row.color && !renameResult?.colorHandled) {
@@ -65,10 +71,25 @@ export default function Editable({
       delete copy[row.id];
       return copy;
     });
+    setFeedback({ variant: "success", message: `${title.slice(0, -1)} mis à jour.` });
   }
 
-  async function confirmRemove(row) {
-    await removeItem(kind, row.name);
+  function relatedWorkoutCount(row) {
+    const field = kind === "category" ? "category" : "subcategory";
+    return workouts.filter((workout) => workout[field] === row.name).length;
+  }
+
+  async function confirmRemove() {
+    if (!pendingRemoval) return;
+
+    const result = await removeItem(kind, pendingRemoval.name, true);
+    if (result === false) {
+      setFeedback({ variant: "error", message: "La suppression n’a pas pu être effectuée." });
+      return;
+    }
+
+    setFeedback({ variant: "success", message: `${pendingRemoval.name} a été supprimé.` });
+    setPendingRemoval(null);
   }
 
   function startEdit(row) {
@@ -90,16 +111,24 @@ export default function Editable({
   }
 
   return (
-    <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-5">
-      <div className="mb-5 flex items-center justify-between">
-        <h3 className="text-xl font-bold">
-          {title}
-        </h3>
-
-        <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-400">
-          {items.length}
-        </span>
+    <section aria-labelledby={`${kind}-taxonomy-title`} className="rounded-3xl border border-zinc-700 bg-zinc-900 p-4 sm:p-5">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Structuration</p>
+          <h3 id={`${kind}-taxonomy-title`} className="mt-1 text-xl font-bold">{title}</h3>
+          <p className="mt-1 text-sm text-zinc-400">Utilisés pour organiser la bibliothèque et les analyses.</p>
+        </div>
+        <Badge className="bg-zinc-800 text-zinc-300">{items.length} élément{items.length > 1 ? "s" : ""}</Badge>
       </div>
+
+      {feedback && (
+        <StatusMessage variant={feedback.variant} className="mb-4">
+          <div className="flex items-start justify-between gap-3">
+            <span>{feedback.message}</span>
+            <button type="button" aria-label="Fermer le message" onClick={() => setFeedback(null)} className="min-h-7 min-w-7 rounded-lg text-current transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">×</button>
+          </div>
+        </StatusMessage>
+      )}
 
       <div className="space-y-3">
         {items.map((row) => {
@@ -107,19 +136,18 @@ export default function Editable({
           const isEditing = !!draft;
 
           return (
-            <div
-              key={row.id}
-              className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3"
-            >
+            <article key={row.id} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 sm:p-4">
               {!isEditing ? (
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div
-                    className={`${row.color} min-w-[180px] rounded-xl px-4 py-3 text-center text-sm font-bold text-white`}
-                  >
-                    {row.name}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`${row.color} rounded-full px-3 py-1 text-xs font-bold text-white`}>{title.slice(0, -1)}</span>
+                      <p className="truncate font-bold text-white">{row.name}</p>
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-400">{relatedWorkoutCount(row) ? `${relatedWorkoutCount(row)} séance${relatedWorkoutCount(row) > 1 ? "s" : ""} liée${relatedWorkoutCount(row) > 1 ? "s" : ""}.` : "Aucune séance liée."}</p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:flex">
                     <Btn
                       variant="primary"
                       onClick={() => startEdit(row)}
@@ -130,7 +158,7 @@ export default function Editable({
 
                     <Btn
                       variant="danger"
-                      onClick={() => confirmRemove(row)}
+                      onClick={() => setPendingRemoval(row)}
                       disabled={taxonomyPending}
                     >
                       Supprimer
@@ -138,28 +166,11 @@ export default function Editable({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <Input
-                    value={draft.name}
-                    onChange={(event) =>
-                      updateDraft(
-                        row,
-                        "name",
-                        event.target.value
-                      )
-                    }
-                  />
-
-                  <ColorSelect
-                    value={draft.color}
-                    onChange={(event) =>
-                      updateDraft(
-                        row,
-                        "color",
-                        event.target.value
-                      )
-                    }
-                  />
+                <div className="space-y-3 border-t border-zinc-800 pt-4">
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
+                    <Field label="Nom"><Input aria-label={`Nom de ${row.name}`} value={draft.name} onChange={(event) => updateDraft(row, "name", event.target.value)} /></Field>
+                    <Field label="Couleur"><ColorSelect value={draft.color} onChange={(event) => updateDraft(row, "color", event.target.value)} /></Field>
+                  </div>
 
                   <div className="flex flex-wrap gap-2">
                     <Btn
@@ -183,16 +194,21 @@ export default function Editable({
                   </div>
                 </div>
               )}
-            </div>
+              {pendingRemoval?.id === row.id && (
+                <div role="region" aria-labelledby={`remove-${kind}-${row.id}`} className="mt-4 rounded-2xl border border-red-400/40 bg-red-500/10 p-4">
+                  <p id={`remove-${kind}-${row.id}`} className="font-semibold text-red-50">Supprimer « {row.name} » ?</p>
+                  <p className="mt-1 text-sm text-red-100">{relatedWorkoutCount(row) ? `${relatedWorkoutCount(row)} séance${relatedWorkoutCount(row) > 1 ? "s" : ""} liée${relatedWorkoutCount(row) > 1 ? "s" : ""} seront également retirées de la bibliothèque.` : "Aucune séance de la bibliothèque ne sera retirée."}</p>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row"><Btn variant="danger" onClick={confirmRemove} disabled={taxonomyPending}>Supprimer définitivement</Btn><Btn onClick={() => setPendingRemoval(null)} disabled={taxonomyPending}>Annuler</Btn></div>
+                </div>
+              )}
+            </article>
           );
         })}
 
         {!items.length && (
-          <div className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">
-            Aucun élément.
-          </div>
+          <Empty text={`Aucun élément dans ${title.toLowerCase()}.`} />
         )}
       </div>
-    </div>
+    </section>
   );
 }

@@ -758,34 +758,27 @@ async function addAthleteGroup() {
     if (result.state === "success" && result.data) {
       setAthleteGroups((current) => [...current, result.data]);
       setNewGroupName("");
-      return result;
+      return true;
     }
 
-    if (result.state === "error") {
-      alert("Impossible de créer ce groupe. Réessaie.");
-    }
-
-    return result;
+    return false;
   }
 
   try {
     await createAthleteGroup(newGroupName);
     setNewGroupName("");
     await loadAllData();
+    return true;
   } catch (error) {
     console.error("Erreur ajout groupe complète", JSON.stringify(error, null, 2));
     console.error(error);
-    alert(
-      error?.message ||
-        JSON.stringify(error, null, 2) ||
-        "Erreur ajout groupe"
-    );
+    return false;
   }
 }
 
 async function renameAthleteGroup(groupId, name) {
   const cleanName = String(name || "").trim();
-  if (!cleanName) return;
+  if (!cleanName) return false;
 
   setAthleteGroups((items) =>
     items.map((group) =>
@@ -795,16 +788,19 @@ async function renameAthleteGroup(groupId, name) {
 
   try {
     await updateAthleteGroupName(groupId, cleanName);
+    return true;
   } catch (error) {
     console.error("Erreur renommage groupe", error);
-    alert(error.message || "Erreur renommage groupe");
     await loadAllData();
+    return false;
   }
 }
 
-async function deleteAthleteGroup(groupId) {
-  const ok = window.confirm("Supprimer ce groupe ? Les athlètes ne seront pas supprimés.");
-  if (!ok) return;
+async function deleteAthleteGroup(groupId, confirmed = false) {
+  if (!confirmed) {
+    const ok = window.confirm("Supprimer ce groupe ? Les athlètes ne seront pas supprimés.");
+    if (!ok) return;
+  }
 
   if (athleteGroupDeletePilotEnabled) {
     const result = await athleteGroupDeleteMutation.mutate({ groupId });
@@ -814,22 +810,19 @@ async function deleteAthleteGroup(groupId) {
       setAthleteGroupMembers((items) =>
         items.filter((member) => member.group_id !== groupId),
       );
-      return result;
+      return true;
     }
 
-    if (result.state === "error") {
-      alert("Impossible de supprimer ce groupe. Réessaie.");
-    }
-
-    return result;
+    return false;
   }
 
   try {
     await removeAthleteGroup(groupId);
     await loadAllData();
+    return true;
   } catch (error) {
     console.error("Erreur suppression groupe", error);
-    alert(error.message || "Erreur suppression groupe");
+    return false;
   }
 }
 
@@ -837,7 +830,7 @@ async function toggleAthleteGroupMember(groupId, athleteId, checked) {
   if (athleteGroupMemberPilotEnabled) {
     const membershipKey = `${groupId}:${athleteId}`;
 
-    if (athleteGroupMemberLocksRef.current.has(membershipKey)) return;
+    if (athleteGroupMemberLocksRef.current.has(membershipKey)) return false;
 
     athleteGroupMemberLocksRef.current.add(membershipKey);
     setAthleteGroupMemberPendingKeys((current) => [...current, membershipKey]);
@@ -849,11 +842,9 @@ async function toggleAthleteGroupMember(groupId, athleteId, checked) {
         groupId,
       });
 
-      if (result.state === "error") {
-        alert("Impossible de modifier ce membre du groupe. Réessaie.");
-      }
+      return result.state === "success";
     } catch {
-      alert("Impossible de modifier ce membre du groupe. Réessaie.");
+      return false;
     } finally {
       athleteGroupMemberLocksRef.current.delete(membershipKey);
       setAthleteGroupMemberPendingKeys((current) =>
@@ -861,15 +852,15 @@ async function toggleAthleteGroupMember(groupId, athleteId, checked) {
       );
     }
 
-    return;
   }
 
   try {
     await setAthleteGroupMember(groupId, athleteId, checked);
     await loadAllData();
+    return true;
   } catch (error) {
     console.error("Erreur modification membre groupe", error);
-    alert(error.message || "Erreur modification membre groupe");
+    return false;
   }
 }
 
@@ -1134,18 +1125,20 @@ async function setAthleteActive(athleteId, nextActive) {
   return true;
 }
 
-  async function deleteAthlete(athleteId) {
+  async function deleteAthlete(athleteId, confirmed = false) {
   if (athleteLifecyclePilotEnabled) {
     return runAthleteLifecycleV2(athleteId, "archive");
   }
 
   if (athletes.length <= 1) return;
 
-  const ok = window.confirm(
-    "Supprimer cet athlète ? Toutes ses séances, propositions, notes et couleurs de semaines seront supprimées."
-  );
+  if (!confirmed) {
+    const ok = window.confirm(
+      "Supprimer cet athlète ? Toutes ses séances, propositions, notes et couleurs de semaines seront supprimées."
+    );
 
-  if (!ok) return;
+    if (!ok) return;
+  }
 
   const { data: workoutsToDelete, error: workoutsFetchError } = await supabase
     .from("calendar_workouts")
@@ -1705,9 +1698,6 @@ async function rename(kind, oldName, newName, newColor) {
     });
 
     if (result.state !== "success" || !result.data) {
-      if (result.state === "error") {
-        alert("Impossible de renommer cet élément. Réessaie.");
-      }
       return false;
     }
 
@@ -1747,7 +1737,7 @@ async function rename(kind, oldName, newName, newColor) {
 
   if (error) {
     console.error("Erreur renommage catégorie", error);
-    return;
+    return false;
   }
 
   const libraryField = isCategory ? "category" : "subcategory";
@@ -1759,7 +1749,7 @@ async function rename(kind, oldName, newName, newColor) {
 
   if (libraryError) {
     console.error("Erreur mise à jour séances bibliothèque", libraryError);
-    return;
+    return false;
   }
 
   setFilter((current) =>
@@ -1775,9 +1765,11 @@ async function rename(kind, oldName, newName, newColor) {
   );
 
   await loadAllData();
+
+  return true;
 }
 
-async function removeItem(kind, name) {
+async function removeItem(kind, name, confirmed = false) {
   const isCategory = kind === "category";
 
   const label = isCategory ? "catégorie" : "sous-partie";
@@ -1790,13 +1782,15 @@ async function removeItem(kind, name) {
     (workout) => workout[workoutField] === name
   );
 
-  const ok = window.confirm(
-    linkedWorkouts.length
-      ? `Supprimer cette ${label} supprimera aussi ${linkedWorkouts.length} séance(s) de la bibliothèque. Continuer ?`
-      : `Supprimer cette ${label} ?`
-  );
+  if (!confirmed) {
+    const ok = window.confirm(
+      linkedWorkouts.length
+        ? `Supprimer cette ${label} supprimera aussi ${linkedWorkouts.length} séance(s) de la bibliothèque. Continuer ?`
+        : `Supprimer cette ${label} ?`
+    );
 
-  if (!ok) return;
+    if (!ok) return;
+  }
 
   if (workoutTaxonomyPilotEnabled) {
     const result = await workoutTaxonomyDeleteMutation.mutate({
@@ -1805,9 +1799,6 @@ async function removeItem(kind, name) {
     });
 
     if (result.state !== "success" || !result.data) {
-      if (result.state === "error") {
-        alert("Impossible de supprimer cet élément. Réessaie.");
-      }
       return false;
     }
 
@@ -1838,7 +1829,7 @@ async function removeItem(kind, name) {
 
     if (libraryError) {
       console.error("Erreur suppression séances liées", libraryError);
-      return;
+      return false;
     }
   }
 
@@ -1849,7 +1840,7 @@ async function removeItem(kind, name) {
 
   if (error) {
     console.error("Erreur suppression catégorie", error);
-    return;
+    return false;
   }
 
   setFilter((current) =>
@@ -1866,6 +1857,8 @@ async function removeItem(kind, name) {
   );
 
   await loadAllData();
+
+  return true;
 }
  async function updateWeekPlanning(year, week, field, value) {
   const key = `${activeId}-${year}-${week}`;

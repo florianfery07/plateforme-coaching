@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const source = readFileSync(resolve(process.cwd(), "src/app/page.tsx"), "utf8");
 const renameStart = source.indexOf("async function rename(kind, oldName, newName, newColor)");
-const removeStart = source.indexOf("async function removeItem(kind, name)", renameStart);
+const removeStart = source.indexOf("async function removeItem(kind, name, confirmed = false)", renameStart);
 const planningStart = source.indexOf("async function updateWeekPlanning", removeStart);
 
 describe("workout taxonomy atomic pilot", () => {
@@ -35,7 +35,8 @@ describe("workout taxonomy atomic pilot", () => {
     expect(pilot).toContain("setCategories(updateTaxonomy)");
     expect(pilot).toContain("setSubcategories(updateTaxonomy)");
     expect(pilot).toContain("setLibrary((items)");
-    expect(pilot).toContain('alert("Impossible de renommer cet élément. Réessaie.")');
+    expect(pilot).toContain("return false;");
+    expect(pilot).not.toContain("alert(");
     expect(pilot).not.toContain("loadAllData");
     expect(pilot).not.toContain("supabase");
   });
@@ -49,7 +50,8 @@ describe("workout taxonomy atomic pilot", () => {
     expect(pilot).toContain("workoutTaxonomyDeleteMutation.mutate");
     expect(pilot).toContain("items.filter((item) => item.name !== name)");
     expect(pilot).toContain("setLibrary((items)");
-    expect(pilot).toContain('alert("Impossible de supprimer cet élément. Réessaie.")');
+    expect(pilot).toContain("return false;");
+    expect(pilot).not.toContain("alert(");
     expect(pilot).not.toContain("loadAllData");
     expect(pilot).not.toContain("supabase");
   });
