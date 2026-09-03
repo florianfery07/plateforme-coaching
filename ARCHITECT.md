@@ -63,12 +63,25 @@ proportionnés.
 - L14c a été volontairement abandonné après mesure: la sauvegarde du planning
   hebdomadaire réalise déjà une écriture ciblée, sans lecture globale ni
   `loadAllData`.
+- L15 est terminé: les parcours à plusieurs écritures les plus risqués ont une
+  preuve atomique locale, notamment la complétion avec feedback, la
+  programmation de proposition, la taxonomie et la suppression d'une journée
+  de groupe. Les parcours legacy restants sont conservés jusqu'à leur propre
+  décision de migration.
 - L16 est terminé: Objectifs V2 possède une fondation atomique, un pilote UI
   coach-athlète, un historique immuable, une lecture d’état ciblée et des
   preuves de concurrence. `athleteGoalsV2` reste désactivé par défaut; hors
   pilote serveur et mapping explicite, le legacy Objectifs reste intégralement
   actif, sans dual-write. Son rollout et son retour arrière sont documentés
   dans `docs/development/athlete-goals-v2.md`.
+- L17 est terminé: la navigation, le calendrier coach, les parcours de gestion,
+  la bibliothèque et les statistiques ont reçu une modernisation progressive
+  et accessible, sans changement métier. Une refonte UX/UI globale reste une
+  phase produit distincte.
+- L18 clôture la phase de modernisation L01–L18: la validation transverse a
+  rétabli le chargement public de `athleteGoalsV2`, actualisé le runtime Next
+  vers une version sans vulnérabilité connue, et reconfirmé les frontières
+  legacy/V2 par tests applicatifs et SQL locaux.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 
@@ -125,3 +138,13 @@ doivent pas être cassés ni étendus hors de leur périmètre sans lot dédié.
 
 Ces documents sont les sources de détail. `ARCHITECT.md` reste un index de
 décisions, pas un second manuel d'implémentation.
+
+## Dette volontaire après L18
+
+- Les pilotes V2 restent désactivés par défaut et ne doivent pas être étendus
+  sans rollout, données de pilotage et validation métier dédiés.
+- Les avertissements ESLint historiques, les `@ts-nocheck` legacy et les
+  rechargements globaux hors parcours pilotes restent une dette non bloquante;
+  leur retrait demande des lots ciblés, pas un nettoyage opportuniste.
+- La refonte complète de l'identité, de la densité et de la navigation UX est
+  reportée à la prochaine phase UX/UI V2.

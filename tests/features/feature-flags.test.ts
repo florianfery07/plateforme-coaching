@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   featureFlagRegistry,
@@ -10,6 +10,11 @@ import {
 import { isReliableMutationsPilotEnabled } from "../../src/lib/features/reliable-mutations-pilot";
 
 describe("feature flags", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
   it("uses the legacy defaults when no environment variable is present", () => {
     expect(resolveFeatureFlags()).toEqual({
       groupsV2: false,
@@ -21,12 +26,27 @@ describe("feature flags", () => {
     });
   });
 
-  it("activates a flag only for an explicit enabled value", () => {
+  it("activates each pilot only for its explicit enabled value", () => {
     expect(
       resolveFeatureFlags({
         NEXT_PUBLIC_FEATURE_GROUPS_V2: "enabled",
       }).groupsV2,
     ).toBe(true);
+    expect(
+      resolveFeatureFlags({
+        NEXT_PUBLIC_FEATURE_ATHLETE_GOALS_V2: "enabled",
+      }).athleteGoalsV2,
+    ).toBe(true);
+  });
+
+  it("reads the Goals V2 public environment flag at module initialization", async () => {
+    vi.stubEnv("NEXT_PUBLIC_FEATURE_ATHLETE_GOALS_V2", "enabled");
+
+    const { featureFlags: initializedFeatureFlags } = await import(
+      "../../src/lib/features/feature-flags"
+    );
+
+    expect(initializedFeatureFlags.athleteGoalsV2).toBe(true);
   });
 
   it("accepts every documented enabled value", () => {

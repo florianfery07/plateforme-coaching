@@ -16,17 +16,17 @@ The registry is defined in `src/lib/features/flags.ts`.
 
 | Flag | Environment variable | Default | Stage | Purpose |
 | --- | --- | --- | --- | --- |
-| `groupsV2` | `NEXT_PUBLIC_FEATURE_GROUPS_V2` | `false` | `experimental` | L09 group-session foundation; no current component imports it. |
-| `accessControlV2` | `NEXT_PUBLIC_FEATURE_ACCESS_CONTROL_V2` | `false` | `pilot` | Pilot-only typed Auth and athlete-read verification beside legacy. |
+| `groupsV2` | `NEXT_PUBLIC_FEATURE_GROUPS_V2` | `false` | `experimental` | L09 group-session foundation and L10 narrow QuickLibrary scheduling pilot; requires `accessControlV2` plus server-side authorization. |
+| `accessControlV2` | `NEXT_PUBLIC_FEATURE_ACCESS_CONTROL_V2` | `false` | `pilot` | Server-derived access context shared by the typed-read, groups, invitations, lifecycle and Goals pilots beside legacy. |
 | `athleteInvitesV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_INVITES_V2` | `false` | `pilot` | L11 secure athlete invitation pilot; requires `accessControlV2` and server-side V2 authorization. |
 | `athleteLifecycleV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_LIFECYCLE_V2` | `false` | `pilot` | L12 atomic athlete archive and restore pilot; requires `accessControlV2`, a server-confirmed pilot and explicit athlete mapping. |
 | `athleteGoalsV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_GOALS_V2` | `false` | `pilot` | Goals V2 pilot; requires `accessControlV2`, a server-confirmed pilot and an explicit athlete mapping. It keeps the legacy UI active everywhere else and never dual-writes. Rollout and rollback: [Goals V2](athlete-goals-v2.md). |
-| `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Local-only L08b pilot for the `WeekDetail` weekly-note autosave; future mutation reliability flows. |
+| `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Development-only reliable-mutation pilots for the weekly note and measured L14 targeted mutations. |
 
-`accessControlV2` is consumed only by the L07b session-restoration pilot. It
-does not grant authorization and remains disabled by default. A flag-enabled
-user stays on legacy unless the server returns an active V2 account with an
-active pilot assignment and the typed reads match the legacy snapshot.
+`accessControlV2` does not grant authorization and remains disabled by
+default. Every dependent pilot remains on legacy unless the server returns an
+active V2 account, an active pilot assignment, and the explicit mapping or
+membership required by that pilot.
 
 ## Using a Flag
 
