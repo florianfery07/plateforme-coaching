@@ -57,7 +57,14 @@ export default function AthletePage({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-3">
+      <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-3 sm:p-4">
+        <div className="mb-4 flex flex-col gap-2 px-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Espace coach</p>
+            <p className="mt-1 text-sm text-zinc-300">Consultez le suivi, les performances et les réglages de {a?.name || "cet athlète"}.</p>
+          </div>
+          <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${a?.active === false ? "bg-zinc-700 text-zinc-200" : "bg-emerald-500/15 text-emerald-200"}`}>{a?.active === false ? "Athlète archivé" : "Athlète actif"}</span>
+        </div>
         <div role="tablist" aria-label="Sections de la fiche athlète" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {tabs.map(([key, label]) => (
             <button

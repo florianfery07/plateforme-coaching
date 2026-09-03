@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Empty, Field, Input, Panel, Select } from "@/components/ui/ui";
+import { Btn, Empty, Field, Input, Panel, Select, StatusMessage } from "@/components/ui/ui";
 import { supabase } from "@/lib/supabase";
 import { zoneWatts } from "@/lib/trainingUtils";
 
@@ -10,6 +10,8 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
   const [testHistory, setTestHistory] = useState([]);
   const currentYear = new Date().getFullYear();
   const [testHistoryYear, setTestHistoryYear] = useState(currentYear);
+  const [feedback, setFeedback] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const formatDate = (value) => {
     if (!value) return "Date inconnue";
@@ -57,7 +59,7 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
     loadTestHistory();
   }, [a?.id]);
 
-  const archiveTest = async () => {
+  const archiveTest = async (confirmed = false) => {
     if (!cpData) return;
 
     const duplicates = testHistory.filter(
@@ -68,16 +70,9 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
         String(item.weight || "") === String(a.weight || "")
     );
 
-    if (duplicates.length) {
-      const dates = duplicates
-        .map((item) => `• ${formatDate(item.archived_at)}`)
-        .join("\n");
-
-      const ok = window.confirm(
-        `Ce test semble déjà enregistré aux dates suivantes :\n\n${dates}\n\nVoulez-vous quand même l'ajouter ?`
-      );
-
-      if (!ok) return;
+    if (duplicates.length && !confirmed) {
+      setPendingAction({ type: "duplicate", count: duplicates.length });
+      return;
     }
 
     const { error } = await supabase
@@ -96,17 +91,16 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
 
     if (error) {
       console.error(error);
-      alert(error.message);
+      setFeedback({ variant: "error", message: "Le test ne peut pas être archivé pour le moment." });
       return;
     }
 
+    setPendingAction(null);
     await loadTestHistory();
+    setFeedback({ variant: "success", message: "Le test a été ajouté à l’historique." });
   };
 
   const deleteArchivedTest = async (testId) => {
-    const ok = window.confirm("Supprimer ce test archivé ?");
-    if (!ok) return;
-
     const { error } = await supabase
       .from("athlete_test_history")
       .delete()
@@ -114,18 +108,27 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
 
     if (error) {
       console.error(error);
-      alert(error.message || "Erreur suppression test archivé");
+      setFeedback({ variant: "error", message: "Le test archivé ne peut pas être supprimé pour le moment." });
       return;
     }
 
+    setPendingAction(null);
     await loadTestHistory();
+    setFeedback({ variant: "success", message: "Le test archivé a été supprimé." });
   };
 
   return (
     <Panel>
-      <h2 className="mb-2 text-2xl font-semibold">
-        Tests principaux — puissance critique
-      </h2>
+      <div className="mb-5 flex flex-col gap-3 border-b border-zinc-800 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Suivi de performance</p>
+          <h2 className="mt-1 text-2xl font-semibold">Tests principaux</h2>
+          <p className="mt-1 text-sm text-zinc-400">Puissance critique, zones d’entraînement et historique de référence.</p>
+        </div>
+        {cpData && <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-200">Zones calculées</span>}
+      </div>
+
+      {feedback && <StatusMessage variant={feedback.variant} className="mb-5"><div className="flex items-start justify-between gap-3"><span>{feedback.message}</span><button type="button" aria-label="Fermer le message" onClick={() => setFeedback(null)} className="min-h-7 min-w-7 rounded-lg transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">×</button></div></StatusMessage>}
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {[
@@ -153,7 +156,7 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4 text-center"
+                className="rounded-2xl border border-zinc-700 bg-zinc-950/50 p-4 text-center"
               >
                 <div className="text-sm text-zinc-400">{label}</div>
                 <div className="text-3xl font-bold">{value}</div>
@@ -175,32 +178,37 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={archiveTest}
-            className="mt-5 rounded-2xl bg-white px-4 py-2 text-sm font-bold text-zinc-950"
-          >
+          <Btn variant="primary" onClick={archiveTest} className="mt-5">
             Archiver le test
-          </button>
+          </Btn>
+
+          {pendingAction?.type === "duplicate" && (
+            <div role="region" aria-label="Confirmation d’ajout d’un test similaire" className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4">
+              <p className="text-sm text-amber-100">Un test aux valeurs identiques existe déjà {pendingAction.count > 1 ? `${pendingAction.count} fois` : "dans l’historique"}. Voulez-vous l’archiver tout de même ?</p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row"><Btn variant="primary" onClick={() => archiveTest(true)}>Archiver quand même</Btn><Btn onClick={() => setPendingAction(null)}>Annuler</Btn></div>
+            </div>
+          )}
 
           <div className="mt-5 space-y-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-lg font-semibold">Historique des tests</h3>
 
-              <div className="flex items-center gap-2">
-                <Select
+              <div className="flex items-end gap-2">
+                <Field label="Année">
+                  <Select
                   value={testHistoryYear}
                   onChange={(event) =>
                     setTestHistoryYear(Number(event.target.value))
                   }
                   className="w-32"
-                >
-                  {testHistoryYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </Select>
+                  >
+                    {testHistoryYears.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
 
                 <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
                   {filteredTestHistory.length}
@@ -209,9 +217,7 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
             </div>
 
             {filteredTestHistory.length === 0 && (
-              <p className="text-sm text-zinc-400">
-                Aucun test archivé.
-              </p>
+              <Empty text="Aucun test archivé pour cette année." />
             )}
 
             {filteredTestHistory.map((item) => (
@@ -219,23 +225,15 @@ export default function CP({ athlete: a, updateAthlete, cpData }) {
                 key={item.id}
                 className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="font-bold">
-                    {formatDate(item.archived_at)}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => deleteArchivedTest(item.id)}
-                    className="rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300"
-                  >
-                    Supprimer
-                  </button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div><div className="font-bold">{formatDate(item.archived_at)}</div><p className="mt-1 text-xs text-zinc-500">Test archivé</p></div>
+                  <Btn variant="danger" onClick={() => setPendingAction({ type: "delete", id: item.id })}>Supprimer</Btn>
                 </div>
 
-                <div className="mt-2 text-sm text-zinc-300">
-                  5 min : {item.power5} W • 12 min : {item.power12} W • 20 min : {item.power20} W • Poids : {item.weight} • CP : {item.cp} W • W/kg : {item.watts_per_kg || "—"}
+                <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3 xl:grid-cols-6">
+                  {[["5 min", `${item.power5} W`], ["12 min", `${item.power12} W`], ["20 min", `${item.power20} W`], ["Poids", item.weight], ["CP", `${item.cp} W`], ["W/kg", item.watts_per_kg || "—"]].map(([label, value]) => <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><div className="text-xs text-zinc-500">{label}</div><div className="mt-1 font-bold text-zinc-100">{value || "—"}</div></div>)}
                 </div>
+                {pendingAction?.type === "delete" && pendingAction.id === item.id && <div role="region" aria-label="Confirmation de suppression du test" className="mt-4 rounded-2xl border border-red-400/40 bg-red-500/10 p-4"><p className="text-sm text-red-50">Supprimer définitivement ce test archivé ?</p><div className="mt-4 flex flex-col gap-2 sm:flex-row"><Btn variant="danger" onClick={() => deleteArchivedTest(item.id)}>Supprimer le test</Btn><Btn onClick={() => setPendingAction(null)}>Annuler</Btn></div></div>}
               </div>
             ))}
           </div>

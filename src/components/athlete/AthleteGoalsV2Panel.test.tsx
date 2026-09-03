@@ -106,6 +106,8 @@ describe("Goals V2 pilot panels", () => {
     );
 
     fireEvent.change(screen.getByLabelText("Retour au sportif (obligatoire pour demander des modifications)"), { target: { value: "Précisez le calendrier." } });
+    expect(screen.getByText("Action coach")).toBeVisible();
+    expect(screen.getByText("À valider")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Demander des modifications" }));
 
     await waitFor(() => expect(onRequestChanges).toHaveBeenCalledWith(requestId, "Précisez le calendrier."));
@@ -181,5 +183,20 @@ describe("Goals V2 pilot panels", () => {
 
     expect(screen.getByText("Ajouter un objectif de récupération.")).toBeInTheDocument();
     expect(screen.getByLabelText("Court terme (~6 mois)")).toHaveValue("Course V1");
+  });
+
+  it("makes the responsible actor explicit for a newly opened request", () => {
+    render(
+      <CoachGoalsV2Panel
+        state={state()}
+        onOpen={vi.fn()}
+        onCancel={vi.fn()}
+        onAccept={vi.fn()}
+        onRequestChanges={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Action athlète")).toBeVisible();
+    expect(screen.getByText("Demande envoyée")).toBeVisible();
   });
 });
