@@ -450,12 +450,12 @@ export default function CalendarPageOld(props) {
   const calendarProps = props;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
       <Panel
         className={
           props.isCoach
-            ? "xl:col-span-3"
-            : "xl:col-span-4"
+            ? "min-w-0"
+            : "min-w-0 xl:col-span-2"
         }
       >
         {!props.isCoach && (
@@ -475,30 +475,37 @@ export default function CalendarPageOld(props) {
 
         <CalendarToolbar {...calendarProps} />
 
-        {props.mode === "year" && (
-          <YearView
-            setMonth={calendarProps.setMonth}
-            setMode={calendarProps.setMode}
-          />
-        )}
+        <div
+          id="calendar-view-panel"
+          role="tabpanel"
+          aria-labelledby={`calendar-view-${props.mode}`}
+          className="min-w-0"
+        >
+          {props.mode === "year" && (
+            <YearView
+              setMonth={calendarProps.setMonth}
+              setMode={calendarProps.setMode}
+            />
+          )}
 
-        {props.mode === "month" && (
-          <MonthView
-            {...calendarProps}
-            currentMonth={calendarProps.month}
-          />
-        )}
+          {props.mode === "month" && (
+            <MonthView
+              {...calendarProps}
+              currentMonth={calendarProps.month}
+            />
+          )}
 
-        {props.mode === "day" && (
-          <DayView
-            {...calendarProps}
-            allAthleteSessions={calendarProps.sessions}
-            sessions={calendarProps.sessionsFor(calendarProps.selectedDate)}
-            proposals={calendarProps.proposalsFor(calendarProps.selectedDate)}
-            deleteAthleteWorkoutFromGroupDay={calendarProps.deleteAthleteWorkoutFromGroupDay}
-            deleteGroupDayWorkouts={calendarProps.deleteGroupDayWorkouts}
-          />
-        )}
+          {props.mode === "day" && (
+            <DayView
+              {...calendarProps}
+              allAthleteSessions={calendarProps.sessions}
+              sessions={calendarProps.sessionsFor(calendarProps.selectedDate)}
+              proposals={calendarProps.proposalsFor(calendarProps.selectedDate)}
+              deleteAthleteWorkoutFromGroupDay={calendarProps.deleteAthleteWorkoutFromGroupDay}
+              deleteGroupDayWorkouts={calendarProps.deleteGroupDayWorkouts}
+            />
+          )}
+        </div>
 
         {props.isCoach && (
           <>
@@ -524,7 +531,9 @@ export default function CalendarPageOld(props) {
       </Panel>
 
       {props.isCoach && (
-        <QuickLibrary {...calendarProps} />
+        <div className="xl:sticky xl:top-4 xl:self-start">
+          <QuickLibrary {...calendarProps} />
+        </div>
       )}
     </div>
   );

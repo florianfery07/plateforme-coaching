@@ -57,10 +57,12 @@ export default function DayView({
   const groupRowsFree = groupRows.filter((row) => !row.sessions.length);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="space-y-5" aria-labelledby="calendar-day-title">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3 sm:p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h3 className="text-2xl font-bold">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-300">Planning du jour</p>
+          <h3 id="calendar-day-title" className="text-2xl font-bold sm:text-3xl">
             {selectedDate.toLocaleDateString("fr-FR", {
               weekday: "long",
               day: "numeric",
@@ -74,11 +76,12 @@ export default function DayView({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:justify-end">
           {isCoach && planningTargetType === "group" && (
             <Btn
               variant="danger"
               onClick={() => deleteGroupDayWorkouts?.(selectedDate)}
+              className="w-full sm:w-auto"
             >
               Retirer toutes les séances du groupe
             </Btn>
@@ -88,21 +91,27 @@ export default function DayView({
             <Btn
               onClick={() => addRestDay(selectedDate)}
               disabled={restDayPending}
+              aria-label="Marquer repos"
+              className="w-full sm:w-auto"
             >
-              Marquer repos
+              {restDayPending ? "Ajout du repos..." : "Marquer repos"}
             </Btn>
           )}
 
-          <Btn onClick={() => setMode("month")}>
+          <Btn onClick={() => setMode("month")} className="w-full sm:w-auto">
             Retour mois
           </Btn>
+        </div>
         </div>
       </div>
 
       {planningTargetType === "group" && selectedGroup && (
         <>
-          <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4">
-            <h4 className="mb-3 font-semibold">Athlètes avec séance</h4>
+          <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h4 className="font-semibold">Athlètes avec séance</h4>
+              <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-zinc-300">{groupRowsWithSession.length}</span>
+            </div>
 
             {groupRowsWithSession.length ? (
               <div className="space-y-2">
@@ -139,7 +148,7 @@ export default function DayView({
                               <button
                                 type="button"
                                 onClick={() => deleteAthleteWorkoutFromGroupDay?.(session)}
-                                className="rounded-xl border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300 hover:bg-red-500/10"
+                                className="min-h-11 rounded-xl border border-red-500/40 px-3 py-2 text-xs font-bold text-red-300 transition hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
                               >
                                 Retirer pour cet athlète
                               </button>
@@ -156,8 +165,11 @@ export default function DayView({
             )}
           </div>
 
-          <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4">
-            <h4 className="mb-3 font-semibold">Athlètes libres</h4>
+          <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h4 className="font-semibold">Athlètes libres</h4>
+              <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-zinc-300">{groupRowsFree.length}</span>
+            </div>
 
             {groupRowsFree.length ? (
               <div className="flex flex-wrap gap-2">
@@ -207,10 +219,11 @@ export default function DayView({
       )}
 
       {planningTargetType !== "group" && !!proposals.length && (
-        <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4">
-          <h4 className="mb-3 font-semibold">
-            Propositions de {athleteActive.name}
-          </h4>
+        <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h4 className="font-semibold">Propositions de {athleteActive.name}</h4>
+            <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-zinc-300">{proposals.length}</span>
+          </div>
 
           <div className="space-y-2">
             {proposals.map((proposal) => (
@@ -226,6 +239,6 @@ export default function DayView({
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

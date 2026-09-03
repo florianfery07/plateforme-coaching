@@ -130,12 +130,15 @@ export default function QuickLibrary({
   });
 
   return (
-    <aside className="h-fit rounded-3xl border border-zinc-800 bg-zinc-900 p-3 shadow-xl sm:p-5">
-      <h2 className="mb-2 text-xl font-semibold">Bibliothèque rapide</h2>
+    <aside className="h-fit rounded-3xl border border-zinc-800 bg-zinc-900 p-3 shadow-xl sm:p-5" aria-labelledby="quick-library-title">
+      <div className="mb-4 border-b border-zinc-800 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Actions rapides</p>
+        <h2 id="quick-library-title" className="mt-1 text-xl font-semibold">Bibliothèque rapide</h2>
 
-      <p className="mb-4 text-sm text-zinc-400">
-        Importer une séance sur le jour sélectionné.
-      </p>
+        <p className="mt-1 text-sm text-zinc-400">
+          Importer une séance sur le jour sélectionné.
+        </p>
+      </div>
 
       <FilterSelects {...{ categories, subcategories, filter, setFilter }} />
 
@@ -152,7 +155,7 @@ export default function QuickLibrary({
             <button
               type="button"
               onClick={() => setSelectedAthleteIds(groupAthletes.map((athlete) => athlete.id))}
-              className="rounded-xl border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-200 hover:bg-zinc-800"
+              className="min-h-11 rounded-xl border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-200 transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
             >
               Tout sélectionner
             </button>
@@ -160,7 +163,7 @@ export default function QuickLibrary({
             <button
               type="button"
               onClick={() => setSelectedAthleteIds([])}
-              className="rounded-xl border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800"
+              className="min-h-11 rounded-xl border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-400 transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
             >
               Tout retirer
             </button>
@@ -175,7 +178,8 @@ export default function QuickLibrary({
                   key={athlete.id}
                   type="button"
                   onClick={() => toggleAthlete(athlete.id)}
-                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left ${
+                    aria-pressed={checked}
+                    className={`flex min-h-11 w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
                     checked
                       ? "border-white bg-zinc-900"
                       : "border-zinc-700 bg-zinc-950"
@@ -212,13 +216,13 @@ export default function QuickLibrary({
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-3" aria-label="Séances disponibles">
         {!filteredLibrary.length && <Empty text="Aucune séance." />}
 
         {sortedLibrary.map((workout) => (
           <div
             key={workout.id}
-            className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4"
+            className="rounded-2xl border border-zinc-700 bg-zinc-800 p-4 transition hover:border-zinc-600"
           >
             <h3 className="font-bold">{workout.title}</h3>
 
