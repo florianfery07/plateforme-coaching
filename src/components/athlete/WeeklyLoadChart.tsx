@@ -36,9 +36,9 @@ export default function WeeklyLoadChart({ week }) {
   const load = loads.greenLoad + loads.yellowLoad + loads.redLoad;
 
   return (
-    <div className="mt-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
+    <section aria-labelledby="weekly-load-chart-title" className="mt-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
       <div className="mb-4">
-        <h3 className="text-xl font-semibold">
+        <h3 id="weekly-load-chart-title" className="text-xl font-semibold">
           Charge de la semaine sélectionnée
         </h3>
 
@@ -48,11 +48,11 @@ export default function WeeklyLoadChart({ week }) {
         </p>
       </div>
 
-      <div className="h-3 overflow-hidden rounded-full bg-zinc-900">
+      <div className="h-3 overflow-hidden rounded-full bg-zinc-900" role="img" aria-label={`Temps total de la semaine ${week.week}, ${week.time.toFixed(1)} heures`}>
         <div className="h-full rounded-full bg-white" style={{ width: "100%" }} />
       </div>
 
-      <div className="mt-3 h-8 overflow-hidden rounded-full bg-zinc-900">
+      <div className="mt-3 h-8 overflow-hidden rounded-full bg-zinc-900" role="img" aria-label={`Répartition de la charge : facile ${Math.round((loads.greenLoad / load) * 100) || 0} pour cent, modérée ${Math.round((loads.yellowLoad / load) * 100) || 0} pour cent, élevée ${Math.round((loads.redLoad / load) * 100) || 0} pour cent`}>
         <div className="flex h-full w-full">
           {loads.greenLoad > 0 && (
             <div
@@ -89,12 +89,12 @@ export default function WeeklyLoadChart({ week }) {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-xs text-zinc-400">
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-zinc-400" aria-label="Légende de la charge hebdomadaire">
         <span>Blanc = temps total semaine</span>
         <span>Vert = charge facile</span>
         <span>Jaune = charge modérée</span>
         <span>Rouge = charge élevée</span>
       </div>
-    </div>
+    </section>
   );
 }

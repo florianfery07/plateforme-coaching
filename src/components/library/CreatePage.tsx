@@ -1,12 +1,15 @@
 // @ts-nocheck
 "use client";
 
+import { useState } from "react";
+
 import {
   Btn,
   Field,
   Input,
   Panel,
   Select,
+  StatusMessage,
   Textarea,
 } from "@/components/ui/ui";
 import WorkoutBlock from "@/components/calendar/WorkoutBlock";
@@ -30,6 +33,8 @@ export default function CreatePage({
   addItem,
   savePending = false,
 }) {
+  const [validationMessage, setValidationMessage] = useState("");
+
   const addSimple = () =>
     setDraft((current) => ({
       ...current,
@@ -129,24 +134,43 @@ export default function CreatePage({
     );
   };
 
+  const handleSave = () => {
+    if (!draft.category) {
+      setValidationMessage("Choisis une discipline avant d’enregistrer la séance.");
+      return;
+    }
+
+    if (!draft.title.trim()) {
+      setValidationMessage("Donne un titre à la séance avant de l’enregistrer.");
+      return;
+    }
+
+    setValidationMessage("");
+    saveWorkout();
+  };
+
   return (
     <Panel>
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mb-6 flex flex-col gap-4 border-b border-zinc-800 pb-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold">
-            Ma création détaillée de séance
-          </h2>
-          <p className="text-sm text-zinc-400">
-            Outil commun : aucune sélection d’athlète ici.
-          </p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Bibliothèque</p>
+          <h2 className="mt-1 text-2xl font-semibold">{editingId ? "Modifier la séance" : "Créer une séance"}</h2>
+          <p className="mt-1 text-sm text-zinc-400">La séance sera disponible dans la bibliothèque, sans être affectée à un athlète.</p>
         </div>
 
-        <Btn variant="primary" onClick={saveWorkout} disabled={savePending}>
+        <Btn variant="primary" onClick={handleSave} disabled={savePending} className="w-full md:w-auto">
           {editingId ? "Mettre à jour" : "Enregistrer dans la bibliothèque"}
         </Btn>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {validationMessage && <StatusMessage variant="error" className="mb-6">{validationMessage}</StatusMessage>}
+
+      <section aria-labelledby="workout-basics-title" className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-4 sm:p-5">
+        <div className="mb-4">
+          <h3 id="workout-basics-title" className="text-lg font-semibold">Informations de la séance</h3>
+          <p className="mt-1 text-sm text-zinc-400">Commence par définir le contenu général et l’intensité attendue.</p>
+        </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Field label="Discipline">
           <Select
             value={draft.category || ""}
@@ -183,7 +207,7 @@ export default function CreatePage({
           />
         </Field>
 
-        <Field label="Durée totale">
+        <Field label="Durée totale prévue">
           <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
             <Input
               value={parseDurationParts(draft.totalDuration).hours}
@@ -193,6 +217,7 @@ export default function CreatePage({
               type="text"
               inputMode="numeric"
               placeholder="1"
+              aria-label="Heures de la durée totale prévue"
             />
 
             <span className="text-sm font-semibold text-zinc-400">
@@ -207,6 +232,7 @@ export default function CreatePage({
               type="text"
               inputMode="numeric"
               placeholder="30"
+              aria-label="Minutes de la durée totale prévue"
             />
 
             <span className="text-sm font-semibold text-zinc-400">
@@ -240,6 +266,7 @@ export default function CreatePage({
       type="text"
       inputMode="numeric"
       placeholder="0"
+      aria-label="Heures de la durée spécifique prévue"
     />
 
     <span className="text-sm font-semibold text-zinc-400">
@@ -254,6 +281,7 @@ export default function CreatePage({
       type="text"
       inputMode="numeric"
       placeholder="10"
+      aria-label="Minutes de la durée spécifique prévue"
     />
 
     <span className="text-sm font-semibold text-zinc-400">
@@ -276,7 +304,7 @@ export default function CreatePage({
   </Select>
 </Field>
 
-        <Field label="Description">
+        <Field label="Description et consignes générales" className="lg:col-span-3">
           <Textarea
             value={draft.description}
             onChange={(event) => updateDraft("description", event.target.value)}
@@ -284,24 +312,30 @@ export default function CreatePage({
           />
         </Field>
       </div>
+      </section>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-xl font-semibold">Blocs de séance</h3>
+      <section aria-labelledby="workout-blocks-title" className="space-y-4">
+        <div className="flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 id="workout-blocks-title" className="text-xl font-semibold">Déroulé de la séance</h3>
+            <p className="mt-1 text-sm text-zinc-400">{draft.blocks.length} bloc{draft.blocks.length > 1 ? "s" : ""}. Organise-les dans l’ordre du déroulé.</p>
+          </div>
 
-          <div className="flex gap-2">
-            <Btn onClick={addSimple}>+ Bloc simple</Btn>
-            <Btn onClick={addRepeat}>+ Bloc répétition</Btn>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Btn onClick={addSimple}>Ajouter un bloc simple</Btn>
+            <Btn onClick={addRepeat}>Ajouter un bloc répétition</Btn>
           </div>
         </div>
 
+        <div className="space-y-4" aria-live="polite">
         {draft.blocks.map((block, blockIndex) => (
           <WorkoutBlock
             key={blockIndex}
             {...{ block, blockIndex, updateBlock, updateRepeat, setDraft }}
           />
         ))}
-      </div>
+        </div>
+      </section>
 
       <QuickCreate
         {...{ newCat, setNewCat, newSub, setNewSub, addItem }}

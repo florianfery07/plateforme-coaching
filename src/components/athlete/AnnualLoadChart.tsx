@@ -107,9 +107,9 @@ export default function AnnualLoadChart({ weeks }) {
   }
 
   return (
-    <div className="mt-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
+    <section aria-labelledby="annual-load-chart-title" className="mt-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">
       <div className="mb-4">
-        <h3 className="text-xl font-semibold">
+        <h3 id="annual-load-chart-title" className="text-xl font-semibold">
           Charge annuelle, fatigue et forme
         </h3>
 
@@ -118,11 +118,17 @@ export default function AnnualLoadChart({ weeks }) {
         </p>
       </div>
 
-      <div className="overflow-x-auto">
+      <p id="annual-load-chart-scroll-hint" className="mb-3 text-xs text-zinc-500 sm:hidden">Fais défiler le graphique horizontalement pour consulter toutes les semaines.</p>
+
+      <div className="overflow-x-auto rounded-2xl focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-amber-400" tabIndex="0" aria-describedby="annual-load-chart-scroll-hint">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[1000px] rounded-2xl bg-zinc-900"
+          className="min-w-[780px] rounded-2xl bg-zinc-900"
+          role="img"
+          aria-labelledby="annual-load-chart-svg-title annual-load-chart-svg-description"
         >
+          <title id="annual-load-chart-svg-title">Charge annuelle, fatigue et forme</title>
+          <desc id="annual-load-chart-svg-description">Graphique hebdomadaire. Les barres montrent la charge réalisée par intensité. Les courbes montrent la fatigue aiguë, la charge chronique et la forme estimée.</desc>
           <text x={14} y={18} fontSize="11" fill="#a1a1aa">
             Charge
           </text>
@@ -275,7 +281,7 @@ export default function AnnualLoadChart({ weeks }) {
         </svg>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-xs text-zinc-400">
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-zinc-400" aria-label="Légende du graphique">
         <span className="text-emerald-400">Vert = charge facile</span>
         <span className="text-yellow-300">Jaune = charge modérée</span>
         <span className="text-red-400">Rouge = charge élevée</span>
@@ -283,6 +289,20 @@ export default function AnnualLoadChart({ weeks }) {
         <span className="text-zinc-300">Gris = charge chronique</span>
         <span className="text-blue-400">Bleu = forme estimée</span>
       </div>
-    </div>
+
+      <details className="mt-4 rounded-2xl border border-zinc-700 bg-zinc-950/50 p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">Consulter les données hebdomadaires</summary>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[620px] text-left text-sm">
+            <thead className="border-b border-zinc-700 text-zinc-400">
+              <tr><th className="py-2 pr-3">Semaine</th><th className="py-2 pr-3">Charge</th><th className="py-2 pr-3">Fatigue aiguë</th><th className="py-2 pr-3">Charge chronique</th><th className="py-2">Forme</th></tr>
+            </thead>
+            <tbody>
+              {computedRows.map((row) => <tr key={`row-${row.week}`} className="border-b border-zinc-900 text-zinc-200"><td className="py-2 pr-3 font-medium">{row.week} <span className="text-zinc-500">{row.range}</span></td><td className="py-2 pr-3">{row.total.toFixed(1)}</td><td className="py-2 pr-3">{row.acute.toFixed(1)}</td><td className="py-2 pr-3">{row.chronic.toFixed(1)}</td><td className="py-2">{row.form.toFixed(1)}</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
   );
 }

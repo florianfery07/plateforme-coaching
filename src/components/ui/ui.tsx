@@ -5,9 +5,9 @@ import { APP_COLORS } from "@/lib/colors";
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400";
 
-export function Field({ label, children }) {
+export function Field({ label, children, className = "" }) {
   return (
-    <label className="flex h-full flex-col">
+    <label className={`flex h-full flex-col ${className}`}>
       <span className="mb-1 flex min-h-[32px] items-end text-xs font-medium text-zinc-400">
         {label}
       </span>

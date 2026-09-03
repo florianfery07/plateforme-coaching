@@ -87,6 +87,7 @@ export default function AthleteStatsPage({
         />
       </div>
       <Stats
+        key={calendarYear}
         stats={stats}
         training={training}
         sessions={activeSessions}

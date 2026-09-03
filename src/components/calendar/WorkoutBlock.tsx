@@ -247,11 +247,12 @@ export default function WorkoutBlock({
 
   return (
     <div className="flex gap-2">
-      <div className="flex flex-col gap-1 pt-4">
+      <div className="flex flex-col gap-1 pt-4" aria-label={`Réorganiser le bloc ${blockIndex + 1}`}>
         <button
           type="button"
           onClick={() => moveBlock(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+          aria-label={`Déplacer le bloc ${blockIndex + 1} vers le haut`}
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
         >
           ↑
         </button>
@@ -259,17 +260,23 @@ export default function WorkoutBlock({
         <button
           type="button"
           onClick={() => moveBlock(1)}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+          aria-label={`Déplacer le bloc ${blockIndex + 1} vers le bas`}
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
         >
           ↓
         </button>
       </div>
 
       <div className="flex-1 rounded-3xl border border-zinc-700 bg-zinc-800/80 p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="font-semibold text-white">Bloc {blockIndex + 1}{block.type === "repeat" ? " à répéter" : ""}</h4>
+        <span className="rounded-full bg-zinc-900 px-2 py-1 text-xs font-semibold text-zinc-400">{block.type === "repeat" ? "Répétition" : "Simple"}</span>
+      </div>
       <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(220px,1.4fr)_minmax(260px,1.5fr)_auto_auto]">
         <Input
           value={blockNameValue(block)}
           onChange={(event) => updateBlock(blockIndex, "name", event.target.value)}
+          aria-label={`Nom du bloc ${blockIndex + 1}`}
           placeholder={
             block.type === "repeat"
               ? "Nom du bloc répétition"
@@ -284,6 +291,7 @@ export default function WorkoutBlock({
             type="text"
             inputMode="numeric"
             placeholder="1"
+            aria-label={`Heures du bloc ${blockIndex + 1}`}
           />
 
           <span className="text-sm font-semibold text-zinc-400">h</span>
@@ -294,6 +302,7 @@ export default function WorkoutBlock({
             type="text"
             inputMode="numeric"
             placeholder="30"
+            aria-label={`Minutes du bloc ${blockIndex + 1}`}
           />
 
           <span className="text-sm font-semibold text-zinc-400">min</span>
@@ -308,6 +317,7 @@ export default function WorkoutBlock({
         </Btn>
 
         <Btn
+          variant="danger"
           className="lg:min-w-[115px]"
           onClick={() =>
             setDraft((current) => ({
@@ -339,6 +349,7 @@ export default function WorkoutBlock({
             inputMode="numeric"
             placeholder="5"
             className="w-20"
+            aria-label={`Nombre de répétitions du bloc ${blockIndex + 1}`}
           />
         </div>
       )}
@@ -351,6 +362,7 @@ export default function WorkoutBlock({
               onChange={(event) =>
                 updateBlock(blockIndex, "zone", event.target.value)
               }
+              aria-label={`Zone du bloc ${blockIndex + 1}`}
             >
               {ZONES.map((zone) => (
                 <option key={zone} value={zone}>
@@ -368,6 +380,7 @@ export default function WorkoutBlock({
                 type="text"
                 inputMode="decimal"
                 placeholder="78"
+                aria-label={`Pourcentage CP minimum du bloc ${blockIndex + 1}`}
               />
 
               <span className="text-sm font-semibold text-zinc-400">-</span>
@@ -380,6 +393,7 @@ export default function WorkoutBlock({
                 type="text"
                 inputMode="decimal"
                 placeholder="84"
+                aria-label={`Pourcentage CP maximum du bloc ${blockIndex + 1}`}
               />
 
               <span className="text-sm font-semibold text-zinc-400">% CP</span>
@@ -393,6 +407,7 @@ export default function WorkoutBlock({
             }
             rows={3}
             placeholder="Consigne / description du bloc"
+            aria-label={`Consigne du bloc ${blockIndex + 1}`}
           />
         </>
       ) : (
@@ -435,11 +450,12 @@ export default function WorkoutBlock({
 
           {block.repeatItems.map((repeatItem, repeatIndex) => (
             <div key={repeatIndex} className="flex gap-2">
-              <div className="flex flex-col gap-1 pt-1">
+              <div className="flex flex-col gap-1 pt-1" aria-label={`Réorganiser l’étape ${repeatIndex + 1}`}>
                 <button
                   type="button"
                   onClick={() => moveRepeatItem(repeatIndex, -1)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+                  aria-label={`Déplacer l’étape ${repeatIndex + 1} vers le haut`}
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
                 >
                   ↑
                 </button>
@@ -447,7 +463,8 @@ export default function WorkoutBlock({
                 <button
                   type="button"
                   onClick={() => moveRepeatItem(repeatIndex, 1)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700"
+                  aria-label={`Déplacer l’étape ${repeatIndex + 1} vers le bas`}
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 text-sm font-bold text-zinc-300 hover:bg-zinc-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
                 >
                   ↓
                 </button>
@@ -465,6 +482,7 @@ export default function WorkoutBlock({
                   )
                 }
                 placeholder={`Nom de l’étape ${repeatIndex + 1}`}
+                aria-label={`Nom de l’étape ${repeatIndex + 1} du bloc ${blockIndex + 1}`}
               />
 
               <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
@@ -480,6 +498,7 @@ export default function WorkoutBlock({
                   type="text"
                   inputMode="numeric"
                   placeholder="0"
+                  aria-label={`Heures de l’étape ${repeatIndex + 1} du bloc ${blockIndex + 1}`}
                 />
 
                 <span className="text-sm font-semibold text-zinc-400">h</span>
@@ -496,6 +515,7 @@ export default function WorkoutBlock({
                   type="text"
                   inputMode="numeric"
                   placeholder="5"
+                  aria-label={`Minutes de l’étape ${repeatIndex + 1} du bloc ${blockIndex + 1}`}
                 />
 
                 <span className="text-sm font-semibold text-zinc-400">min</span>
@@ -511,6 +531,7 @@ export default function WorkoutBlock({
                     event.target.value
                   )
                 }
+                aria-label={`Zone de l’étape ${repeatIndex + 1} du bloc ${blockIndex + 1}`}
               >
                 {ZONES.map((zone) => (
                   <option key={zone} value={zone}>
@@ -532,6 +553,7 @@ export default function WorkoutBlock({
                   type="text"
                   inputMode="decimal"
                   placeholder="102"
+                  aria-label={`Pourcentage CP minimum de l’étape ${repeatIndex + 1} du bloc ${blockIndex + 1}`}
                 />
 
                 <span className="text-sm font-semibold text-zinc-400">-</span>
@@ -548,6 +570,7 @@ export default function WorkoutBlock({
                   type="text"
                   inputMode="decimal"
                   placeholder="108"
+                  aria-label={`Pourcentage CP maximum de l’étape ${repeatIndex + 1} du bloc ${blockIndex + 1}`}
                 />
 
                 <span className="text-sm font-semibold text-zinc-400">% CP</span>
@@ -564,6 +587,7 @@ export default function WorkoutBlock({
                   )
                 }
                 placeholder="Consigne"
+                aria-label={`Consigne de l’étape ${repeatIndex + 1} du bloc ${blockIndex + 1}`}
               />
 
               <Btn

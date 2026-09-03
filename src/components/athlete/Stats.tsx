@@ -3,18 +3,17 @@
 
 import {
   avg,
-  feedbackDone,
   parseLocalDate,
   sessionLoadParts,
   trainingStats,
 } from "@/lib/trainingUtils";
 
 import { CALENDAR_YEARS } from "@/lib/platformDefaults";
-import { Panel, Select } from "@/components/ui/ui";
+import { Field, Panel, Select } from "@/components/ui/ui";
 
 import AnnualLoadChart from "@/components/athlete/AnnualLoadChart";
 import TrainingDistribution from "@/components/athlete/TrainingDistribution";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function getAvailableYears(sessions, preferredYear = new Date().getFullYear()) {
   const currentYear = new Date().getFullYear();
@@ -35,7 +34,6 @@ function getAvailableYears(sessions, preferredYear = new Date().getFullYear()) {
 }
 
 export default function Stats({
-  training,
   sessions,
   calendarYear,
   categories,
@@ -46,12 +44,6 @@ export default function Stats({
 const [selectedYear, setSelectedYear] = useState(
   years.includes(Number(calendarYear)) ? Number(calendarYear) : years[0]
 );
-
-useEffect(() => {
-  if (years.includes(Number(calendarYear))) {
-    setSelectedYear(Number(calendarYear));
-  }
-}, [calendarYear]);
 
 const activeYear = years.includes(Number(selectedYear))
   ? Number(selectedYear)
@@ -73,31 +65,33 @@ const activeYear = years.includes(Number(selectedYear))
 
   return (
     <Panel>
-     <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-  <div>
-    <h2 className="text-2xl font-semibold">
-      Graphique représentatif de charge, % d’intensité et estimation de forme basée sur vos retours
-    </h2>
+      <div className="mb-6 flex flex-col gap-4 border-b border-zinc-800 pb-6 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Analyse annuelle</p>
+          <h2 className="mt-1 text-2xl font-semibold">Charge et répartition</h2>
+          <p className="mt-1 max-w-2xl text-sm text-zinc-400">Retrouve la charge réalisée, la tendance de forme et la répartition du temps d’entraînement.</p>
+        </div>
 
-    <p className="mt-1 text-sm text-zinc-400">
-      Barres = charge réalisée par semaine. Courbes = fatigue aiguë, charge chronique et forme estimée.
-    </p>
-  </div>
+        <Field label="Année affichée" className="w-full md:w-40">
+          <Select
+            value={activeYear}
+            onChange={(event) => setSelectedYear(Number(event.target.value))}
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
 
-  <Select
-    value={activeYear}
-    onChange={(event) =>
-      setSelectedYear(Number(event.target.value))
-    }
-    className="md:w-40"
-  >
-    {years.map((year) => (
-      <option key={year} value={year}>
-        {year}
-      </option>
-    ))}
-  </Select>
-</div>
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label={`Repères pour l’année ${activeYear}`}>
+        <SummaryCard label="Séances réalisées" value={yearDone.length} />
+        <SummaryCard label="Charge totale" value={Math.round(totalLoad)} />
+        <SummaryCard label="RPE moyen" value={formatScore(yearStats.rpe)} />
+        <SummaryCard label="Plaisir moyen" value={formatScore(yearStats.pleasure)} />
+      </div>
 
       <AnnualLoadChart weeks={yearTraining.weeks} />
       <TrainingDistribution
@@ -106,5 +100,19 @@ const activeYear = years.includes(Number(selectedYear))
   subcategories={subcategories}
 />
     </Panel>
+  );
+}
+
+function formatScore(value) {
+  const score = Number(value);
+  return Number.isFinite(score) && score > 0 ? `${score.toFixed(1)} / 10` : "—";
+}
+
+function SummaryCard({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+      <p className="text-xs font-medium text-zinc-400">{label}</p>
+      <p className="mt-1 text-xl font-bold text-white sm:text-2xl">{value}</p>
+    </div>
   );
 }

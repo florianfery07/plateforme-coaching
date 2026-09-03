@@ -1,13 +1,16 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 import {
   Btn,
   Empty,
+  Field,
+  Input,
   Panel,
+  StatusMessage,
 } from "@/components/ui/ui";
 
 import FilterSelects from "@/components/calendar/FilterSelects";
@@ -31,27 +34,46 @@ export default function LibraryPage({
 }) {
   const [workoutToDelete, setWorkoutToDelete] = useState(null);
   const [deletingWorkoutId, setDeletingWorkoutId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [feedback, setFeedback] = useState(null);
 
   async function deleteWorkout(workout) {
     if (deletingWorkoutId) return;
 
     setDeletingWorkoutId(workout.id);
     try {
-      await supabase
+      const { error } = await supabase
         .from("workout_library")
         .delete()
         .eq("id", workout.id);
+
+      if (error) {
+        setFeedback({ variant: "error", message: "La séance n’a pas pu être supprimée. Réessaie." });
+        return;
+      }
 
       setLibrary(
         library.filter((row) => row.id !== workout.id)
       );
       setWorkoutToDelete(null);
+      setFeedback({ variant: "success", message: "La séance a été supprimée de la bibliothèque." });
     } finally {
       setDeletingWorkoutId(null);
     }
   }
 
-  const sortedLibrary = [...filteredLibrary].sort((a, b) => {
+  const searchedLibrary = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase("fr-FR");
+    if (!query) return filteredLibrary;
+
+    return filteredLibrary.filter((workout) =>
+      [workout.title, workout.category, workout.subcategory, workout.description]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase("fr-FR").includes(query)),
+    );
+  }, [filteredLibrary, search]);
+
+  const sortedLibrary = [...searchedLibrary].sort((a, b) => {
     const durationA = a.totalDuration || "999h";
     const durationB = b.totalDuration || "999h";
 
@@ -101,23 +123,44 @@ export default function LibraryPage({
             </h3>
 
             <p className="text-sm text-zinc-400">
-              {filteredLibrary.length} séance(s) affichée(s).
+              {sortedLibrary.length} séance{sortedLibrary.length > 1 ? "s" : ""} affichée{sortedLibrary.length > 1 ? "s" : ""} sur {library.length}.
             </p>
           </div>
 
-          <FilterSelects
-            {...{
-              categories,
-              subcategories,
-              filter,
-              setFilter,
-            }}
-          />
+          <div className="grid w-full gap-3 sm:grid-cols-2 xl:max-w-3xl">
+            <Field label="Rechercher une séance">
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Titre, discipline ou thème"
+                type="search"
+              />
+            </Field>
+            <FilterSelects
+              {...{
+                categories,
+                subcategories,
+                filter,
+                setFilter,
+              }}
+            />
+          </div>
         </div>
 
+        {feedback && (
+          <StatusMessage variant={feedback.variant} className="mb-4">
+            <div className="flex items-start justify-between gap-3">
+              <span>{feedback.message}</span>
+              <button type="button" aria-label="Fermer le message" onClick={() => setFeedback(null)} className="min-h-8 min-w-8 rounded-lg text-lg leading-none transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400">×</button>
+            </div>
+          </StatusMessage>
+        )}
+
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          {!filteredLibrary.length && (
-            <Empty text="Aucune séance." />
+          {!sortedLibrary.length && (
+            <div className="lg:col-span-2 xl:col-span-3">
+              <Empty text={search ? "Aucune séance ne correspond à cette recherche." : "Aucune séance ne correspond aux filtres actuels."} />
+            </div>
           )}
 
           {sortedLibrary.map((workout) => (
@@ -140,7 +183,7 @@ export default function LibraryPage({
                   )}
                 </div>
 
-                <h4 className="line-clamp-2 text-base font-bold">
+                <h4 className="line-clamp-2 text-base font-bold text-white">
                   {workout.title || "Séance sans titre"}
                 </h4>
 

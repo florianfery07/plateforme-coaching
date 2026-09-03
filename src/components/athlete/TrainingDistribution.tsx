@@ -49,9 +49,16 @@ function buildDistribution(sessions, field, items) {
   return rows;
 }
 
-function PieChart({ rows }) {
+function PieChart({ rows, labelId, descriptionId }) {
   const total = rows.reduce((sum, row) => sum + row.time, 0);
-  let cumulative = 0;
+  const chartRows = rows.map((row, index) => {
+    const value = total ? (row.time / total) * 100 : 0;
+    const previous = rows
+      .slice(0, index)
+      .reduce((sum, previousRow) => sum + (previousRow.time / total) * 100, 0);
+
+    return { ...row, value, offset: 25 - previous };
+  });
 
   if (!rows.length || !total) {
     return (
@@ -63,7 +70,9 @@ function PieChart({ rows }) {
 
   return (
     <div className="flex items-center justify-center rounded-2xl bg-zinc-900 p-4">
-      <svg viewBox="0 0 42 42" className="h-48 w-48">
+      <svg viewBox="0 0 42 42" className="h-48 w-48" role="img" aria-labelledby={`${labelId} ${descriptionId}`}>
+        <title id={labelId}>Répartition du temps réalisé</title>
+        <desc id={descriptionId}>La répartition détaillée est disponible juste après le graphique.</desc>
         <circle
           cx="21"
           cy="21"
@@ -73,12 +82,8 @@ function PieChart({ rows }) {
           strokeWidth="10"
         />
 
-        {rows.map((row) => {
-          const value = (row.time / total) * 100;
-          const dash = `${value} ${100 - value}`;
-          const offset = 25 - cumulative;
-
-          cumulative += value;
+        {chartRows.map((row) => {
+          const dash = `${row.value} ${100 - row.value}`;
 
           return (
             <circle
@@ -90,7 +95,7 @@ function PieChart({ rows }) {
               stroke={row.color}
               strokeWidth="10"
               strokeDasharray={dash}
-              strokeDashoffset={offset}
+              strokeDashoffset={row.offset}
             >
               <title>
                 {row.name} • {row.percent.toFixed(1)} %
@@ -125,6 +130,8 @@ function PieChart({ rows }) {
 }
 
 function DistributionBlock({ title, rows }) {
+  const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
   return (
     <div className="rounded-3xl border border-zinc-700 bg-zinc-800 p-5">
       <h3 className="mb-1 text-xl font-semibold">
@@ -137,9 +144,26 @@ function DistributionBlock({ title, rows }) {
       </p>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[260px_1fr]">
-        <PieChart rows={rows} />
+        <PieChart rows={rows} labelId={`${id}-chart-title`} descriptionId={`${id}-chart-description`} />
 
-        <div className="overflow-x-auto">
+        <div className="space-y-3 md:hidden">
+          {rows.map((row) => (
+            <article key={`mobile-${row.name}`} className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="font-semibold text-white"><span className="mr-2 inline-block h-3 w-3 rounded-full" style={{ backgroundColor: row.color }} />{row.name}</h4>
+                <span className="text-sm font-bold text-zinc-200">{row.percent.toFixed(1)} %</span>
+              </div>
+              <dl className="mt-3 grid grid-cols-3 gap-2 text-sm">
+                <div><dt className="text-xs text-zinc-500">Séances</dt><dd className="mt-1 font-semibold text-zinc-100">{row.sessions}</dd></div>
+                <div><dt className="text-xs text-zinc-500">Temps</dt><dd className="mt-1 font-semibold text-zinc-100">{row.time.toFixed(1)} h</dd></div>
+                <div><dt className="text-xs text-zinc-500">Charge / h</dt><dd className="mt-1 font-semibold text-zinc-100">{row.loadPerHour.toFixed(0)}</dd></div>
+              </dl>
+            </article>
+          ))}
+          {!rows.length && <p className="rounded-2xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-500">Pas encore de données réalisées.</p>}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-zinc-700 text-left text-zinc-400">
