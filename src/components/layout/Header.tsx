@@ -1,22 +1,38 @@
 // @ts-nocheck
 
-export default function Header({ view, setView, auth, logout }) {
-  const nav =
-    auth?.role === "coach"
-      ? [
-          ["calendar", "Calendriers"],
-          ["athlete", "Fiche athlète"],
-          ["create", "Création séance"],
-          ["library", "Bibliothèque"],
-          ["management", "Paramètres athlètes"],
-        ]
-      : [
-          ["calendar", "Mon calendrier"],
-          ["athleteStats", "Mes stats"],
-        ];
+export default function Header({
+  view,
+  setView,
+  auth,
+  logout,
+  coachPilotageV2Enabled = false,
+}) {
+  const coachNavigation = coachPilotageV2Enabled
+    ? [
+        ["calendar", "Pilotage"],
+        ["athlete", "Athlètes"],
+        ["library", "Bibliothèque"],
+        ["management", "Paramètres"],
+      ]
+    : [
+        ["calendar", "Calendriers"],
+        ["athlete", "Fiche athlète"],
+        ["create", "Création séance"],
+        ["library", "Bibliothèque"],
+        ["management", "Paramètres athlètes"],
+      ];
+
+  const nav = auth?.role === "coach"
+    ? coachNavigation
+    : [
+        ["calendar", "Mon calendrier"],
+        ["athleteStats", "Mes stats"],
+      ];
 
   return (
-    <header className="flex flex-col gap-5 border-b border-zinc-800 pb-5 xl:flex-row xl:items-end xl:justify-between">
+    <header className={`flex flex-col gap-5 border-b border-zinc-800 pb-5 xl:flex-row xl:items-end xl:justify-between ${
+      coachPilotageV2Enabled ? "xl:gap-8" : ""
+    }`}>
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-300">
           {auth?.role === "coach" ? "Espace coach" : "Espace athlète"}
@@ -25,7 +41,9 @@ export default function Header({ view, setView, auth, logout }) {
           Ma Plateforme Coaching Cycliste
         </h1>
         <p className="mt-2 text-sm text-zinc-400 sm:text-base">
-          Calendriers individuels, bibliothèque, fiches athlètes, retours et propositions.
+          {coachPilotageV2Enabled
+            ? "Pilotage, athlètes, bibliothèque et réglages du coaching."
+            : "Calendriers individuels, bibliothèque, fiches athlètes, retours et propositions."}
         </p>
       </div>
 

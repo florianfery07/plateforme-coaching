@@ -14,6 +14,7 @@ export default function AthleteSelector({
   athleteGroups = [],
   selectedGroupId = "",
   setSelectedGroupId,
+  showStatusLegend = true,
 }) {
   const [open, setOpen] = useState(false);
 
@@ -116,13 +117,15 @@ export default function AthleteSelector({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {badges.map(([text, klass]) => (
-            <Badge key={text} className={klass}>
-              {text}
-            </Badge>
-          ))}
-        </div>
+        {showStatusLegend && (
+          <div className="flex flex-wrap gap-2">
+            {badges.map(([text, klass]) => (
+              <Badge key={text} className={klass}>
+                {text}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

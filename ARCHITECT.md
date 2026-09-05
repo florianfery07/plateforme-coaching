@@ -82,6 +82,11 @@ proportionnés.
   rétabli le chargement public de `athleteGoalsV2`, actualisé le runtime Next
   vers une version sans vulnérabilité connue, et reconfirmé les frontières
   legacy/V2 par tests applicatifs et SQL locaux.
+- P01/P02 ouvrent le pilote UX coach `coachPilotageV2`: une navigation prête
+  pour l'ajout futur d'Analyse et un espace Pilotage hebdomadaire où le
+  calendrier reste la surface dominante. Le flag demeure désactivé par défaut;
+  hors pilote, le shell et le calendrier legacy restent inchangés. Les groupes
+  restent un ciblage de programmation, sans calendrier agrégé inventé.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 
@@ -124,6 +129,7 @@ défaut. Leur contrat détaillé est dans
 | `athleteInvitesV2` | Invitations athlètes V2, dépend de `accessControlV2`. |
 | `athleteLifecycleV2` | Archivage/restauration athlète, dépend de `accessControlV2`. |
 | `athleteGoalsV2` | Pilote UI Objectifs V2, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
+| `coachPilotageV2` | Pilote UX coach P01/P02: shell de navigation et Pilotage semaine, sans changement métier ni agrégation de groupes. |
 | `reliableMutationsV2` | Pilotes locaux de mutations fiables. |
 
 Un flag public ne constitue jamais une autorisation. Les pilotes L11 et L12 ne

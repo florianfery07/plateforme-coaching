@@ -45,6 +45,6 @@ describe("weekly note reliable-mutation pilot guard", () => {
       "src/services/week-notes/supabase-week-note-repository.ts",
     ]);
     expect(readFileSync(resolve(root, "src/app/page.tsx"), "utf8")).not.toContain("useWeekNoteAutosave");
-    expect(readFileSync(resolve(root, "src/components/calendar/CalendarPageOld.tsx"), "utf8")).toContain("useWeekNoteAutosave");
+    expect(readFileSync(resolve(root, "src/components/calendar/WeekPlanningTool.jsx"), "utf8")).toContain("useWeekNoteAutosave");
   });
 });

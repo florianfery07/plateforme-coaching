@@ -69,6 +69,7 @@ import {
   updateAthleteGroupName,
 } from "@/lib/api/groups";
 import AthleteSelector from "@/components/athlete/AthleteSelector";
+import CoachPilotageWorkspace from "@/components/calendar/CoachPilotageWorkspace";
 import CalendarPageOld from "@/components/calendar/CalendarPageOld";
 import ManagementPage from "@/components/athlete/ManagementPage";
 import CreatePage from "@/components/library/CreatePage";
@@ -2181,6 +2182,64 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
   });
 }
 
+  const coachPilotageV2Enabled = isCoach && isFeatureEnabled("coachPilotageV2");
+  const calendarPageProps = {
+    athleteActive,
+    activeId,
+    mode,
+    setMode,
+    year,
+    setYear,
+    month,
+    setMonth,
+    selectedDate,
+    setSelectedDate,
+    days,
+    activeSessions,
+    sessionsFor,
+    proposalsFor,
+    categories,
+    subcategories,
+    filter,
+    setFilter,
+    filteredLibrary,
+    cpData,
+    importWorkout,
+    importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending,
+    adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending,
+    restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending,
+    nonDonePending: calendarSessionNonDonePilotEnabled && calendarSessionNonDoneMutation.pending,
+    proposalSchedulingPending: calendarProposalSchedulingPilotEnabled && calendarProposalSchedulingMutation.pending,
+    addRestDay,
+    deleteAthleteWorkoutFromGroupDay,
+    deleteGroupDayWorkouts,
+    updateFeedback,
+    updateNonDone,
+    updateSession,
+    updateCalendarWorkoutField,
+    setProposals,
+    programProposal,
+    addAthleteProposal,
+    isCoach,
+    weekPlanning,
+    updateWeekPlanning,
+    weekNotes,
+    setWeekNotes,
+    updateWeekNote,
+    updateAthlete,
+    athleteGroups,
+    athleteGroupMembers,
+    planningTargetType,
+    setPlanningTargetType,
+    selectedGroupId,
+    setSelectedGroupId,
+    selectedGroup,
+    selectedGroupMembers,
+    athletes,
+    sessions,
+    athleteGoalsV2Enabled: athleteGoalsV2TargetEnabled,
+  };
+
   if (!auth) return <AuthPage athletes={athletes} loginCoach={loginCoach} loginAthlete={loginAthlete} acceptInvite={acceptInvite} />;
 
   return <div className="min-h-screen bg-zinc-950 p-3 text-white sm:p-4 lg:p-6">
@@ -2191,9 +2250,9 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
       Aller au contenu principal
     </a>
     <div className="mx-auto max-w-7xl">
-    <Header view={view} setView={setView} auth={auth} logout={logout} />
+    <Header view={view} setView={setView} auth={auth} logout={logout} coachPilotageV2Enabled={coachPilotageV2Enabled} />
     <main id="main-content" tabIndex="-1" className="mt-4 space-y-4 focus:outline focus:outline-2 focus:outline-offset-4 focus:outline-amber-400 sm:mt-6 sm:space-y-6">
-    <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} planningTargetType={planningTargetType} setPlanningTargetType={setPlanningTargetType} athleteGroups={athleteGroups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} />
+    <AthleteSelector visible={isCoach && ["calendar", "athlete", "management"].includes(view)} athletes={visibleAthletes} activeId={activeId} setActiveId={setActiveId} planningTargetType={planningTargetType} setPlanningTargetType={setPlanningTargetType} athleteGroups={athleteGroups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} showStatusLegend={!coachPilotageV2Enabled || view !== "calendar"} />
     {auth?.role === "athlete" && athleteGoalsV2TargetEnabled && (
       <AthleteGoalsV2Panel state={athleteGoalsV2State} onSubmit={submitAthleteGoalsV2} />
     )}
@@ -2204,7 +2263,11 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
         validateGoalUpdate={validateAthleteGoalUpdate}
       />
     )}
-    {view === "calendar" && <CalendarPageOld {...{ athleteActive, activeId, mode, setMode, year, setYear, month, setMonth, selectedDate, setSelectedDate, days, activeSessions, sessionsFor, proposalsFor, categories, subcategories, filter, setFilter, filteredLibrary, cpData, importWorkout, importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending, adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending, restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending, nonDonePending: calendarSessionNonDonePilotEnabled && calendarSessionNonDoneMutation.pending, proposalSchedulingPending: calendarProposalSchedulingPilotEnabled && calendarProposalSchedulingMutation.pending, addRestDay, deleteAthleteWorkoutFromGroupDay, deleteGroupDayWorkouts, updateFeedback, updateNonDone, updateSession, updateCalendarWorkoutField, setProposals, programProposal, addAthleteProposal, isCoach, weekPlanning, updateWeekPlanning, weekNotes, setWeekNotes, updateWeekNote, updateAthlete, athleteGroups, athleteGroupMembers, planningTargetType, setPlanningTargetType, selectedGroupId, setSelectedGroupId, selectedGroup, selectedGroupMembers, athletes, sessions, athleteGoalsV2Enabled: athleteGoalsV2TargetEnabled }} />}
+    {view === "calendar" && (
+      coachPilotageV2Enabled
+        ? <CoachPilotageWorkspace {...calendarPageProps} onCreateSession={() => setView("create")} />
+        : <CalendarPageOld {...calendarPageProps} />
+    )}
    {auth?.role === "athlete" && view === "athleteStats" && (
   <AthleteStatsPage
     athlete={athleteActive}

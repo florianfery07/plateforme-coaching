@@ -35,6 +35,8 @@ export default function DayView({
   selectedGroupMembers = [],
   athletes = [],
   allAthleteSessions = {},
+  onBack = undefined,
+  backLabel = "Retour mois",
 }) {
   const selectedDateKey = dateKey(selectedDate);
   const groupRows = selectedGroupMembers
@@ -98,8 +100,18 @@ export default function DayView({
             </Btn>
           )}
 
-          <Btn onClick={() => setMode("month")} className="w-full sm:w-auto">
-            Retour mois
+          <Btn
+            onClick={() => {
+              if (onBack) {
+                onBack();
+                return;
+              }
+
+              setMode("month");
+            }}
+            className="w-full sm:w-auto"
+          >
+            {backLabel}
           </Btn>
         </div>
         </div>

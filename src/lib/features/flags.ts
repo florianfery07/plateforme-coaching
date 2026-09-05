@@ -55,6 +55,14 @@ export const featureFlagRegistry = {
     removal: "Remove after Goals V2 has replaced the audited legacy objective workflow.",
     stage: "pilot",
   },
+  coachPilotageV2: {
+    description: "Pilot-only coach planning workspace built beside the legacy calendar.",
+    defaultValue: false,
+    environmentVariable: "NEXT_PUBLIC_FEATURE_COACH_PILOTAGE_V2",
+    owner: "Calendar",
+    removal: "Remove after the coach planning workspace replaces the legacy calendar for every supported coach workflow.",
+    stage: "pilot",
+  },
   reliableMutationsV2: {
     description: "Future progressive replacement for legacy mutation reliability flows.",
     defaultValue: false,
