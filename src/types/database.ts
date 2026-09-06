@@ -12,6 +12,7 @@
  * Source: supabase/migrations/20260828000000_workout_taxonomy_atomic_v2.sql (e3406248413c188aec4c2e3e0cee2ecff4bfd77642bf1619b12e92e3f8392a9d)
  * Source: supabase/migrations/20260830000000_athlete_goals_v2_foundation.sql (706397e1e226a8445a1fb41c96f3f59367e15109be7c7765b92275448ff8f765)
  * Source: supabase/migrations/20260830010000_athlete_goals_v2_state_read.sql (3b86d609daa8b1a7533634ce2df355fecb6dc4c4e1b014839646038ac47ab70b)
+ * Source: supabase/migrations/20260906000000_coach_pilotage_timeline_v2.sql (18b50b3e91eb211dd1ae560d25891fccb3ffd06d73bbb3866ea43519175c2806)
  * Regenerate: npm run generate:types
  */
 
@@ -300,6 +301,195 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "athletes"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      "athlete_pilotage_cycles_v2": {
+        Row: {
+          "id": string,
+          "organization_id": string,
+          "athlete_membership_id": string,
+          "legacy_athlete_id": string,
+          "goal_version_id": string | null,
+          "name": string,
+          "starts_on": string,
+          "ends_on": string,
+          "color_key": string,
+          "intent": string | null,
+          "created_by_user_id": string,
+          "idempotency_key": string,
+          "revision": number,
+          "archived_at": string | null,
+          "archived_by_user_id": string | null,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "id"?: string
+          "organization_id": string
+          "athlete_membership_id": string
+          "legacy_athlete_id": string
+          "goal_version_id"?: string | null
+          "name": string
+          "starts_on": string
+          "ends_on": string
+          "color_key"?: string
+          "intent"?: string | null
+          "created_by_user_id": string
+          "idempotency_key": string
+          "revision"?: number
+          "archived_at"?: string | null
+          "archived_by_user_id"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "organization_id"?: string
+          "athlete_membership_id"?: string
+          "legacy_athlete_id"?: string
+          "goal_version_id"?: string | null
+          "name"?: string
+          "starts_on"?: string
+          "ends_on"?: string
+          "color_key"?: string
+          "intent"?: string | null
+          "created_by_user_id"?: string
+          "idempotency_key"?: string
+          "revision"?: number
+          "archived_at"?: string | null
+          "archived_by_user_id"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_pilotage_cycles_v2_archived_by_user_id_fkey"
+            columns: ["archived_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_cycles_v2_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_cycles_v2_goal_version_id_fkey"
+            columns: ["goal_version_id"]
+            isOneToOne: false
+            referencedRelation: "athlete_goal_versions_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_cycles_v2_organization_id_athlete_members_fkey"
+            columns: ["organization_id","athlete_membership_id"]
+            isOneToOne: false
+            referencedRelation: "organization_memberships"
+            referencedColumns: ["organization_id","id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_cycles_v2_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      "athlete_pilotage_milestones_v2": {
+        Row: {
+          "id": string,
+          "organization_id": string,
+          "athlete_membership_id": string,
+          "legacy_athlete_id": string,
+          "goal_version_id": string | null,
+          "kind": string,
+          "title": string,
+          "scheduled_for": string,
+          "details": string | null,
+          "created_by_user_id": string,
+          "idempotency_key": string,
+          "revision": number,
+          "archived_at": string | null,
+          "archived_by_user_id": string | null,
+          "created_at": string,
+          "updated_at": string
+        }
+        Insert: {
+          "id"?: string
+          "organization_id": string
+          "athlete_membership_id": string
+          "legacy_athlete_id": string
+          "goal_version_id"?: string | null
+          "kind": string
+          "title": string
+          "scheduled_for": string
+          "details"?: string | null
+          "created_by_user_id": string
+          "idempotency_key": string
+          "revision"?: number
+          "archived_at"?: string | null
+          "archived_by_user_id"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "organization_id"?: string
+          "athlete_membership_id"?: string
+          "legacy_athlete_id"?: string
+          "goal_version_id"?: string | null
+          "kind"?: string
+          "title"?: string
+          "scheduled_for"?: string
+          "details"?: string | null
+          "created_by_user_id"?: string
+          "idempotency_key"?: string
+          "revision"?: number
+          "archived_at"?: string | null
+          "archived_by_user_id"?: string | null
+          "created_at"?: string
+          "updated_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_pilotage_milestones_v2_archived_by_user_id_fkey"
+            columns: ["archived_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_milestones_v2_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_milestones_v2_goal_version_id_fkey"
+            columns: ["goal_version_id"]
+            isOneToOne: false
+            referencedRelation: "athlete_goal_versions_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_milestones_v2_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_pilotage_milestones_v_organization_id_athlete_memb_fkey"
+            columns: ["organization_id","athlete_membership_id"]
+            isOneToOne: false
+            referencedRelation: "organization_memberships"
+            referencedColumns: ["organization_id","id"]
           }
         ]
       }
@@ -1135,6 +1325,18 @@ export type Database = {
         }
         Returns: Json
       }
+      "archive_athlete_pilotage_cycle_v2": {
+        Args: {
+          "p_cycle_id": string
+        }
+        Returns: Json
+      }
+      "archive_athlete_pilotage_milestone_v2": {
+        Args: {
+          "p_milestone_id": string
+        }
+        Returns: Json
+      }
       "archive_legacy_athlete_v2": {
         Args: {
           "p_legacy_athlete_id": string
@@ -1232,6 +1434,14 @@ export type Database = {
         }
         Returns: Json
       }
+      "get_athlete_pilotage_timeline_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+          "p_range_start": string
+          "p_range_end": string
+        }
+        Returns: Json
+      }
       "is_coach": {
         Args: Record<string, never>
         Returns: boolean
@@ -1316,6 +1526,35 @@ export type Database = {
         Args: {
           "p_invite_id": string
           "p_coach_membership_id": string
+        }
+        Returns: Json
+      }
+      "save_athlete_pilotage_cycle_v2": {
+        Args: {
+          "p_cycle_id": string
+          "p_legacy_athlete_id": string
+          "p_name": string
+          "p_starts_on": string
+          "p_ends_on": string
+          "p_color_key": string
+          "p_intent": string
+          "p_goal_version_id": string
+          "p_expected_revision": number
+          "p_idempotency_key": string
+        }
+        Returns: Json
+      }
+      "save_athlete_pilotage_milestone_v2": {
+        Args: {
+          "p_milestone_id": string
+          "p_legacy_athlete_id": string
+          "p_kind": string
+          "p_title": string
+          "p_scheduled_for": string
+          "p_details": string
+          "p_goal_version_id": string
+          "p_expected_revision": number
+          "p_idempotency_key": string
         }
         Returns: Json
       }

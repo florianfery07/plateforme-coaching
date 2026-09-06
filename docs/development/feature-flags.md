@@ -21,7 +21,7 @@ The registry is defined in `src/lib/features/flags.ts`.
 | `athleteInvitesV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_INVITES_V2` | `false` | `pilot` | L11 secure athlete invitation pilot; requires `accessControlV2` and server-side V2 authorization. |
 | `athleteLifecycleV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_LIFECYCLE_V2` | `false` | `pilot` | L12 atomic athlete archive and restore pilot; requires `accessControlV2`, a server-confirmed pilot and explicit athlete mapping. |
 | `athleteGoalsV2` | `NEXT_PUBLIC_FEATURE_ATHLETE_GOALS_V2` | `false` | `pilot` | Goals V2 pilot; requires `accessControlV2`, a server-confirmed pilot and an explicit athlete mapping. It keeps the legacy UI active everywhere else and never dual-writes. Rollout and rollback: [Goals V2](athlete-goals-v2.md). |
-| `coachPilotageV2` | `NEXT_PUBLIC_FEATURE_COACH_PILOTAGE_V2` | `false` | `pilot` | P01/P02 coach interface pilot. It swaps only the coach calendar composition for a weekly Pilotage workspace; it does not grant authorization, call a new API or alter any calendar mutation. Flag off preserves the complete legacy calendar. |
+| `coachPilotageV2` | `NEXT_PUBLIC_FEATURE_COACH_PILOTAGE_V2` | `false` | `pilot` | P01-P03 coach Pilotage pilot. It swaps only the coach calendar composition. P03 adds an authorized temporal timeline through Access Control V2; P01/P02 calendar mutations stay unchanged. Flag off preserves the complete legacy calendar. Rollout and rollback: [Coach Pilotage V2](coach-pilotage-v2.md). |
 | `reliableMutationsV2` | `NEXT_PUBLIC_FEATURE_RELIABLE_MUTATIONS_V2` | `false` | `experimental` | Development-only reliable-mutation pilots for the weekly note and measured L14 targeted mutations. |
 
 `accessControlV2` does not grant authorization and remains disabled by

@@ -2238,6 +2238,7 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
     athletes,
     sessions,
     athleteGoalsV2Enabled: athleteGoalsV2TargetEnabled,
+    goalsV2State: athleteGoalsV2TargetEnabled ? athleteGoalsV2State : null,
   };
 
   if (!auth) return <AuthPage athletes={athletes} loginCoach={loginCoach} loginAthlete={loginAthlete} acceptInvite={acceptInvite} />;

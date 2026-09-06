@@ -25,6 +25,9 @@ vi.mock("@/components/calendar/CalendarWeekSummary", () => ({
 vi.mock("@/components/calendar/WeekPlanningTool", () => ({
   default: () => <div>Prévision de charge</div>,
 }));
+vi.mock("@/components/calendar/CoachPilotageMonth", () => ({
+  default: ({ onShowWeek }: { onShowWeek: () => void }) => <div>Vue mois Pilotage <button type="button" onClick={onShowWeek}>Retour semaine</button></div>,
+}));
 
 import CoachPilotageWorkspace from "./CoachPilotageWorkspace";
 
@@ -129,5 +132,14 @@ describe("CoachPilotageWorkspace", () => {
 
     expect(screen.getByText(/Ciblage de programmation/)).toBeVisible();
     expect(screen.getByText(/Le calendrier conserve la lecture de/)).toBeVisible();
+  });
+
+  it("switches to the month workspace while preserving the existing weekly workspace", () => {
+    renderWorkspace();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Mois" }));
+    expect(screen.getByText("Vue mois Pilotage")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Retour semaine" }));
+    expect(screen.getByRole("heading", { name: "Pilotage" })).toBeVisible();
   });
 });

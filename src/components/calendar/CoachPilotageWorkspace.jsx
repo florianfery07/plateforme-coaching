@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import CoachPilotageMonth from "@/components/calendar/CoachPilotageMonth";
 import CalendarWeekSummary from "@/components/calendar/CalendarWeekSummary";
 import DayView from "@/components/calendar/DayView";
 import Proposal from "@/components/calendar/Proposal";
@@ -147,6 +148,7 @@ export default function CoachPilotageWorkspace(props) {
     selectedGroupMembers = [],
     onCreateSession,
   } = props;
+  const [pilotageView, setPilotageView] = useState("week");
   const [activeContext, setActiveContext] = useState({ kind: "overview", dayKey: dateKey(selectedDate) });
   const [showDayDetails, setShowDayDetails] = useState(false);
   const { info, start, end } = weekBounds(selectedDate);
@@ -191,6 +193,10 @@ export default function CoachPilotageWorkspace(props) {
     setActiveContext({ kind: "overview", dayKey: dateKey(nextDate) });
   }
 
+  if (pilotageView === "month") {
+    return <CoachPilotageMonth {...props} onShowWeek={() => setPilotageView("week")} />;
+  }
+
   if (showDayDetails) {
     return (
       <Panel>
@@ -222,6 +228,29 @@ export default function CoachPilotageWorkspace(props) {
             <Btn aria-label="Semaine suivante" onClick={() => moveWeek(1)} className="min-w-11 px-3"><span aria-hidden="true">&gt;</span></Btn>
             <Btn variant="primary" onClick={() => openLibrary(selectedDate)}>Programmer</Btn>
             <Btn onClick={onCreateSession}>Créer une séance</Btn>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-zinc-400">Lecture détaillée de la semaine sélectionnée.</p>
+          <div role="tablist" aria-label="Vue Pilotage" className="grid grid-cols-2 gap-2 sm:inline-flex">
+            <button
+              type="button"
+              role="tab"
+              aria-selected
+              className="min-h-11 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black"
+            >
+              Semaine
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={false}
+              onClick={() => setPilotageView("month")}
+              className="min-h-11 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+            >
+              Mois
+            </button>
           </div>
         </div>
 
