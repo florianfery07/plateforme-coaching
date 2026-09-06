@@ -41,10 +41,10 @@ function CompactSessionCard({ session, selected, onSelect }) {
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`min-h-16 w-full rounded-xl border p-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+      className={`min-h-12 w-full rounded-lg border-l-2 px-2 py-1.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
         selected
           ? "border-amber-300 bg-amber-400/10"
-          : "border-zinc-700 bg-zinc-950 hover:border-zinc-500 hover:bg-zinc-900"
+          : "border-zinc-700 bg-zinc-900/60 hover:bg-zinc-900"
       }`}
     >
       <span className="flex items-start justify-between gap-2">
@@ -56,7 +56,7 @@ function CompactSessionCard({ session, selected, onSelect }) {
           {statusLabel[status]}
         </span>
       </span>
-      {needsFeedback && <span className="mt-2 block text-xs font-medium text-amber-200">Retour attendu</span>}
+      {needsFeedback && <span className="mt-1 block text-[11px] font-medium text-amber-200">Retour attendu</span>}
     </button>
   );
 }
@@ -67,10 +67,10 @@ function CompactProposalCard({ proposal, selected, onSelect }) {
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`min-h-16 w-full rounded-xl border p-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+      className={`min-h-12 w-full rounded-lg border-l-2 px-2 py-1.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
         selected
           ? "border-amber-300 bg-amber-400/10"
-          : "border-zinc-700 bg-zinc-900 hover:border-zinc-500"
+          : "border-zinc-700 bg-zinc-900/60 hover:bg-zinc-900"
       }`}
     >
       <span className="flex items-center justify-between gap-2">
@@ -88,21 +88,21 @@ function WeekDay({ date, sessions, proposals, selectedDate, activeContext, onSel
   const isToday = dateKey(date) === dateKey(new Date());
 
   return (
-    <section className={`min-w-0 rounded-2xl border p-2.5 ${isSelected ? "border-amber-300/70 bg-amber-400/5" : "border-zinc-800 bg-zinc-950/50"}`}>
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <section className={`min-w-0 rounded-xl border p-2 ${isSelected ? "border-amber-300/70 bg-amber-400/5" : "border-zinc-800/80 bg-zinc-950/35"}`}>
+      <div className="mb-2 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => onSelectDay(date)}
           aria-current={isSelected ? "date" : undefined}
-          className="min-h-11 rounded-xl px-2 text-left transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+          className="min-h-11 rounded-lg px-2 text-left transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 sm:min-h-10"
         >
           <span className="block text-xs font-semibold uppercase tracking-wide text-zinc-400">{dayLabel(date)}</span>
           <span className="text-lg font-bold text-white">{date.getDate()}</span>
         </button>
-        {isToday && <span className="rounded-full bg-amber-300 px-2 py-1 text-[10px] font-bold text-zinc-950">Aujourd&apos;hui</span>}
+        {isToday && <span className="rounded-full bg-amber-300 px-1.5 py-0.5 text-[10px] font-bold text-zinc-950">Aujourd&apos;hui</span>}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {sessions.map((session) => (
           <CompactSessionCard
             key={session.id}
@@ -123,7 +123,7 @@ function WeekDay({ date, sessions, proposals, selectedDate, activeContext, onSel
           <button
             type="button"
             onClick={() => onProgram(date)}
-            className="flex min-h-16 w-full items-center justify-center rounded-xl border border-dashed border-zinc-700 px-3 py-3 text-sm font-semibold text-zinc-400 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+            className="flex min-h-12 w-full items-center justify-center rounded-lg border border-dashed border-zinc-800 px-2 py-2 text-xs font-semibold text-zinc-500 transition hover:border-zinc-600 hover:bg-zinc-900 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
           >
             Programmer
           </button>
@@ -214,15 +214,15 @@ export default function CoachPilotageWorkspace(props) {
   }
 
   return (
-    <section className="space-y-4" aria-labelledby="coach-pilotage-title">
+    <section className="space-y-6" aria-labelledby="coach-pilotage-title">
       <Panel className="overflow-hidden">
-        <div className="flex flex-col gap-4 border-b border-zinc-800 pb-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="flex flex-col gap-3 border-b border-zinc-800/80 pb-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Espace de programmation</p>
             <h2 id="coach-pilotage-title" className="mt-1 text-2xl font-bold sm:text-3xl">Pilotage</h2>
             <p className="mt-1 text-sm text-zinc-400">{info.label} · {longDate(start)} au {longDate(end)}</p>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
             <Btn aria-label="Semaine précédente" onClick={() => moveWeek(-1)} className="min-w-11 px-3"><span aria-hidden="true">&lt;</span></Btn>
             <Btn onClick={() => selectDay(new Date())}>Aujourd&apos;hui</Btn>
             <Btn aria-label="Semaine suivante" onClick={() => moveWeek(1)} className="min-w-11 px-3"><span aria-hidden="true">&gt;</span></Btn>
@@ -231,14 +231,14 @@ export default function CoachPilotageWorkspace(props) {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-zinc-400">Lecture détaillée de la semaine sélectionnée.</p>
-          <div role="tablist" aria-label="Vue Pilotage" className="grid grid-cols-2 gap-2 sm:inline-flex">
+          <div role="tablist" aria-label="Vue Pilotage" className="grid grid-cols-2 gap-1 rounded-lg border border-zinc-800 bg-zinc-950/50 p-0.5 sm:inline-flex">
             <button
               type="button"
               role="tab"
               aria-selected
-              className="min-h-11 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black"
+              className="min-h-11 rounded-md bg-white px-3 py-2 text-sm font-semibold text-black sm:min-h-10 sm:py-1.5"
             >
               Semaine
             </button>
@@ -247,14 +247,14 @@ export default function CoachPilotageWorkspace(props) {
               role="tab"
               aria-selected={false}
               onClick={() => setPilotageView("month")}
-              className="min-h-11 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+              className="min-h-11 rounded-md px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 sm:min-h-10 sm:py-1.5"
             >
               Mois
             </button>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
           <Badge className="bg-white text-black">Programmée</Badge>
           <Badge className="bg-yellow-400 text-black">Retour attendu</Badge>
           <Badge className="bg-emerald-500 text-white">Réalisée</Badge>
@@ -271,9 +271,9 @@ export default function CoachPilotageWorkspace(props) {
         )}
       </Panel>
 
-      <div className={contextIsOpen ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]" : "space-y-4"}>
+      <div className={contextIsOpen ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]" : "space-y-6"}>
         <Panel className="min-w-0">
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 className="text-lg font-bold">Semaine de {athleteActive?.name || "l’athlète"}</h3>
               <p className="text-sm text-zinc-400">Sélectionne une séance pour ses détails, ou un jour pour programmer.</p>
@@ -287,7 +287,7 @@ export default function CoachPilotageWorkspace(props) {
             </button>
           </div>
 
-          <div className="space-y-3 lg:hidden" aria-label="Jours de la semaine">
+          <div className="space-y-2 lg:hidden" aria-label="Jours de la semaine">
             {days.map((date) => (
               <WeekDay
                 key={dateKey(date)}
@@ -303,7 +303,7 @@ export default function CoachPilotageWorkspace(props) {
               />
             ))}
           </div>
-          <div className="hidden min-w-0 gap-2 lg:grid lg:grid-cols-7" aria-label="Semaine de programmation">
+          <div className="hidden min-w-0 gap-3 lg:grid lg:grid-cols-7" aria-label="Semaine de programmation">
             {days.map((date) => (
               <WeekDay
                 key={dateKey(date)}
@@ -327,7 +327,7 @@ export default function CoachPilotageWorkspace(props) {
               <button
                 type="button"
                 onClick={() => { setShowDayDetails(false); setActiveContext({ kind: "overview", dayKey: dateKey(selectedDate) }); }}
-                className="min-h-11 rounded-xl border border-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                className="min-h-11 rounded-lg border border-zinc-700 px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-800 sm:min-h-10 sm:py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
               >
                 Fermer le contexte
               </button>
