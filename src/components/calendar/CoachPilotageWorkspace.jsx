@@ -8,6 +8,7 @@ import DayView from "@/components/calendar/DayView";
 import Proposal from "@/components/calendar/Proposal";
 import QuickLibrary from "@/components/calendar/QuickLibrary";
 import Session from "@/components/calendar/Session";
+import { feedbackCompactLabel } from "@/components/calendar/CoachSessionFeedbackV2";
 import WeekPlanningTool from "@/components/calendar/WeekPlanningTool";
 import { Badge, Btn, Empty, Panel } from "@/components/ui/ui";
 import { proposalStyle } from "@/lib/proposalUtils";
@@ -32,9 +33,10 @@ function compactSessionMeta(session) {
   return parts.join(" · ") || "Séance";
 }
 
-function CompactSessionCard({ session, selected, onSelect }) {
+function CompactSessionCard({ session, selected, onSelect, coachFeedbackV2Enabled }) {
   const status = sessionStatus(session);
   const needsFeedback = status === "awaitingAction";
+  const feedbackLabel = coachFeedbackV2Enabled ? feedbackCompactLabel(session) : null;
 
   return (
     <button
@@ -56,7 +58,7 @@ function CompactSessionCard({ session, selected, onSelect }) {
           {statusLabel[status]}
         </span>
       </span>
-      {needsFeedback && <span className="mt-1 block text-[11px] font-medium text-amber-200">Retour attendu</span>}
+      {feedbackLabel ? <span className="mt-1 block truncate text-[11px] font-medium text-zinc-300">{feedbackLabel}</span> : needsFeedback && <span className="mt-1 block text-[11px] font-medium text-amber-200">Retour attendu</span>}
     </button>
   );
 }
@@ -83,7 +85,7 @@ function CompactProposalCard({ proposal, selected, onSelect }) {
   );
 }
 
-function WeekDay({ date, sessions, proposals, selectedDate, activeContext, onSelectDay, onSelectSession, onSelectProposal, onProgram }) {
+function WeekDay({ date, sessions, proposals, selectedDate, activeContext, onSelectDay, onSelectSession, onSelectProposal, onProgram, coachFeedbackV2Enabled }) {
   const isSelected = dateKey(date) === dateKey(selectedDate);
   const isToday = dateKey(date) === dateKey(new Date());
 
@@ -109,6 +111,7 @@ function WeekDay({ date, sessions, proposals, selectedDate, activeContext, onSel
             session={session}
             selected={activeContext.kind === "session" && activeContext.id === session.id}
             onSelect={() => onSelectSession(session, date)}
+            coachFeedbackV2Enabled={coachFeedbackV2Enabled}
           />
         ))}
         {proposals.map((proposal) => (
@@ -147,6 +150,7 @@ export default function CoachPilotageWorkspace(props) {
     selectedGroup,
     selectedGroupMembers = [],
     onCreateSession,
+    coachFeedbackV2Enabled = false,
   } = props;
   const [pilotageView, setPilotageView] = useState("week");
   const [activeContext, setActiveContext] = useState({ kind: "overview", dayKey: dateKey(selectedDate) });
@@ -300,6 +304,7 @@ export default function CoachPilotageWorkspace(props) {
                 onSelectSession={selectSession}
                 onSelectProposal={selectProposal}
                 onProgram={openLibrary}
+                coachFeedbackV2Enabled={coachFeedbackV2Enabled}
               />
             ))}
           </div>
@@ -316,6 +321,7 @@ export default function CoachPilotageWorkspace(props) {
                 onSelectSession={selectSession}
                 onSelectProposal={selectProposal}
                 onProgram={openLibrary}
+                coachFeedbackV2Enabled={coachFeedbackV2Enabled}
               />
             ))}
           </div>
@@ -346,6 +352,7 @@ export default function CoachPilotageWorkspace(props) {
                 adjustmentPending={props.adjustmentPending}
                 nonDonePending={props.nonDonePending}
                 isCoach
+                coachFeedbackV2Enabled={coachFeedbackV2Enabled}
               />
             )}
 

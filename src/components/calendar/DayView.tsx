@@ -1,6 +1,8 @@
 // @ts-nocheck
 "use client";
 
+import { useEffect } from "react";
+
 import { Btn, Empty } from "@/components/ui/ui";
 import Session from "@/components/calendar/Session";
 import AthleteProposalForm from "@/components/calendar/AthleteProposalForm";
@@ -37,6 +39,9 @@ export default function DayView({
   allAthleteSessions = {},
   onBack = undefined,
   backLabel = "Retour mois",
+  athleteFeedbackV2Enabled = false,
+  coachFeedbackV2Enabled = false,
+  focusedFeedbackSessionId = "",
 }) {
   const selectedDateKey = dateKey(selectedDate);
   const groupRows = selectedGroupMembers
@@ -57,6 +62,14 @@ export default function DayView({
 
   const groupRowsWithSession = groupRows.filter((row) => row.sessions.length);
   const groupRowsFree = groupRows.filter((row) => !row.sessions.length);
+
+  useEffect(() => {
+    if (!focusedFeedbackSessionId) return;
+    const element = document.getElementById(`session-${focusedFeedbackSessionId}`);
+    if (!element) return;
+    element.scrollIntoView({ block: "start", behavior: "smooth" });
+    element.focus({ preventScroll: true });
+  }, [focusedFeedbackSessionId, sessions]);
 
   return (
     <section className="space-y-5" aria-labelledby="calendar-day-title">
@@ -216,6 +229,9 @@ export default function DayView({
               adjustmentPending={adjustmentPending}
               nonDonePending={nonDonePending}
               isCoach={isCoach}
+              athleteFeedbackV2Enabled={athleteFeedbackV2Enabled}
+              coachFeedbackV2Enabled={coachFeedbackV2Enabled}
+              focused={focusedFeedbackSessionId === session.id}
             />
           ))}
         </div>

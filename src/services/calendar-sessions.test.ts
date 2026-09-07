@@ -59,6 +59,8 @@ describe("calendar session preparation", () => {
         comment: "Bonne seance",
         real_duration: "1h20",
         created_at: null,
+        sensation: null,
+        updated_at: null,
       }],
     })]);
 

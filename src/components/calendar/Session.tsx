@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/ui";
 
 import Block from "@/components/calendar/Block";
+import AthleteSessionFeedbackV2 from "@/components/calendar/AthleteSessionFeedbackV2";
+import CoachSessionFeedbackV2 from "@/components/calendar/CoachSessionFeedbackV2";
 import RpeHelp from "@/components/calendar/RpeHelp";
 
 export default function Session({
@@ -34,11 +36,17 @@ export default function Session({
   adjustmentPending = false,
   nonDonePending = false,
   isCoach,
+  athleteFeedbackV2Enabled = false,
+  coachFeedbackV2Enabled = false,
+  focused = false,
 }) {
   const status = sessionStatus(session);
   const ready = feedbackReady(session.feedback);
   const isRest =
   session.category?.toLowerCase() === "repos";
+  const feedbackV2Enabled = isCoach
+    ? coachFeedbackV2Enabled
+    : athleteFeedbackV2Enabled;
 
   const feedbackPilotEnabled = isReliableMutationsPilotEnabled();
   const adjustmentPilotEnabled = isReliableMutationsPilotEnabled();
@@ -305,7 +313,7 @@ function changeActualTimePart(part, value) {
   };
    if (isRest) {
   return (
-    <article className="rounded-3xl border border-blue-500 bg-blue-950 p-3 sm:p-5">
+    <article id={`session-${session.id}`} tabIndex={focused ? -1 : undefined} className="rounded-3xl border border-blue-500 bg-blue-950 p-3 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-sm text-blue-200">
@@ -359,7 +367,7 @@ function changeActualTimePart(part, value) {
   );
 }
   return (
-    <article className="rounded-3xl border border-zinc-700 bg-zinc-800 p-3 sm:p-5">
+    <article id={`session-${session.id}`} tabIndex={focused ? -1 : undefined} className="rounded-3xl border border-zinc-700 bg-zinc-800 p-3 sm:p-5">
       <div className="flex flex-col gap-4 md:flex-row md:justify-between">
         <div>
           <div className="text-sm text-zinc-400">
@@ -434,6 +442,21 @@ function changeActualTimePart(part, value) {
       </div>
       
     
+      {feedbackV2Enabled ? (
+        isCoach ? (
+          <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 sm:p-4">
+            <CoachSessionFeedbackV2 session={session} />
+          </div>
+        ) : (
+          <div className="mt-4">
+            <AthleteSessionFeedbackV2
+              key={`${session.id}:${session.feedback?.updatedAt || "new"}:${session.feedback?.validated ? "final" : "draft"}`}
+              session={session}
+              updateSession={updateSession}
+            />
+          </div>
+        )
+      ) : (
       <div className="mt-4 rounded-2xl bg-zinc-900 p-3 sm:p-5">
         <div className="mb-3">
           <div className="text-sm font-semibold text-zinc-300">
@@ -595,6 +618,7 @@ function changeActualTimePart(part, value) {
           </Btn>
         </div>
       </div>
+      )}
       
             {isCoach && (
         <div className="mt-4 flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-400 sm:flex-row sm:items-end sm:justify-between">

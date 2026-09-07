@@ -55,6 +55,14 @@ export const featureFlagRegistry = {
     removal: "Remove after Goals V2 has replaced the audited legacy objective workflow.",
     stage: "pilot",
   },
+  athleteFeedbackV2: {
+    description: "Pilot-only structured athlete workout feedback backed by Access Control V2.",
+    defaultValue: false,
+    environmentVariable: "NEXT_PUBLIC_FEATURE_ATHLETE_FEEDBACK_V2",
+    owner: "Calendar",
+    removal: "Remove after structured feedback has replaced the legacy workout feedback flow.",
+    stage: "pilot",
+  },
   coachPilotageV2: {
     description: "Pilot-only coach planning workspace built beside the legacy calendar.",
     defaultValue: false,

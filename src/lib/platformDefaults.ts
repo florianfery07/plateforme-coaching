@@ -63,9 +63,11 @@ export function blankFeedback() {
     rpe: "",
     rpeGlobal: "",
     rpeSpecific: "",
+    sensation: "",
     motivation: "",
     pleasure: "",
     comment: "",
+    updatedAt: "",
     validated: false,
   };
 }

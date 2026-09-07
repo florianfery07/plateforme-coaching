@@ -2,18 +2,20 @@ import { supabase } from "../lib/supabase";
 
 import {
   createCalendarFeedbackService,
+  createCalendarFeedbackV2Service,
   createCalendarWorkoutCompletionService,
   createCalendarSessionService,
   type CalendarSessionAdjustmentRepository,
   type CalendarSessionNonDoneRepository,
   type CalendarSessionDeleteRepository,
   type CalendarFeedbackRepository,
+  type CalendarFeedbackV2Repository,
   type CalendarWorkoutCompletionRepository,
   type CalendarSessionsRepository,
   type CalendarSessionWriteRepository,
 } from "./calendar-sessions";
 
-export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository & CalendarWorkoutCompletionRepository & CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository & CalendarSessionDeleteRepository = {
+export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFeedbackRepository & CalendarFeedbackV2Repository & CalendarWorkoutCompletionRepository & CalendarSessionWriteRepository & CalendarSessionAdjustmentRepository & CalendarSessionNonDoneRepository & CalendarSessionDeleteRepository = {
   async list() {
     return supabase
       .from("calendar_workouts")
@@ -47,6 +49,44 @@ export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFe
 
     if (signal) query.abortSignal(signal);
 
+    return query;
+  },
+  async getPilotStateV3(athleteId, signal) {
+    const query = supabase.rpc("get_athlete_feedback_pilot_state_v3", {
+      p_legacy_athlete_id: athleteId,
+    });
+
+    if (signal) query.abortSignal(signal);
+    return query;
+  },
+  async saveDraftV3(feedback, signal) {
+    const query = supabase.rpc("save_workout_feedback_draft_v3", {
+      p_actual_time: feedback.real_duration,
+      p_comment: feedback.comment,
+      p_motivation: feedback.motivation,
+      p_pleasure: feedback.pleasure,
+      p_rpe_global: feedback.rpe_global,
+      p_rpe_specific: feedback.rpe_specific,
+      p_sensation: feedback.sensation,
+      p_workout_id: feedback.workout_id,
+    });
+
+    if (signal) query.abortSignal(signal);
+    return query;
+  },
+  async completeWithFeedbackV3(feedback, signal) {
+    const query = supabase.rpc("complete_workout_with_feedback_v3", {
+      p_actual_time: feedback.real_duration,
+      p_comment: feedback.comment,
+      p_motivation: feedback.motivation,
+      p_pleasure: feedback.pleasure,
+      p_rpe_global: feedback.rpe_global,
+      p_rpe_specific: feedback.rpe_specific,
+      p_sensation: feedback.sensation,
+      p_workout_id: feedback.workout_id,
+    });
+
+    if (signal) query.abortSignal(signal);
     return query;
   },
   async insert(session, signal) {
@@ -97,5 +137,6 @@ export const calendarSessionsRepository: CalendarSessionsRepository & CalendarFe
 };
 
 export const calendarFeedbackService = createCalendarFeedbackService(calendarSessionsRepository);
+export const calendarFeedbackV2Service = createCalendarFeedbackV2Service(calendarSessionsRepository);
 export const calendarWorkoutCompletionService = createCalendarWorkoutCompletionService(calendarSessionsRepository);
 export const calendarSessionService = createCalendarSessionService(calendarSessionsRepository);

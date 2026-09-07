@@ -22,7 +22,7 @@ export type CalendarSession = {
   description: string;
   date: string;
   blocks: Json;
-  feedback: ReturnType<typeof blankFeedback>;
+  feedback: CalendarFeedback;
   nonDone: ReturnType<typeof blankNonDone>;
 };
 
@@ -171,6 +171,8 @@ export type CalendarFeedback = {
   rpe: string;
   rpeGlobal: string;
   rpeSpecific: string;
+  sensation?: string;
+  updatedAt?: string;
   validated: boolean;
 };
 
@@ -195,6 +197,51 @@ export type CalendarFeedbackRepository = {
     feedback: CalendarFeedbackPersistence,
     signal?: AbortSignal,
   ) => Promise<{ data: CalendarFeedbackPersistence | null; error: unknown }>;
+};
+
+export type CalendarFeedbackV2Persistence = {
+  comment: string;
+  motivation: number | null;
+  pleasure: number | null;
+  real_duration: string;
+  rpe: number | null;
+  rpe_global: number | null;
+  rpe_specific: number | null;
+  sensation: number | null;
+  workout_id: string;
+};
+
+export type CalendarFeedbackV2Repository = {
+  getPilotStateV3: (
+    athleteId: string,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: unknown }>;
+  saveDraftV3: (
+    feedback: CalendarFeedbackV2Persistence,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: unknown }>;
+  completeWithFeedbackV3: (
+    feedback: CalendarFeedbackV2Persistence,
+    signal?: AbortSignal,
+  ) => Promise<{ data: unknown; error: unknown }>;
+};
+
+export type CalendarFeedbackV2Result = {
+  completed: boolean;
+  feedback: CalendarFeedback;
+  workoutId: string;
+};
+
+export type CalendarFeedbackV2Service = {
+  isPilotTarget: (athleteId: string, signal?: AbortSignal) => Promise<boolean>;
+  saveDraft: (
+    input: CalendarFeedbackSaveInput,
+    signal?: AbortSignal,
+  ) => Promise<CalendarFeedbackV2Result>;
+  complete: (
+    input: CalendarFeedbackSaveInput & { requiresSpecific: boolean },
+    signal?: AbortSignal,
+  ) => Promise<CalendarFeedbackV2Result>;
 };
 
 export type CalendarFeedbackService = {
@@ -401,6 +448,26 @@ export function toCalendarFeedbackPersistence(
   };
 }
 
+/** Converts the existing calendar feedback shape to the P04 V2 RPC payload. */
+export function toCalendarFeedbackV2Persistence(
+  input: CalendarFeedbackSaveInput,
+): CalendarFeedbackV2Persistence {
+  const { feedback, workoutId } = input;
+  const rpeGlobal = cleanFeedbackRpe(feedback.rpeGlobal || feedback.rpe);
+
+  return {
+    workout_id: workoutId,
+    rpe: rpeGlobal,
+    rpe_global: rpeGlobal,
+    rpe_specific: cleanFeedbackRpe(feedback.rpeSpecific),
+    sensation: feedback.sensation ? Number(feedback.sensation) : null,
+    motivation: feedback.motivation ? Number(feedback.motivation) : null,
+    pleasure: feedback.pleasure ? Number(feedback.pleasure) : null,
+    comment: feedback.comment || "",
+    real_duration: feedback.actualTime || "",
+  };
+}
+
 export function createCalendarFeedbackService(
   repository: CalendarFeedbackRepository,
 ): CalendarFeedbackService {
@@ -459,7 +526,109 @@ function completionResult(value: unknown): CalendarWorkoutCompletion | null {
       rpe: String(feedback.rpe),
       rpeGlobal: String(feedback.rpeGlobal),
       rpeSpecific: String(feedback.rpeSpecific),
+      sensation: "",
+      updatedAt: "",
       validated: true,
+    },
+  };
+}
+
+function feedbackV2Result(value: unknown, expectedCompleted: boolean): CalendarFeedbackV2Result | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+
+  const result = value as {
+    completed?: unknown;
+    feedback?: Record<string, unknown>;
+    workoutId?: unknown;
+  };
+  const feedback = result.feedback;
+
+  if (
+    result.completed !== expectedCompleted
+    || typeof result.workoutId !== "string"
+    || !feedback
+    || typeof feedback.actualTime !== "string"
+    || typeof feedback.comment !== "string"
+    || (feedback.rpe !== null && typeof feedback.rpe !== "number")
+    || (feedback.rpeGlobal !== null && typeof feedback.rpeGlobal !== "number")
+    || (feedback.rpeSpecific !== null && typeof feedback.rpeSpecific !== "number")
+    || (feedback.sensation !== null && typeof feedback.sensation !== "number")
+    || (feedback.motivation !== null && typeof feedback.motivation !== "number")
+    || (feedback.pleasure !== null && typeof feedback.pleasure !== "number")
+    || (feedback.updatedAt !== null && typeof feedback.updatedAt !== "string")
+  ) return null;
+
+  return {
+    completed: expectedCompleted,
+    workoutId: result.workoutId,
+    feedback: {
+      actualTime: feedback.actualTime,
+      comment: feedback.comment,
+      motivation: feedback.motivation === null ? "" : String(feedback.motivation),
+      pleasure: feedback.pleasure === null ? "" : String(feedback.pleasure),
+      rpe: feedback.rpe === null ? "" : String(feedback.rpe),
+      rpeGlobal: feedback.rpeGlobal === null ? "" : String(feedback.rpeGlobal),
+      rpeSpecific: feedback.rpeSpecific === null ? "" : String(feedback.rpeSpecific),
+      sensation: feedback.sensation === null ? "" : String(feedback.sensation),
+      updatedAt: feedback.updatedAt === null ? "" : feedback.updatedAt,
+      validated: expectedCompleted,
+    },
+  };
+}
+
+function isFeedbackV2Score(value: number | null, maximum: number): value is number {
+  return value !== null && value >= 1 && value <= maximum;
+}
+
+/** P04 V2 keeps draft and final completion as two explicit, authorized RPC paths. */
+export function createCalendarFeedbackV2Service(
+  repository: CalendarFeedbackV2Repository,
+): CalendarFeedbackV2Service {
+  return {
+    async isPilotTarget(athleteId, signal) {
+      if (!athleteId) return false;
+      const { data, error } = await repository.getPilotStateV3(athleteId, signal);
+      if (error || typeof data !== "object" || data === null || Array.isArray(data)) return false;
+      return (data as { legacyAthleteId?: unknown }).legacyAthleteId === athleteId;
+    },
+    async saveDraft(input, signal) {
+      if (!input.workoutId) throw { kind: "validation", retryable: false };
+
+      const feedback = toCalendarFeedbackV2Persistence(input);
+      const { data, error } = await repository.saveDraftV3(feedback, signal);
+      if (error) throw error;
+
+      const result = feedbackV2Result(data, false);
+      if (!result || result.workoutId !== input.workoutId) {
+        throw { kind: "unknown", retryable: false };
+      }
+      return result;
+    },
+    async complete(input, signal) {
+      if (!input.workoutId) throw { kind: "validation", retryable: false };
+
+      const feedback = toCalendarFeedbackV2Persistence(input);
+      if (
+        !feedback.real_duration.trim()
+        || !isFeedbackV2Score(feedback.rpe, 10)
+        || !isFeedbackV2Score(feedback.rpe_global, 10)
+        || (input.requiresSpecific && !isFeedbackV2Score(feedback.rpe_specific, 10))
+        || (!input.requiresSpecific && feedback.rpe_specific !== null)
+        || !isFeedbackV2Score(feedback.sensation, 5)
+        || !isFeedbackV2Score(feedback.motivation, 10)
+        || !isFeedbackV2Score(feedback.pleasure, 5)
+      ) {
+        throw { kind: "validation", retryable: false };
+      }
+
+      const { data, error } = await repository.completeWithFeedbackV3(feedback, signal);
+      if (error) throw error;
+
+      const result = feedbackV2Result(data, true);
+      if (!result || result.workoutId !== input.workoutId) {
+        throw { kind: "unknown", retryable: false };
+      }
+      return result;
     },
   };
 }
@@ -543,9 +712,11 @@ export function mapCalendarSessions(
         rpe: feedback?.rpe_global ? String(feedback.rpe_global) : feedback?.rpe ? String(feedback.rpe) : "",
         rpeGlobal: feedback?.rpe_global ? String(feedback.rpe_global) : feedback?.rpe ? String(feedback.rpe) : "",
         rpeSpecific: feedback?.rpe_specific ? String(feedback.rpe_specific) : "",
+        sensation: feedback?.sensation ? String(feedback.sensation) : "",
         motivation: feedback?.motivation ? String(feedback.motivation) : "",
         pleasure: feedback?.pleasure ? String(feedback.pleasure) : "",
         comment: feedback?.comment || "",
+        updatedAt: feedback?.updated_at || "",
         validated: Boolean(row.completed),
       },
       nonDone: {

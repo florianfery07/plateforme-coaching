@@ -13,6 +13,7 @@
  * Source: supabase/migrations/20260830000000_athlete_goals_v2_foundation.sql (706397e1e226a8445a1fb41c96f3f59367e15109be7c7765b92275448ff8f765)
  * Source: supabase/migrations/20260830010000_athlete_goals_v2_state_read.sql (3b86d609daa8b1a7533634ce2df355fecb6dc4c4e1b014839646038ac47ab70b)
  * Source: supabase/migrations/20260906000000_coach_pilotage_timeline_v2.sql (18b50b3e91eb211dd1ae560d25891fccb3ffd06d73bbb3866ea43519175c2806)
+ * Source: supabase/migrations/20260907000000_athlete_feedback_v2.sql (6d4c9ed9210c88f8113e63b82d051d9b2471af2aac4a0b0a8cb0f1002604d237)
  * Regenerate: npm run generate:types
  */
 
@@ -1167,7 +1168,9 @@ export type Database = {
           "real_duration": string | null,
           "created_at": string | null,
           "rpe_global": number | null,
-          "rpe_specific": number | null
+          "rpe_specific": number | null,
+          "sensation": number | null,
+          "updated_at": string | null
         }
         Insert: {
           "id"?: string
@@ -1180,6 +1183,8 @@ export type Database = {
           "created_at"?: string | null
           "rpe_global"?: number | null
           "rpe_specific"?: number | null
+          "sensation"?: number | null
+          "updated_at"?: string | null
         }
         Update: {
           "id"?: string
@@ -1192,6 +1197,8 @@ export type Database = {
           "created_at"?: string | null
           "rpe_global"?: number | null
           "rpe_specific"?: number | null
+          "sensation"?: number | null
+          "updated_at"?: string | null
         }
         Relationships: [
           {
@@ -1369,6 +1376,19 @@ export type Database = {
         }
         Returns: Json
       }
+      "complete_workout_with_feedback_v3": {
+        Args: {
+          "p_workout_id": string
+          "p_actual_time": string
+          "p_rpe_global": number
+          "p_rpe_specific": number
+          "p_sensation": number
+          "p_motivation": number
+          "p_pleasure": number
+          "p_comment": string
+        }
+        Returns: Json
+      }
       "consume_athlete_invite_v2": {
         Args: {
           "p_token": string
@@ -1423,6 +1443,12 @@ export type Database = {
         Returns: Json
       }
       "get_athlete_current_goal_v2": {
+        Args: {
+          "p_legacy_athlete_id": string
+        }
+        Returns: Json
+      }
+      "get_athlete_feedback_pilot_state_v3": {
         Args: {
           "p_legacy_athlete_id": string
         }
@@ -1555,6 +1581,19 @@ export type Database = {
           "p_goal_version_id": string
           "p_expected_revision": number
           "p_idempotency_key": string
+        }
+        Returns: Json
+      }
+      "save_workout_feedback_draft_v3": {
+        Args: {
+          "p_workout_id": string
+          "p_actual_time": string
+          "p_rpe_global": number
+          "p_rpe_specific": number
+          "p_sensation": number
+          "p_motivation": number
+          "p_pleasure": number
+          "p_comment": string
         }
         Returns: Json
       }

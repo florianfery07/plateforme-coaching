@@ -229,7 +229,71 @@ export function feedbackReady(feedback = {}) {
 }
 
 export function feedbackDone(feedback = {}) {
+  // V2 finalization permits an optional comment and conditionally requires specific RPE.
+  // Legacy records retain their historic completion contract below.
+  if (feedback.sensation) {
+    return Boolean(
+      feedback.validated &&
+        feedback.actualTime &&
+        (feedback.rpeGlobal || feedback.rpe) &&
+        feedback.motivation &&
+        feedback.pleasure &&
+        feedback.sensation
+    );
+  }
   return Boolean(feedbackReady(feedback) && feedback.validated);
+}
+
+/** P04 pilot-only status vocabulary. Legacy status helpers remain untouched. */
+export function hasSpecificFeedbackRequirement(session = {}) {
+  return Boolean(
+    rpeNumber(session.expectedRpeSpecific) > 0
+      && durationHours(session.expectedSpecificDuration) > 0
+  );
+}
+
+function validFeedbackScore(value, maximum) {
+  const score = rpeNumber(value);
+  return score >= 1 && score <= maximum;
+}
+
+export function feedbackV2Complete(session = {}) {
+  const feedback = session.feedback || {};
+
+  return Boolean(
+    String(feedback.actualTime || "").trim()
+      && validFeedbackScore(feedback.rpeGlobal || feedback.rpe, 10)
+      && (!hasSpecificFeedbackRequirement(session) || validFeedbackScore(feedback.rpeSpecific, 10))
+      && validFeedbackScore(feedback.sensation, 5)
+      && validFeedbackScore(feedback.motivation, 10)
+      && validFeedbackScore(feedback.pleasure, 5)
+  );
+}
+
+export function feedbackV2Started(feedback = {}) {
+  return [
+    feedback.actualTime,
+    feedback.rpeGlobal || feedback.rpe,
+    feedback.rpeSpecific,
+    feedback.sensation,
+    feedback.motivation,
+    feedback.pleasure,
+    feedback.comment,
+  ].some((value) => String(value || "").trim().length > 0);
+}
+
+export function feedbackV2Status(session = {}, now = new Date()) {
+  const isRest = String(session.category || "").toLowerCase() === "repos";
+  if (isRest) return "rest";
+  if (session.nonDone?.validated) return "nonDone";
+  if (parseLocalDate(session.date).getTime() > dayStart(now).getTime()) return "scheduled";
+  const isV2Feedback = Boolean(session.feedback?.sensation);
+  if (
+    session.feedback?.validated
+    && (isV2Feedback ? feedbackV2Complete(session) : feedbackReady(session.feedback))
+  ) return "complete";
+  if (feedbackV2Started(session.feedback)) return "incomplete";
+  return "missing";
 }
 
 export function avg(list, key) {

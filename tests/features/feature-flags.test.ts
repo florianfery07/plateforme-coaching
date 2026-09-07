@@ -22,6 +22,7 @@ describe("feature flags", () => {
       athleteInvitesV2: false,
       athleteLifecycleV2: false,
       athleteGoalsV2: false,
+      athleteFeedbackV2: false,
       coachPilotageV2: false,
       reliableMutationsV2: false,
     });
@@ -40,6 +41,11 @@ describe("feature flags", () => {
     ).toBe(true);
     expect(
       resolveFeatureFlags({
+        NEXT_PUBLIC_FEATURE_ATHLETE_FEEDBACK_V2: "enabled",
+      }).athleteFeedbackV2,
+    ).toBe(true);
+    expect(
+      resolveFeatureFlags({
         NEXT_PUBLIC_FEATURE_COACH_PILOTAGE_V2: "enabled",
       }).coachPilotageV2,
     ).toBe(true);
@@ -53,6 +59,16 @@ describe("feature flags", () => {
     );
 
     expect(initializedFeatureFlags.athleteGoalsV2).toBe(true);
+  });
+
+  it("reads the athlete feedback V2 public environment flag at module initialization", async () => {
+    vi.stubEnv("NEXT_PUBLIC_FEATURE_ATHLETE_FEEDBACK_V2", "enabled");
+
+    const { featureFlags: initializedFeatureFlags } = await import(
+      "../../src/lib/features/feature-flags"
+    );
+
+    expect(initializedFeatureFlags.athleteFeedbackV2).toBe(true);
   });
 
   it("reads the coach planning public environment flag at module initialization", async () => {

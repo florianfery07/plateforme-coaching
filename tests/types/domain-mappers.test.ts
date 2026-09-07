@@ -73,6 +73,8 @@ const feedbackRow: WorkoutFeedbackRow = {
   created_at: null,
   rpe_global: null,
   rpe_specific: null,
+  sensation: null,
+  updated_at: null,
 };
 
 const groupRow: GroupRow = {

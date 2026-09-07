@@ -23,7 +23,7 @@ import {
   defaultSubcategories,
 } from "@/lib/platformDefaults";
 import { getColorClass } from "@/lib/colors";
-import { loadAccessControlV2Context, type AccessContextRpcClient } from "@/lib/access";
+import { loadAccessControlV2Context, resolveAccessControlMode, type AccessContextRpcClient } from "@/lib/access";
 import { isFeatureEnabled } from "@/lib/features";
 import { isReliableMutationsPilotEnabled } from "@/lib/features/reliable-mutations-pilot";
 import { supabase } from "@/lib/supabase";
@@ -32,7 +32,7 @@ import { createAthleteInviteService, createAthleteInviteSupabaseRepository } fro
 import { createAthleteLifecycleService, shouldUseAthleteLifecycleV2 } from "@/services/athlete-lifecycle";
 import { createGoalsV2Service, goalsV2Repository, shouldUseGoalsV2 } from "@/services/goals-v2";
 import { calendarSessionsForDate, loadCalendarSessions } from "@/services/calendar-sessions";
-import { calendarSessionService, calendarSessionsRepository } from "@/services/calendar-sessions-repository";
+import { calendarFeedbackV2Service, calendarSessionService, calendarSessionsRepository } from "@/services/calendar-sessions-repository";
 import {
   calendarProposalsForAthlete,
   calendarProposalsForDate,
@@ -226,6 +226,9 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const [athleteLifecycleV2Enabled, setAthleteLifecycleV2Enabled] = useState(false);
 	const [athleteGoalsV2Enabled, setAthleteGoalsV2Enabled] = useState(false);
 	const [athleteGoalsV2State, setAthleteGoalsV2State] = useState(null);
+	const [athleteFeedbackV2Enabled, setAthleteFeedbackV2Enabled] = useState(false);
+	const [coachFeedbackV2Enabled, setCoachFeedbackV2Enabled] = useState(false);
+	const [focusedFeedbackSessionId, setFocusedFeedbackSessionId] = useState("");
 	const [athleteLifecyclePendingAthleteId, setAthleteLifecyclePendingAthleteId] = useState(null);
 	const athleteLifecycleLocksRef = useRef(new Set());
 	const athleteGroupMemberLocksRef = useRef(new Set());
@@ -581,6 +584,8 @@ const athleteLifecycleFeatureEnabled = isFeatureEnabled("accessControlV2")
   && isFeatureEnabled("athleteLifecycleV2");
 const athleteGoalsV2FeatureEnabled = isFeatureEnabled("accessControlV2")
   && isFeatureEnabled("athleteGoalsV2");
+const athleteFeedbackV2FeatureEnabled = isFeatureEnabled("accessControlV2")
+  && isFeatureEnabled("athleteFeedbackV2");
 const athleteLifecyclePilotEnabled = athleteLifecycleFeatureEnabled
   && auth?.role === "coach"
   && athleteLifecycleV2Enabled;
@@ -632,6 +637,44 @@ useEffect(() => {
 
   return () => { active = false; };
 }, [athleteGoalsV2FeatureEnabled, auth]);
+
+useEffect(() => {
+  let active = true;
+
+  if (!athleteFeedbackV2FeatureEnabled || !auth) {
+    return () => { active = false; };
+  }
+
+  void (async () => {
+    const client = createTypedSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const context = await loadAccessControlV2Context(
+      client as unknown as AccessContextRpcClient,
+      true,
+    );
+    const serverPilot = resolveAccessControlMode(context, true) === "v2";
+
+    if (!active) return;
+    if (!serverPilot) {
+      setAthleteFeedbackV2Enabled(false);
+      setCoachFeedbackV2Enabled(false);
+      return;
+    }
+
+    const targetAthleteId = auth.role === "coach" ? activeId : auth.athleteId;
+    const targetEnabled = await calendarFeedbackV2Service
+      .isPilotTarget(targetAthleteId)
+      .catch(() => false);
+    if (!active) return;
+
+    setAthleteFeedbackV2Enabled(auth.role === "athlete" && targetEnabled);
+    setCoachFeedbackV2Enabled(auth.role === "coach" && targetEnabled);
+  })();
+
+  return () => { active = false; };
+}, [athleteFeedbackV2FeatureEnabled, activeId, auth]);
   const isCoach = auth?.role === "coach";
   const visibleAthletes = athletes.filter((row) => row.active !== false);
   const athleteActive =
@@ -641,6 +684,12 @@ useEffect(() => {
   const athleteGoalsV2PilotEnabled = athleteGoalsV2FeatureEnabled && athleteGoalsV2Enabled;
   const athleteGoalsV2TargetEnabled = athleteGoalsV2PilotEnabled
     && athleteGoalsV2State?.legacyAthleteId === athleteActive?.id;
+  const athleteFeedbackV2PilotEnabled = auth?.role === "athlete"
+    && athleteFeedbackV2FeatureEnabled
+    && athleteFeedbackV2Enabled;
+  const coachFeedbackV2PilotEnabled = auth?.role === "coach"
+    && athleteFeedbackV2FeatureEnabled
+    && coachFeedbackV2Enabled;
   useEffect(() => {
     let active = true;
 
@@ -2182,6 +2231,14 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
   });
 }
 
+  function openAthleteFeedback(session) {
+    if (!athleteFeedbackV2PilotEnabled || !session?.id) return;
+    setView("calendar");
+    setMode("day");
+    setSelectedDate(parseLocalDate(session.date));
+    setFocusedFeedbackSessionId(session.id);
+  }
+
   const coachPilotageV2Enabled = isCoach && isFeatureEnabled("coachPilotageV2");
   const calendarPageProps = {
     athleteActive,
@@ -2238,6 +2295,10 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
     athletes,
     sessions,
     athleteGoalsV2Enabled: athleteGoalsV2TargetEnabled,
+    athleteFeedbackV2Enabled: athleteFeedbackV2PilotEnabled,
+    coachFeedbackV2Enabled: coachFeedbackV2PilotEnabled,
+    focusedFeedbackSessionId,
+    openAthleteFeedback,
     goalsV2State: athleteGoalsV2TargetEnabled ? athleteGoalsV2State : null,
   };
 

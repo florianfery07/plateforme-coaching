@@ -23,7 +23,7 @@ export default function CalendarPageOld(props) {
             {!props.athleteGoalsV2Enabled && (
               <AthleteGoalUpdateBanner athlete={props.athleteActive} updateAthlete={props.updateAthlete} />
             )}
-            <AthleteNotificationsBanner sessions={props.activeSessions} />
+            <AthleteNotificationsBanner sessions={props.activeSessions} onCompleteSession={props.athleteFeedbackV2Enabled ? props.openAthleteFeedback : undefined} />
           </>
         )}
 

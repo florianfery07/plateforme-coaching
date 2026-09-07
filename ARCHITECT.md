@@ -89,6 +89,12 @@ proportionnés.
   Goals V2 acceptée. Le flag demeure désactivé par défaut; hors pilote, le
   shell et le calendrier legacy restent inchangés. Les groupes restent un
   ciblage de programmation, sans calendrier agrégé inventé.
+- P04 ajoute `athleteFeedbackV2`: un pilote de retour athlète structuré pour
+  les séances individuelles, avec brouillon persistant, finalisation atomique,
+  correction et lecture coach compacte. Il dépend d'`accessControlV2`, reste
+  désactivé par défaut et ne change ni les formules de charge, ni les retours
+  legacy, ni Groups V2. Son rollout est dans
+  `docs/development/athlete-feedback-v2.md`.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 
@@ -131,6 +137,7 @@ défaut. Leur contrat détaillé est dans
 | `athleteInvitesV2` | Invitations athlètes V2, dépend de `accessControlV2`. |
 | `athleteLifecycleV2` | Archivage/restauration athlète, dépend de `accessControlV2`. |
 | `athleteGoalsV2` | Pilote UI Objectifs V2, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
+| `athleteFeedbackV2` | Pilote de retour athlète structuré P04, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
 | `coachPilotageV2` | Pilote UX coach P01-P03: shell de navigation, Pilotage semaine/mois et timeline autorisée de cycles/jalons, sans agrégation de groupes ni dual-write. |
 | `reliableMutationsV2` | Pilotes locaux de mutations fiables. |
 
