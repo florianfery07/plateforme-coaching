@@ -1,0 +1,40 @@
+import { supabase } from "../lib/supabase";
+
+import type {
+  CalendarSnapshotInput,
+  SaveWorkoutStructureInput,
+  WorkoutStructureRpcResponse,
+  WorkoutStructureV2Repository,
+} from "./workout-structure-v2-persistence";
+
+async function response(query: PromiseLike<{ data: unknown; error: { code?: string; message?: string; status?: number } | null }>): Promise<WorkoutStructureRpcResponse> {
+  const result = await query;
+  return { data: result.data, error: result.error };
+}
+
+/** RPC-only repository: direct table access is deliberately unavailable to clients. */
+export const workoutStructureV2Repository: WorkoutStructureV2Repository = {
+  saveLibrary(input: SaveWorkoutStructureInput) {
+    return response(supabase.rpc("upsert_workout_library_structure_v2", {
+      p_document: input.document,
+      p_expected_revision: input.expectedRevision,
+      p_idempotency_key: input.idempotencyKey,
+      p_library_workout_id: input.targetId,
+    }));
+  },
+  saveCalendar(input: SaveWorkoutStructureInput) {
+    return response(supabase.rpc("upsert_calendar_workout_structure_v2", {
+      p_calendar_workout_id: input.targetId,
+      p_document: input.document,
+      p_expected_revision: input.expectedRevision,
+      p_idempotency_key: input.idempotencyKey,
+    }));
+  },
+  createCalendarSnapshot(input: CalendarSnapshotInput) {
+    return response(supabase.rpc("create_calendar_workout_structure_snapshot_v2", {
+      p_calendar_workout_id: input.calendarWorkoutId,
+      p_idempotency_key: input.idempotencyKey,
+      p_library_structure_id: input.libraryStructureId,
+    }));
+  },
+};

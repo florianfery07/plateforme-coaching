@@ -14,6 +14,7 @@
  * Source: supabase/migrations/20260830010000_athlete_goals_v2_state_read.sql (3b86d609daa8b1a7533634ce2df355fecb6dc4c4e1b014839646038ac47ab70b)
  * Source: supabase/migrations/20260906000000_coach_pilotage_timeline_v2.sql (18b50b3e91eb211dd1ae560d25891fccb3ffd06d73bbb3866ea43519175c2806)
  * Source: supabase/migrations/20260907000000_athlete_feedback_v2.sql (6d4c9ed9210c88f8113e63b82d051d9b2471af2aac4a0b0a8cb0f1002604d237)
+ * Source: supabase/migrations/20260908000000_workout_structures_v2.sql (598c8e3e5279f36b1a2722bcc95288b503f019f3570d0916b74aca736a95a7ba)
  * Regenerate: npm run generate:types
  */
 
@@ -1293,6 +1294,86 @@ export type Database = {
           }
         ]
       }
+      "workout_structures_v2": {
+        Row: {
+          "id": string,
+          "library_workout_id": string | null,
+          "calendar_workout_id": string | null,
+          "source_structure_id": string | null,
+          "schema_version": number,
+          "document": Json,
+          "total_duration_seconds": number,
+          "specific_duration_seconds": number,
+          "revision": number,
+          "is_current": boolean,
+          "idempotency_key": string,
+          "created_by_user_id": string,
+          "superseded_at": string | null,
+          "created_at": string
+        }
+        Insert: {
+          "id"?: string
+          "library_workout_id"?: string | null
+          "calendar_workout_id"?: string | null
+          "source_structure_id"?: string | null
+          "schema_version": number
+          "document": Json
+          "total_duration_seconds": number
+          "specific_duration_seconds": number
+          "revision": number
+          "is_current"?: boolean
+          "idempotency_key": string
+          "created_by_user_id": string
+          "superseded_at"?: string | null
+          "created_at"?: string
+        }
+        Update: {
+          "id"?: string
+          "library_workout_id"?: string | null
+          "calendar_workout_id"?: string | null
+          "source_structure_id"?: string | null
+          "schema_version"?: number
+          "document"?: Json
+          "total_duration_seconds"?: number
+          "specific_duration_seconds"?: number
+          "revision"?: number
+          "is_current"?: boolean
+          "idempotency_key"?: string
+          "created_by_user_id"?: string
+          "superseded_at"?: string | null
+          "created_at"?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_structures_v2_calendar_workout_id_fkey"
+            columns: ["calendar_workout_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_workouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_structures_v2_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "workout_structures_v2_library_workout_id_fkey"
+            columns: ["library_workout_id"]
+            isOneToOne: false
+            referencedRelation: "workout_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_structures_v2_source_structure_id_fkey"
+            columns: ["source_structure_id"]
+            isOneToOne: false
+            referencedRelation: "workout_structures_v2"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       "workout_subcategories": {
         Row: {
           "id": string,
@@ -1399,6 +1480,14 @@ export type Database = {
         Args: {
           "p_legacy_athlete_id": string
           "p_coach_membership_id": string
+        }
+        Returns: Json
+      }
+      "create_calendar_workout_structure_snapshot_v2": {
+        Args: {
+          "p_calendar_workout_id": string
+          "p_library_structure_id": string
+          "p_idempotency_key": string
         }
         Returns: Json
       }
@@ -1618,6 +1707,24 @@ export type Database = {
           "p_group_session_id": string
           "p_expected_version": number
           "p_session_data": Json
+        }
+        Returns: Json
+      }
+      "upsert_calendar_workout_structure_v2": {
+        Args: {
+          "p_calendar_workout_id": string
+          "p_document": Json
+          "p_expected_revision": number
+          "p_idempotency_key": string
+        }
+        Returns: Json
+      }
+      "upsert_workout_library_structure_v2": {
+        Args: {
+          "p_library_workout_id": string
+          "p_document": Json
+          "p_expected_revision": number
+          "p_idempotency_key": string
         }
         Returns: Json
       }
@@ -2137,6 +2244,16 @@ export type Database = {
     }
     Views: Record<string, never>
     Functions: {
+      "assert_workout_structure_calendar_authorized_v2": {
+        Args: {
+          "p_calendar_workout_id": string
+        }
+        Returns: string
+      }
+      "assert_workout_structure_library_authorized_v2": {
+        Args: Record<string, never>
+        Returns: string
+      }
       "current_account_is_active": {
         Args: Record<string, never>
         Returns: boolean
@@ -2167,9 +2284,28 @@ export type Database = {
         Args: Record<string, never>
         Returns: boolean
       }
+      "format_legacy_duration_v2": {
+        Args: {
+          "p_seconds": number
+        }
+        Returns: string
+      }
       "resolve_active_goal_target_v2": {
         Args: {
           "p_legacy_athlete_id": string
+        }
+        Returns: string
+      }
+      "validate_workout_atomic_step_v2": {
+        Args: {
+          "p_step": Json
+          "p_ids": string[]
+        }
+        Returns: string
+      }
+      "workout_structure_metrics_v2": {
+        Args: {
+          "p_document": Json
         }
         Returns: string
       }

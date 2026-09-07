@@ -95,6 +95,10 @@ proportionnés.
   désactivé par défaut et ne change ni les formules de charge, ni les retours
   legacy, ni Groups V2. Son rollout est dans
   `docs/development/athlete-feedback-v2.md`.
+- P05.C ajoute une persistance sécurisée et versionnée pour les structures de
+  séance V2 : document structuré canonique, projections legacy de durée
+  atomiques et snapshots calendrier indépendants. `structuredWorkoutsV2` reste
+  désactivé par défaut et P05.C n'active aucune UI.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 
@@ -139,6 +143,7 @@ défaut. Leur contrat détaillé est dans
 | `athleteGoalsV2` | Pilote UI Objectifs V2, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
 | `athleteFeedbackV2` | Pilote de retour athlète structuré P04, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
 | `coachPilotageV2` | Pilote UX coach P01-P03: shell de navigation, Pilotage semaine/mois et timeline autorisée de cycles/jalons, sans agrégation de groupes ni dual-write. |
+| `structuredWorkoutsV2` | Persistance P05.C de documents de séance structurés versionnés, dépendante de l'autorisation serveur Access Control V2, sans UI active en P05.C. |
 | `reliableMutationsV2` | Pilotes locaux de mutations fiables. |
 
 Un flag public ne constitue jamais une autorisation. Les pilotes L11 et L12 ne

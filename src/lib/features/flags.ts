@@ -71,6 +71,14 @@ export const featureFlagRegistry = {
     removal: "Remove after the coach planning workspace replaces the legacy calendar for every supported coach workflow.",
     stage: "pilot",
   },
+  structuredWorkoutsV2: {
+    description: "Pilot-only versioned structured workout persistence beside the legacy builder.",
+    defaultValue: false,
+    environmentVariable: "NEXT_PUBLIC_FEATURE_STRUCTURED_WORKOUTS_V2",
+    owner: "Workout Library",
+    removal: "Remove after the structured workout builder has replaced the legacy content path.",
+    stage: "pilot",
+  },
   reliableMutationsV2: {
     description: "Future progressive replacement for legacy mutation reliability flows.",
     defaultValue: false,

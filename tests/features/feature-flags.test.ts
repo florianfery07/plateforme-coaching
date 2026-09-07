@@ -24,6 +24,7 @@ describe("feature flags", () => {
       athleteGoalsV2: false,
       athleteFeedbackV2: false,
       coachPilotageV2: false,
+      structuredWorkoutsV2: false,
       reliableMutationsV2: false,
     });
   });
@@ -48,6 +49,11 @@ describe("feature flags", () => {
       resolveFeatureFlags({
         NEXT_PUBLIC_FEATURE_COACH_PILOTAGE_V2: "enabled",
       }).coachPilotageV2,
+    ).toBe(true);
+    expect(
+      resolveFeatureFlags({
+        NEXT_PUBLIC_FEATURE_STRUCTURED_WORKOUTS_V2: "enabled",
+      }).structuredWorkoutsV2,
     ).toBe(true);
   });
 
