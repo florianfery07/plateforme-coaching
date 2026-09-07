@@ -60,6 +60,7 @@ const workoutRow: WorkoutRow = {
   adjusted_specific_duration: null,
   athlete_seen_at: null,
   source_proposal_id: null,
+  structured_workout_v2: false,
 };
 
 const feedbackRow: WorkoutFeedbackRow = {

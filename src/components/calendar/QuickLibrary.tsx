@@ -27,12 +27,15 @@ export default function QuickLibrary({
   setFilter,
   filteredLibrary,
   importWorkout,
+  programStructuredWorkout,
   planningTargetType,
   selectedGroup,
   selectedGroupMembers = [],
   athletes = [],
   importPending = false,
   selectedDate,
+  structuredCalendarPending = false,
+  structuredWorkoutsV2Enabled = false,
 }) {
   const [pendingWorkout, setPendingWorkout] = useState(null);
   const [selectedAthleteIds, setSelectedAthleteIds] = useState([]);
@@ -235,12 +238,14 @@ export default function QuickLibrary({
               onClick={() =>
                 planningTargetType === "group"
                   ? openGroupImport(workout)
-                  : importWorkout(workout)
+                  : structuredWorkoutsV2Enabled && programStructuredWorkout
+                    ? programStructuredWorkout(workout, selectedDate)
+                    : importWorkout(workout)
               }
-              disabled={planningTargetType !== "group" && importPending}
+              disabled={planningTargetType !== "group" && (importPending || structuredCalendarPending)}
               className="mt-3 w-full"
             >
-              {planningTargetType !== "group" && importPending
+              {planningTargetType !== "group" && (importPending || structuredCalendarPending)
                 ? "Programmation..."
                 : "Importer ce jour"}
             </Btn>

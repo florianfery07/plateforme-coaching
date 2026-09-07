@@ -10,6 +10,7 @@ import { calendarFeedbackV2Service } from "@/services/calendar-sessions-reposito
 
 type Props = {
   session: CalendarSession;
+  specificContext?: string;
   updateSession: (updater: (sessions: CalendarSession[]) => CalendarSession[]) => void;
 };
 
@@ -99,7 +100,7 @@ function FeedbackSummary({ feedback, onEdit }: { feedback: CalendarFeedback; onE
   );
 }
 
-export default function AthleteSessionFeedbackV2({ session, updateSession }: Props) {
+export default function AthleteSessionFeedbackV2({ session, specificContext = "", updateSession }: Props) {
   const [feedback, setFeedback] = useState<CalendarFeedback>(session.feedback);
   const feedbackRef = useRef(feedback);
   const confirmedFeedbackRef = useRef(session.feedback);
@@ -252,7 +253,7 @@ export default function AthleteSessionFeedbackV2({ session, updateSession }: Pro
         {requiresSpecific && (
           <div className="border-t border-zinc-800 pt-4">
             <ScoreGrid disabled={pending} label="Difficulté de la partie spécifique /10" maximum={10} value={feedback.rpeSpecific} onChange={(value) => changeAndSave("rpeSpecific", value)} />
-            <p className="mt-1.5 text-xs text-zinc-400">Pense uniquement aux efforts spécifiques prévus par ton coach. Partie spécifique prévue : {session.expectedSpecificDuration}.</p>
+            <p className="mt-1.5 text-xs text-zinc-400">Pense uniquement aux efforts spécifiques prévus par ton coach. Partie spécifique prévue : {session.expectedSpecificDuration}.{specificContext ? ` ${specificContext}` : ""}</p>
           </div>
         )}
 

@@ -8,6 +8,7 @@ import DayView from "@/components/calendar/DayView";
 import Proposal from "@/components/calendar/Proposal";
 import QuickLibrary from "@/components/calendar/QuickLibrary";
 import Session from "@/components/calendar/Session";
+import StructuredCalendarWorkoutEditor from "@/components/calendar/StructuredCalendarWorkoutEditor";
 import { feedbackCompactLabel } from "@/components/calendar/CoachSessionFeedbackV2";
 import WeekPlanningTool from "@/components/calendar/WeekPlanningTool";
 import { Badge, Btn, Empty, Panel } from "@/components/ui/ui";
@@ -29,7 +30,7 @@ function dayLabel(date) {
 }
 
 function compactSessionMeta(session) {
-  const parts = [session.subcategory || session.category, session.totalDuration].filter(Boolean);
+  const parts = [session.subcategory || session.category, session.totalDuration, session.structuredWorkoutV2 && session.expectedSpecificDuration ? `${session.expectedSpecificDuration} spé` : ""].filter(Boolean);
   return parts.join(" · ") || "Séance";
 }
 
@@ -151,10 +152,12 @@ export default function CoachPilotageWorkspace(props) {
     selectedGroupMembers = [],
     onCreateSession,
     coachFeedbackV2Enabled = false,
+    structuredWorkoutsV2Enabled = false,
   } = props;
   const [pilotageView, setPilotageView] = useState("week");
   const [activeContext, setActiveContext] = useState({ kind: "overview", dayKey: dateKey(selectedDate) });
   const [showDayDetails, setShowDayDetails] = useState(false);
+  const [structuredEditor, setStructuredEditor] = useState(null);
   const { info, start, end } = weekBounds(selectedDate);
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
   const selectedDay = days.find((day) => dateKey(day) === activeContext.dayKey) || selectedDate;
@@ -188,6 +191,34 @@ export default function CoachPilotageWorkspace(props) {
     setSelectedDate(date);
     setShowDayDetails(false);
     setActiveContext({ kind: "library", dayKey: dateKey(date) });
+  }
+
+  function openStructuredEditor(date = selectedDay, workout = null) {
+    if (!structuredWorkoutsV2Enabled || planningTargetType === "group") {
+      onCreateSession();
+      return;
+    }
+    setStructuredEditor({ date: dateKey(date), workout });
+  }
+
+  if (structuredEditor) {
+    return (
+      <Panel>
+        <StructuredCalendarWorkoutEditor
+          athleteId={activeId}
+          categories={props.categories}
+          date={structuredEditor.date}
+          subcategories={props.subcategories}
+          workout={structuredEditor.workout}
+          onCancel={() => setStructuredEditor(null)}
+          onSaved={(result) => {
+            props.onStructuredCalendarSaved(result);
+            setStructuredEditor(null);
+            setActiveContext({ kind: "session", id: result.calendarWorkoutId, dayKey: structuredEditor.date });
+          }}
+        />
+      </Panel>
+    );
   }
 
   function moveWeek(offset) {
@@ -231,7 +262,7 @@ export default function CoachPilotageWorkspace(props) {
             <Btn onClick={() => selectDay(new Date())}>Aujourd&apos;hui</Btn>
             <Btn aria-label="Semaine suivante" onClick={() => moveWeek(1)} className="min-w-11 px-3"><span aria-hidden="true">&gt;</span></Btn>
             <Btn variant="primary" onClick={() => openLibrary(selectedDate)}>Programmer</Btn>
-            <Btn onClick={onCreateSession}>Créer une séance</Btn>
+            <Btn onClick={() => openStructuredEditor(selectedDate)}>Créer une séance</Btn>
           </div>
         </div>
 
@@ -353,6 +384,8 @@ export default function CoachPilotageWorkspace(props) {
                 nonDonePending={props.nonDonePending}
                 isCoach
                 coachFeedbackV2Enabled={coachFeedbackV2Enabled}
+                structuredWorkoutsV2Enabled={structuredWorkoutsV2Enabled}
+                onEditStructured={(workout) => openStructuredEditor(selectedDay, workout)}
               />
             )}
 
@@ -373,6 +406,7 @@ export default function CoachPilotageWorkspace(props) {
                 <p className="mt-1 text-sm text-zinc-400">{sessionsFor(selectedDay).length} séance{sessionsFor(selectedDay).length > 1 ? "s" : ""} · {proposalsFor(selectedDay).length} proposition{proposalsFor(selectedDay).length > 1 ? "s" : ""}</p>
                 <div className="mt-4 grid gap-2">
                   <Btn variant="primary" onClick={() => openLibrary(selectedDay)}>Programmer depuis la bibliothèque</Btn>
+                  <Btn onClick={() => openStructuredEditor(selectedDay)}>Créer une séance structurée</Btn>
                   <Btn onClick={() => props.addRestDay(selectedDay)} disabled={props.restDayPending}>Marquer repos</Btn>
                   <Btn onClick={() => setShowDayDetails(true)}>Voir le détail du jour</Btn>
                 </div>

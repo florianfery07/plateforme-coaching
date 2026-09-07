@@ -41,6 +41,7 @@ export default function DayView({
   backLabel = "Retour mois",
   athleteFeedbackV2Enabled = false,
   coachFeedbackV2Enabled = false,
+  structuredWorkoutsV2Enabled = false,
   focusedFeedbackSessionId = "",
 }) {
   const selectedDateKey = dateKey(selectedDate);
@@ -231,6 +232,7 @@ export default function DayView({
               isCoach={isCoach}
               athleteFeedbackV2Enabled={athleteFeedbackV2Enabled}
               coachFeedbackV2Enabled={coachFeedbackV2Enabled}
+              structuredWorkoutsV2Enabled={structuredWorkoutsV2Enabled}
               focused={focusedFeedbackSessionId === session.id}
             />
           ))}

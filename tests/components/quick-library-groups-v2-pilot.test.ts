@@ -23,6 +23,6 @@ describe("QuickLibrary Groups V2 pilot", () => {
   });
 
   it("keeps the Groups V2 controls independent from the individual import pending state", () => {
-    expect(source).toContain('disabled={planningTargetType !== "group" && importPending}');
+    expect(source).toContain('disabled={planningTargetType !== "group" && (importPending || structuredCalendarPending)}');
   });
 });

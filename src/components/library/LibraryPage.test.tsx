@@ -18,6 +18,31 @@ describe("LibraryPage", () => {
     vi.clearAllMocks();
   });
 
+  it("offers contextual creation from the library", () => {
+    const onCreateWorkout = vi.fn();
+    render(
+      <LibraryPage
+        categories={[]}
+        setCategories={vi.fn()}
+        subcategories={[]}
+        setSubcategories={vi.fn()}
+        filter={{ category: "", subcategory: "" }}
+        setFilter={vi.fn()}
+        filteredLibrary={[]}
+        editWorkout={vi.fn()}
+        onCreateWorkout={onCreateWorkout}
+        setLibrary={vi.fn()}
+        library={[]}
+        rename={vi.fn()}
+        removeItem={vi.fn()}
+        taxonomyPending={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Créer une séance" }));
+    expect(onCreateWorkout).toHaveBeenCalledOnce();
+  });
+
   it("requires an internal confirmation before deleting a library workout", async () => {
     const setLibrary = vi.fn();
     render(

@@ -1,4 +1,4 @@
-# Workouts structures V2 (P05.C / P05.D)
+# Workouts structures V2 (P05.C / P05.D / P05.E)
 
 ## Source de vérité
 
@@ -9,6 +9,8 @@ La structure vise exactement une ressource explicite : `workout_library` ou `cal
 ## Révisions et snapshots
 
 Une modification bibliothèque ajoute une révision immuable et rend cette révision courante. Une séance calendrier est un snapshot indépendant : sa ligne conserve le `source_structure_id` de la révision bibliothèque exacte dont elle provient. Modifier le modèle ne modifie donc jamais une séance déjà programmée.
+
+P05.E ajoute `calendar_workouts.structured_workout_v2` comme marqueur additif et trois RPC ciblées : création atomique d’un parent calendrier et de son snapshot, lecture autorisée du snapshot, et modification atomique des métadonnées calendrier avec une nouvelle révision de structure. Une création directe n’a pas de source bibliothèque; une programmation depuis la bibliothèque référence exactement la révision courante sélectionnée. Dans les deux cas, `blocks` legacy reste inchangé.
 
 ## Validation, projections et P04
 
@@ -27,7 +29,9 @@ Une même transaction projette uniquement les valeurs legacy nécessaires :
 
 La nouvelle table a RLS activée et aucun accès direct pour les clients. Les écritures passent uniquement par RPC : bibliothèque pour un coach V2 actif; calendrier pour un coach V2 actif ayant un accès explicite à un athlète actif et mappé. Le flag public n'est jamais une autorisation.
 
-`structuredWorkoutsV2` est désactivé par défaut. P05.D ajoute le constructeur bibliothèque uniquement : création atomique du parent et de sa révision initiale, lecture de la révision courante, édition sous forme d'une nouvelle révision et duplication avec une nouvelle identité. Un modèle legacy détecté reste dans son constructeur historique : aucune conversion ni dual-write n'est introduit.
+`structuredWorkoutsV2` est désactivé par défaut. P05.D ajoute le constructeur bibliothèque uniquement : création atomique du parent et de sa révision initiale, lecture de la révision courante, édition sous forme d'une nouvelle révision et duplication avec une nouvelle identité. P05.E raccorde ce pilote à la programmation individuelle depuis Pilotage et à une lecture compacte coach/athlète. Un modèle ou une séance legacy reste sur son chemin historique : aucune conversion ni dual-write n'est introduit.
+
+Les groupes ne sont pas étendus ici : une programmation groupe structurée reste explicitement reportée à P05.F.
 
 Le rollback consiste à garder le flag désactivé : les structures et projections additives restent en base, tandis que le constructeur legacy continue sans changement. Le flag public ne donne jamais accès à lui seul; les RPC contrôlent le pilote Access Control V2.
 

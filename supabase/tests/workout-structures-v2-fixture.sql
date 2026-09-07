@@ -15,6 +15,18 @@ create table if not exists public.calendar_workouts (
   id uuid primary key, athlete_id uuid references public.athletes(id), date text not null default '2026-09-08',
   duration text, expected_specific_duration text, blocks jsonb default '[]'::jsonb
 );
+alter table public.calendar_workouts alter column id set default gen_random_uuid();
+alter table public.calendar_workouts
+  add column if not exists workout_type text,
+  add column if not exists subcategory text,
+  add column if not exists title text,
+  add column if not exists description text,
+  add column if not exists expected_rpe text,
+  add column if not exists expected_rpe_global numeric,
+  add column if not exists expected_rpe_specific numeric,
+  add column if not exists athlete_seen_at timestamptz,
+  add column if not exists completed boolean default false,
+  add column if not exists non_done boolean default false;
 alter table public.athletes add column if not exists name text;
 
 insert into auth.users (id, email) values

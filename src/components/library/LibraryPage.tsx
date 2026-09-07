@@ -26,6 +26,7 @@ export default function LibraryPage({
   setFilter,
   filteredLibrary,
   editWorkout,
+  onCreateWorkout = () => {},
   setLibrary,
   library,
   rename,
@@ -105,14 +106,17 @@ export default function LibraryPage({
 
   return (
     <Panel>
-      <div className="mb-6 flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold">
-          Bibliothèque de séances
-        </h2>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-semibold">
+            Bibliothèque de séances
+          </h2>
 
-        <p className="text-sm text-zinc-400">
-          Crée, filtre et organise tes séances types.
-        </p>
+          <p className="text-sm text-zinc-400">
+            Crée, filtre et organise tes séances types.
+          </p>
+        </div>
+        <Btn variant="primary" onClick={onCreateWorkout}>Créer une séance</Btn>
       </div>
 
       <div className="mb-6 rounded-3xl border border-zinc-700 bg-zinc-800 p-4 sm:p-5">

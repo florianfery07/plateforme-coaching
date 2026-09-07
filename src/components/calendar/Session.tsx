@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { sessionStatus, feedbackReady } from "@/lib/trainingUtils";
 import { statusLabel, statusStyle } from "@/lib/platformDefaults";
@@ -25,6 +25,8 @@ import Block from "@/components/calendar/Block";
 import AthleteSessionFeedbackV2 from "@/components/calendar/AthleteSessionFeedbackV2";
 import CoachSessionFeedbackV2 from "@/components/calendar/CoachSessionFeedbackV2";
 import RpeHelp from "@/components/calendar/RpeHelp";
+import StructuredWorkoutSessionRead from "@/components/calendar/StructuredWorkoutSessionRead";
+import { formatWorkoutDurationV2, getCompactWorkoutBlocksV2 } from "@/services/workout-structure-v2";
 
 export default function Session({
   session,
@@ -39,6 +41,8 @@ export default function Session({
   athleteFeedbackV2Enabled = false,
   coachFeedbackV2Enabled = false,
   focused = false,
+  onEditStructured = undefined,
+  structuredWorkoutsV2Enabled = false,
 }) {
   const status = sessionStatus(session);
   const ready = feedbackReady(session.feedback);
@@ -55,11 +59,22 @@ export default function Session({
     session.adjustedSpecificDuration || "",
   );
   const [nonDoneDraft, setNonDoneDraft] = useState(session.nonDone || {});
+  const [specificContext, setSpecificContext] = useState("");
   const nonDoneSubmittingRef = useRef(false);
   const patch = (fn) =>
     updateSession((items) =>
       items.map((item) => (item.id === session.id ? fn(item) : item))
     );
+  const receiveStructuredContext = useCallback((document) => {
+    const specific = document.blocks.flatMap((block) => block.kind === "repeat"
+      ? block.steps.filter((step) => step.isSpecific).map((step) => ({ ...step, repetitions: block.repetitions }))
+      : block.isSpecific ? [block] : []);
+    if (!specific.length) return setSpecificContext("");
+    const compact = getCompactWorkoutBlocksV2(document);
+    const specificIds = new Set(document.blocks.filter((block) => block.kind === "repeat" ? block.steps.some((step) => step.isSpecific) : block.isSpecific).map((block) => block.id));
+    const labels = compact.filter((block) => specificIds.has(block.id));
+    setSpecificContext(labels.length ? `Efforts spécifiques : ${labels.map((block) => `${block.title} ${block.detail}`).join(" · ")}.` : `Partie spécifique : ${formatWorkoutDurationV2(specific.reduce((total, step) => total + step.durationSeconds * (step.repetitions || 1), 0))}.`);
+  }, []);
 
   const feedbackMutation = useReliableMutation({
     concurrency: "serial",
@@ -325,7 +340,7 @@ function changeActualTimePart(part, value) {
           </h4>
         </div>
 
-        {isCoach && (
+          {isCoach && (
           <Btn
             onClick={async () => {
               if (
@@ -403,6 +418,9 @@ function changeActualTimePart(part, value) {
               Retour à compléter
             </span>
           )}
+          {isCoach && structuredWorkoutsV2Enabled && session.structuredWorkoutV2 && onEditStructured && (
+            <Btn onClick={() => onEditStructured(session)}>Modifier la structure</Btn>
+          )}
 
          {isCoach && (
           <Btn
@@ -431,6 +449,12 @@ function changeActualTimePart(part, value) {
         </div>
       </div>
 
+      {structuredWorkoutsV2Enabled && session.structuredWorkoutV2 && (
+        <div className="mt-4">
+          <StructuredWorkoutSessionRead calendarWorkoutId={session.id} onLoaded={receiveStructuredContext} />
+        </div>
+      )}
+
       <p className="mt-4 rounded-2xl bg-zinc-900 p-4 text-zinc-300">
         {session.description || "Pas de description."}
       </p>
@@ -452,6 +476,7 @@ function changeActualTimePart(part, value) {
             <AthleteSessionFeedbackV2
               key={`${session.id}:${session.feedback?.updatedAt || "new"}:${session.feedback?.validated ? "final" : "draft"}`}
               session={session}
+              specificContext={specificContext}
               updateSession={updateSession}
             />
           </div>

@@ -13,6 +13,9 @@ vi.mock("@/components/calendar/QuickLibrary", () => ({
 vi.mock("@/components/calendar/Session", () => ({
   default: ({ session }: { session: { title: string } }) => <div>Détail séance {session.title}</div>,
 }));
+vi.mock("@/components/calendar/StructuredCalendarWorkoutEditor", () => ({
+  default: () => <div>Éditeur séance structurée</div>,
+}));
 vi.mock("@/components/calendar/Proposal", () => ({
   default: ({ proposal }: { proposal: { title: string } }) => <div>Détail proposition {proposal.title}</div>,
 }));
@@ -121,6 +124,12 @@ describe("CoachPilotageWorkspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Créer une séance" }));
     expect(props.onCreateSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the structured calendar editor only for the enabled individual pilot", () => {
+    renderWorkspace({ structuredWorkoutsV2Enabled: true, onStructuredCalendarSaved: vi.fn() });
+    fireEvent.click(screen.getByRole("button", { name: "Créer une séance" }));
+    expect(screen.getByText("Éditeur séance structurée")).toBeVisible();
   });
 
   it("explains that a group is a programming target and never presents an invented aggregate calendar", () => {

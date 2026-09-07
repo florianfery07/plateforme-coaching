@@ -14,25 +14,25 @@ const input = {
   targetId: "20000000-0000-0000-0000-000000000001",
 };
 const success = { changed: true, revision: 1, specificDurationSeconds: 0, structureId: "30000000-0000-0000-0000-000000000001", totalDurationSeconds: 600 };
+const calendarSuccess = { ...success, calendarWorkoutId: "40000000-0000-0000-0000-000000000001", calendarWorkout: { id: "40000000-0000-0000-0000-000000000001" } };
 
 describe("Workout Structure V2 persistence service", () => {
   it("validates before one library RPC and maps the confirmed result", async () => {
-    const repository = { createLibrary: vi.fn(), getLibrary: vi.fn(), saveLibrary: vi.fn().mockResolvedValue({ data: success, error: null }), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn() };
+    const repository = { createCalendar: vi.fn(), createLibrary: vi.fn(), getCalendar: vi.fn(), getLibrary: vi.fn(), saveLibrary: vi.fn().mockResolvedValue({ data: success, error: null }), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn(), updateCalendar: vi.fn() };
     await expect(createWorkoutStructureV2PersistenceService(repository).saveLibrary(input)).resolves.toEqual(success);
     expect(repository.saveLibrary).toHaveBeenCalledOnce();
   });
 
   it("does not call a repository for an invalid document", async () => {
-    const repository = { createLibrary: vi.fn(), getLibrary: vi.fn(), saveLibrary: vi.fn(), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn() };
+    const repository = { createCalendar: vi.fn(), createLibrary: vi.fn(), getCalendar: vi.fn(), getLibrary: vi.fn(), saveLibrary: vi.fn(), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn(), updateCalendar: vi.fn() };
     await expect(createWorkoutStructureV2PersistenceService(repository).saveCalendar({ ...input, document: { schemaVersion: 1, blocks: [] } })).rejects.toThrow("workout_structure_v2_invalid");
     expect(repository.saveCalendar).not.toHaveBeenCalled();
   });
 
   it("maps revision conflicts and keeps snapshot persistence to one RPC", async () => {
     const repository = {
-      createLibrary: vi.fn(), getLibrary: vi.fn(), saveLibrary: vi.fn(),
-      saveCalendar: vi.fn(),
-      createCalendarSnapshot: vi.fn().mockResolvedValue({ data: null, error: { message: "workout_structure_revision_conflict" } }),
+      createCalendar: vi.fn(), createLibrary: vi.fn(), getCalendar: vi.fn(), getLibrary: vi.fn(), saveLibrary: vi.fn(),
+      saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn().mockResolvedValue({ data: null, error: { message: "workout_structure_revision_conflict" } }), updateCalendar: vi.fn(),
     };
     await expect(createWorkoutStructureV2PersistenceService(repository).createCalendarSnapshot({
       calendarWorkoutId: input.targetId,
@@ -44,9 +44,9 @@ describe("Workout Structure V2 persistence service", () => {
 
   it("creates a V2 library workout with one confirmed RPC and reads its canonical revision", async () => {
     const repository = {
-      createLibrary: vi.fn().mockResolvedValue({ data: { ...success, libraryWorkoutId: input.targetId }, error: null }),
-      getLibrary: vi.fn().mockResolvedValue({ data: { ...success, document }, error: null }),
-      saveLibrary: vi.fn(), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn(),
+      createCalendar: vi.fn(), createLibrary: vi.fn().mockResolvedValue({ data: { ...success, libraryWorkoutId: input.targetId }, error: null }),
+      getCalendar: vi.fn(), getLibrary: vi.fn().mockResolvedValue({ data: { ...success, document }, error: null }),
+      saveLibrary: vi.fn(), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn(), updateCalendar: vi.fn(),
     };
     const service = createWorkoutStructureV2PersistenceService(repository);
     await expect(service.createLibrary({
@@ -56,5 +56,31 @@ describe("Workout Structure V2 persistence service", () => {
     await expect(service.getLibrary(input.targetId)).resolves.toMatchObject({ document, revision: 1 });
     expect(repository.createLibrary).toHaveBeenCalledOnce();
     expect(repository.getLibrary).toHaveBeenCalledOnce();
+  });
+
+  it("creates one calendar parent and snapshot through one confirmed RPC", async () => {
+    const repository = {
+      createCalendar: vi.fn().mockResolvedValue({ data: calendarSuccess, error: null }), createLibrary: vi.fn(), getCalendar: vi.fn(), getLibrary: vi.fn(),
+      saveLibrary: vi.fn(), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn(), updateCalendar: vi.fn(),
+    };
+    const service = createWorkoutStructureV2PersistenceService(repository);
+    await expect(service.createCalendar({
+      athleteId: "20000000-0000-0000-0000-000000000001", category: "Route", date: "2026-09-10", description: "", document,
+      expectedRpeGlobal: 6, expectedRpeSpecific: null, idempotencyKey: input.idempotencyKey, libraryWorkoutId: null, subcategory: "VO2", title: "VO2 calendrier",
+    })).resolves.toMatchObject({ calendarWorkoutId: calendarSuccess.calendarWorkoutId, changed: true });
+    expect(repository.createCalendar).toHaveBeenCalledOnce();
+  });
+
+  it("updates only the calendar snapshot with its expected revision", async () => {
+    const repository = {
+      createCalendar: vi.fn(), createLibrary: vi.fn(), getCalendar: vi.fn(), getLibrary: vi.fn(), saveLibrary: vi.fn(), saveCalendar: vi.fn(), createCalendarSnapshot: vi.fn(),
+      updateCalendar: vi.fn().mockResolvedValue({ data: { ...calendarSuccess, revision: 2 }, error: null }),
+    };
+    const service = createWorkoutStructureV2PersistenceService(repository);
+    await expect(service.updateCalendar({
+      calendarWorkoutId: calendarSuccess.calendarWorkoutId, category: "Route", description: "Nouvelle consigne", document, expectedRevision: 1,
+      expectedRpeGlobal: 6, expectedRpeSpecific: null, idempotencyKey: input.idempotencyKey, subcategory: "VO2", title: "VO2 calendrier",
+    })).resolves.toMatchObject({ calendarWorkoutId: calendarSuccess.calendarWorkoutId, revision: 2 });
+    expect(repository.updateCalendar).toHaveBeenCalledOnce();
   });
 });

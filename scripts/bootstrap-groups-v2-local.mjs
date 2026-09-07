@@ -22,6 +22,9 @@ const bootstrapFiles = [
   "supabase/migrations/20260830010000_athlete_goals_v2_state_read.sql",
   "supabase/migrations/20260906000000_coach_pilotage_timeline_v2.sql",
   "supabase/migrations/20260907000000_athlete_feedback_v2.sql",
+  "supabase/migrations/20260908000000_workout_structures_v2.sql",
+  "supabase/migrations/20260909000000_structured_workout_library_create_v2.sql",
+  "supabase/migrations/20260910000000_structured_calendar_workouts_v2.sql",
   "supabase/tests/groups-v2-local-fixture.sql",
   "supabase/tests/athlete-invites-v2-local-fixture.sql",
   "supabase/tests/reliable-mutations-v2-local-fixture.sql",
@@ -32,6 +35,7 @@ const bootstrapFiles = [
   "supabase/tests/athlete-goals-v2-local-fixture.sql",
   "supabase/tests/pilotage-timeline-v2-local-fixture.sql",
   "supabase/tests/athlete-feedback-v2-local-fixture.sql",
+  "supabase/tests/workout-structures-v2-fixture.sql",
 ];
 
 function run(command, args, input) {
@@ -79,5 +83,11 @@ const verification = run(
   ["exec", databaseContainer, "psql", "-tAc", "select to_regclass('public.athlete_groups') is not null and to_regclass('public.group_sessions_v2') is not null and to_regprocedure('public.resolve_legacy_group_bridge_v2(uuid)') is not null and to_regprocedure('public.consume_athlete_invite_v2(text)') is not null and to_regprocedure('public.archive_legacy_athlete_v2(uuid)') is not null and to_regprocedure('public.restore_legacy_athlete_v2(uuid)') is not null and to_regprocedure('public.complete_workout_with_feedback_v2(uuid,text,numeric,numeric,numeric,integer,integer,text)') is not null and to_regprocedure('public.complete_workout_with_feedback_v3(uuid,text,numeric,numeric,integer,integer,integer,text)') is not null and to_regprocedure('public.schedule_athlete_proposal_v2(uuid)') is not null and to_regprocedure('public.rename_workout_category_v2(uuid,text,text)') is not null and to_regprocedure('public.delete_workout_category_v2(text)') is not null and to_regprocedure('public.get_athlete_goal_state_v2(uuid)') is not null and to_regprocedure('public.get_athlete_pilotage_timeline_v2(uuid,date,date)') is not null;", "-U", "postgres", "-d", "postgres"],
 ).trim();
 if (verification !== "t") throw new Error("Local Groups V2 bootstrap verification failed.");
+
+const structuredVerification = run(
+  "docker",
+  ["exec", databaseContainer, "psql", "-tAc", "select to_regprocedure('public.create_structured_calendar_workout_v2(uuid,text,uuid,text,text,text,text,numeric,numeric,jsonb,uuid)') is not null and to_regprocedure('public.get_calendar_workout_structure_v2(uuid)') is not null;", "-U", "postgres", "-d", "postgres"],
+).trim();
+if (structuredVerification !== "t") throw new Error("Local structured workouts V2 bootstrap verification failed.");
 
 console.log("Groups V2 local bootstrap completed. Use only local Supabase status values for the app runtime.");

@@ -2,7 +2,8 @@ import { blankFeedback, blankNonDone } from "../lib/platformDefaults";
 import type { Database, Json } from "../types/database";
 import type { WorkoutFeedbackRow, WorkoutRow } from "../types/domain";
 
-type CalendarWorkoutWithFeedback = WorkoutRow & {
+type CalendarWorkoutWithFeedback = Omit<WorkoutRow, "structured_workout_v2"> & {
+  structured_workout_v2?: boolean;
   workout_feedbacks: WorkoutFeedbackRow | WorkoutFeedbackRow[] | null;
 };
 
@@ -10,6 +11,7 @@ export type CalendarSession = {
   id: string;
   athleteSeenAt: string | null;
   sourceProposalId: string | null;
+  structuredWorkoutV2?: boolean;
   category: string;
   subcategory: string;
   title: string;
@@ -694,6 +696,7 @@ export function mapCalendarSessions(
       id: row.id,
       athleteSeenAt: row.athlete_seen_at || null,
       sourceProposalId: row.source_proposal_id || null,
+      structuredWorkoutV2: Boolean(row.structured_workout_v2),
       category: row.workout_type || "Séance",
       subcategory: row.subcategory || "",
       title: row.title || "Séance",

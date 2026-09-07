@@ -31,7 +31,9 @@ import { createTypedSupabaseClient } from "@/lib/supabase-typed";
 import { createAthleteInviteService, createAthleteInviteSupabaseRepository } from "@/services/athlete-invites";
 import { createAthleteLifecycleService, shouldUseAthleteLifecycleV2 } from "@/services/athlete-lifecycle";
 import { createGoalsV2Service, goalsV2Repository, shouldUseGoalsV2 } from "@/services/goals-v2";
-import { calendarSessionsForDate, loadCalendarSessions } from "@/services/calendar-sessions";
+import { calendarSessionsForDate, loadCalendarSessions, mapCalendarSession } from "@/services/calendar-sessions";
+import { createWorkoutStructureV2PersistenceService } from "@/services/workout-structure-v2-persistence";
+import { workoutStructureV2Repository } from "@/services/workout-structure-v2-repository";
 import { calendarFeedbackV2Service, calendarSessionService, calendarSessionsRepository } from "@/services/calendar-sessions-repository";
 import {
   calendarProposalsForAthlete,
@@ -113,6 +115,7 @@ function proposalToSession(proposal) {
 }
 function availableYears(sessions, preferredYear = new Date().getFullYear()) { const currentYear = new Date().getFullYear(); const years = new Set([currentYear - 5, currentYear, currentYear + 25, Number(preferredYear)]); CALENDAR_YEARS.forEach((year) => years.add(year)); sessions.forEach((session) => years.add(parseLocalDate(session.date).getFullYear())); return [...years].sort((a, b) => b - a); }
 const goalsV2Service = createGoalsV2Service(goalsV2Repository);
+const workoutStructureV2Service = createWorkoutStructureV2PersistenceService(workoutStructureV2Repository);
 export default function CoachingPlatformMockup() {
   async function deleteAthleteWorkoutFromGroupDay(referenceSession) {
   const ok = window.confirm("Retirer cette séance uniquement pour cet athlète ?");
@@ -292,6 +295,12 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
     operation: ({ athleteId, session }, context) =>
       calendarSessionService.create({ athleteId, session }, context.signal),
     type: "calendar-session.import",
+  });
+  const structuredCalendarMutation = useReliableMutation({
+    concurrency: "reject",
+    key: "structured-calendar-workout-v2",
+    operation: (input) => workoutStructureV2Service.createCalendar(input),
+    type: "structured-calendar-workout-v2.schedule",
   });
   const calendarSessionAdjustmentMutation = useReliableMutation({
     concurrency: "reject",
@@ -1442,6 +1451,51 @@ setMode("day");
 setView("calendar");
 }
 
+function addStructuredCalendarSession(result, athleteId = activeId) {
+  const session = mapCalendarSession(result.calendarWorkout);
+  setSessions((items) => ({
+    ...items,
+    [athleteId]: (items[athleteId] || []).some((item) => item.id === session.id)
+      ? (items[athleteId] || []).map((item) => item.id === session.id ? { ...session, feedback: item.feedback, nonDone: item.nonDone } : item)
+      : [...(items[athleteId] || []), session],
+  }));
+  setMode("day");
+  setView("calendar");
+  return session;
+}
+
+async function scheduleStructuredLibraryWorkout(workout, date = selectedDate) {
+  if (!structuredWorkoutsV2Enabled || planningTargetType === "group") {
+    return importWorkout(workout, date);
+  }
+
+  try {
+    const structure = await workoutStructureV2Service.getLibrary(workout.id);
+    if (!structure) return importWorkout(workout, date);
+    const result = await structuredCalendarMutation.mutate({
+      athleteId: activeId,
+      category: "",
+      date: dateKey(date),
+      description: "",
+      document: null,
+      expectedRpeGlobal: null,
+      expectedRpeSpecific: null,
+      idempotencyKey: crypto.randomUUID(),
+      libraryWorkoutId: workout.id,
+      subcategory: "",
+      title: "",
+    });
+    if (result.state === "success" && result.data) return addStructuredCalendarSession(result.data, activeId);
+    if (result.state === "error") alert("Impossible de programmer cette séance structurée. Réessaie.");
+  } catch (error) {
+    alert(error instanceof Error ? error.message : "Impossible de programmer cette séance structurée.");
+  }
+}
+
+function saveDirectStructuredCalendarWorkout(result) {
+  addStructuredCalendarSession(result, activeId);
+}
+
 async function addRestDay(date = selectedDate) {
   const targetAthleteIds =
   planningTargetType === "group" ? selectedGroupAthleteIds : [activeId];
@@ -2272,6 +2326,10 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
     filteredLibrary,
     cpData,
     importWorkout,
+    programStructuredWorkout: scheduleStructuredLibraryWorkout,
+    onStructuredCalendarSaved: saveDirectStructuredCalendarWorkout,
+    structuredCalendarPending: structuredCalendarMutation.pending,
+    structuredWorkoutsV2Enabled,
     importPending: calendarSessionImportPilotEnabled && calendarSessionImportMutation.pending,
     adjustmentPending: calendarSessionAdjustmentPilotEnabled && calendarSessionAdjustmentMutation.pending,
     restDayPending: calendarRestDayPilotEnabled && calendarRestDayMutation.pending,
@@ -2358,7 +2416,7 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
   />
 )}
     {isCoach && view === "create" && (structuredWorkoutsV2Enabled && !forceLegacyBuilder ? <StructuredWorkoutLibraryPage key={structuredEditingWorkout?.id || "new"} categories={categories} subcategories={subcategories} editingWorkout={structuredEditingWorkout} onUseLegacy={() => setForceLegacyBuilder(true)} onSaved={() => { setStructuredEditingWorkout(null); setForceLegacyBuilder(false); setDraft(blankWorkout()); setEditingId(null); setView("library"); void loadAllData(); }} /> : <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && workoutLibrarySaveMutation.pending }} />)}
-    {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem, taxonomyPending: workoutTaxonomyPilotEnabled && (workoutTaxonomyRenameMutation.pending || workoutTaxonomyDeleteMutation.pending) }} />}
+    {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, onCreateWorkout: () => { setStructuredEditingWorkout(null); setForceLegacyBuilder(false); setView("create"); }, setLibrary, library, rename, removeItem, taxonomyPending: workoutTaxonomyPilotEnabled && (workoutTaxonomyRenameMutation.pending || workoutTaxonomyDeleteMutation.pending) }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories, goalsV2Enabled: athleteGoalsV2TargetEnabled, goalsV2State: athleteGoalsV2State, openGoalRequestV2: openAthleteGoalRequestV2, cancelGoalRequestV2: cancelAthleteGoalRequestV2, acceptGoalRequestV2: acceptAthleteGoalRequestV2, requestGoalChangesV2: requestAthleteGoalChangesV2 }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, athleteGroupCreatePending: athleteGroupCreatePilotEnabled && athleteGroupCreateMutation.pending, athleteGroupDeletePilotEnabled, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}
     {auth?.role === "coach" && <DevChecks />}
