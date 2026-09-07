@@ -15,6 +15,7 @@
  * Source: supabase/migrations/20260906000000_coach_pilotage_timeline_v2.sql (18b50b3e91eb211dd1ae560d25891fccb3ffd06d73bbb3866ea43519175c2806)
  * Source: supabase/migrations/20260907000000_athlete_feedback_v2.sql (6d4c9ed9210c88f8113e63b82d051d9b2471af2aac4a0b0a8cb0f1002604d237)
  * Source: supabase/migrations/20260908000000_workout_structures_v2.sql (598c8e3e5279f36b1a2722bcc95288b503f019f3570d0916b74aca736a95a7ba)
+ * Source: supabase/migrations/20260909000000_structured_workout_library_create_v2.sql (939a042c36b634f580bf8d6c9e3c0054bbb8a14382b5c2edb58fda1bef03c522)
  * Regenerate: npm run generate:types
  */
 
@@ -1500,6 +1501,19 @@ export type Database = {
         }
         Returns: Json
       }
+      "create_structured_workout_library_v2": {
+        Args: {
+          "p_title": string
+          "p_category": string
+          "p_subcategory": string
+          "p_description": string
+          "p_expected_rpe_global": number
+          "p_expected_rpe_specific": number
+          "p_document": Json
+          "p_idempotency_key": string
+        }
+        Returns: Json
+      }
       "delete_group_session_v2": {
         Args: {
           "p_group_session_id": string
@@ -1554,6 +1568,12 @@ export type Database = {
           "p_legacy_athlete_id": string
           "p_range_start": string
           "p_range_end": string
+        }
+        Returns: Json
+      }
+      "get_workout_library_structure_v2": {
+        Args: {
+          "p_library_workout_id": string
         }
         Returns: Json
       }

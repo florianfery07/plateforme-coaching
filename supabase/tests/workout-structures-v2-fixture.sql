@@ -3,10 +3,19 @@ create table if not exists public.workout_library (
   id uuid primary key, title text not null, total_duration text,
   expected_specific_duration text, blocks jsonb default '[]'::jsonb
 );
+alter table public.workout_library alter column id set default gen_random_uuid();
+alter table public.workout_library
+  add column if not exists category text,
+  add column if not exists subcategory text,
+  add column if not exists description text,
+  add column if not exists expected_rpe text,
+  add column if not exists expected_rpe_global numeric,
+  add column if not exists expected_rpe_specific numeric;
 create table if not exists public.calendar_workouts (
   id uuid primary key, athlete_id uuid references public.athletes(id), date text not null default '2026-09-08',
   duration text, expected_specific_duration text, blocks jsonb default '[]'::jsonb
 );
+alter table public.athletes add column if not exists name text;
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-000000000301', 'p05-coach@example.test'),
@@ -14,8 +23,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-000000000303', 'p05-non-pilot@example.test'),
   ('00000000-0000-0000-0000-000000000304', 'p05-athlete@example.test')
 on conflict do nothing;
-insert into public.athletes (id, user_id, active, email) values
-  ('10000000-0000-0000-0000-000000000301', '00000000-0000-0000-0000-000000000304', true, 'p05-athlete@example.test')
+insert into public.athletes (id, name, user_id, active, email) values
+  ('10000000-0000-0000-0000-000000000301', 'P05 Athlete', '00000000-0000-0000-0000-000000000304', true, 'p05-athlete@example.test')
 on conflict (id) do update set active = excluded.active;
 insert into access_control.accounts (user_id, account_status, migration_state) values
   ('00000000-0000-0000-0000-000000000301', 'active', 'verified'),

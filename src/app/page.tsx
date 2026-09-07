@@ -73,6 +73,7 @@ import CoachPilotageWorkspace from "@/components/calendar/CoachPilotageWorkspace
 import CalendarPageOld from "@/components/calendar/CalendarPageOld";
 import ManagementPage from "@/components/athlete/ManagementPage";
 import CreatePage from "@/components/library/CreatePage";
+import StructuredWorkoutLibraryPage from "@/components/library/StructuredWorkoutLibraryPage";
 import LibraryPage from "@/components/library/LibraryPage";
 import AthletePage from "@/components/athlete/AthletePage";
 import AthleteStatsPage from "@/components/athlete/AthleteStatsPage";
@@ -211,6 +212,8 @@ async function deleteGroupDayWorkouts(date = selectedDate) {
   const [library, setLibrary] = useState(defaultLibrary);
   const [draft, setDraft] = useState(blankWorkout());
   const [editingId, setEditingId] = useState(null);
+  const [structuredEditingWorkout, setStructuredEditingWorkout] = useState(null);
+  const [forceLegacyBuilder, setForceLegacyBuilder] = useState(false);
   const [sessions, setSessions] = useState({ "athlete-1": [], "athlete-2": [], "athlete-3": [] });
   const [proposals, setProposals] = useState([{ id: "proposal-1", athleteId: "athlete-1", type: "Course à ajouter", date: dateKey(now), title: "XCO régional", message: "J’aimerais l’ajouter au calendrier.", status: "À traiter" }]);
   const [weekColors, setWeekColors] = useState({});
@@ -233,6 +236,7 @@ const [planningTargetType, setPlanningTargetType] = useState("athlete");
 	const athleteLifecycleLocksRef = useRef(new Set());
 	const athleteGroupMemberLocksRef = useRef(new Set());
   const workoutLibraryPilotEnabled = isReliableMutationsPilotEnabled();
+  const structuredWorkoutsV2Enabled = isFeatureEnabled("structuredWorkoutsV2");
   const workoutTaxonomyPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionImportPilotEnabled = isReliableMutationsPilotEnabled();
   const calendarSessionAdjustmentPilotEnabled = isReliableMutationsPilotEnabled();
@@ -1358,7 +1362,13 @@ alert(JSON.stringify(error, null, 2));
   setEditingId(null);
   setView("library");
 }
-  function editWorkout(workout) { setDraft(workout); setEditingId(workout.id); setView("create"); }
+  function editWorkout(workout) {
+    setDraft(workout);
+    setEditingId(workout.id);
+    setStructuredEditingWorkout(structuredWorkoutsV2Enabled ? workout : null);
+    setForceLegacyBuilder(false);
+    setView("create");
+  }
   async function importWorkout(workout, date = selectedDate, selectedAthleteIds = null) {
   const session = calendarSession(workout, date);
   const targetAthleteIds =
@@ -2347,7 +2357,7 @@ async function submitAthleteGoalsV2(requestId, goalValues) {
     subcategories={subcategories}
   />
 )}
-    {isCoach && view === "create" && <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && workoutLibrarySaveMutation.pending }} />}
+    {isCoach && view === "create" && (structuredWorkoutsV2Enabled && !forceLegacyBuilder ? <StructuredWorkoutLibraryPage key={structuredEditingWorkout?.id || "new"} categories={categories} subcategories={subcategories} editingWorkout={structuredEditingWorkout} onUseLegacy={() => setForceLegacyBuilder(true)} onSaved={() => { setStructuredEditingWorkout(null); setForceLegacyBuilder(false); setDraft(blankWorkout()); setEditingId(null); setView("library"); void loadAllData(); }} /> : <CreatePage {...{ categories, subcategories, draft, editingId, updateDraft, updateBlock, updateRepeat, setDraft, saveWorkout, newCat, setNewCat, newSub, setNewSub, addItem, savePending: workoutLibraryPilotEnabled && workoutLibrarySaveMutation.pending }} />)}
     {isCoach && view === "library" && <LibraryPage {...{ categories, setCategories, subcategories, setSubcategories, filter, setFilter, filteredLibrary, editWorkout, setLibrary, library, rename, removeItem, taxonomyPending: workoutTaxonomyPilotEnabled && (workoutTaxonomyRenameMutation.pending || workoutTaxonomyDeleteMutation.pending) }} />}
     {isCoach && view === "athlete" && <AthletePage {...{ athleteActive, activeId, calendarYear: year, updateAthlete, cpData, stats, training, activeSessions, weekColors, setWeekColors, weekNotes, setWeekNotes, weekPlanning, updateWeekPlanning, categories, subcategories, goalsV2Enabled: athleteGoalsV2TargetEnabled, goalsV2State: athleteGoalsV2State, openGoalRequestV2: openAthleteGoalRequestV2, cancelGoalRequestV2: cancelAthleteGoalRequestV2, acceptGoalRequestV2: acceptAthleteGoalRequestV2, requestGoalChangesV2: requestAthleteGoalChangesV2 }} />}
     {isCoach && view === "management" && <ManagementPage {...{ athletes, newAthlete, setNewAthlete, addAthlete, deleteAthlete, updateAthlete, setAthleteActive, athleteLifecycleV2Enabled: athleteLifecyclePilotEnabled, athleteLifecyclePendingAthleteId, athleteGroups, athleteGroupMembers, athleteGroupMemberPilotEnabled, athleteGroupMemberPendingKeys, athleteGroupCreatePending: athleteGroupCreatePilotEnabled && athleteGroupCreateMutation.pending, athleteGroupDeletePilotEnabled, newGroupName, setNewGroupName, addAthleteGroup, renameAthleteGroup, deleteAthleteGroup, toggleAthleteGroupMember }} />}

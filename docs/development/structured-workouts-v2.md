@@ -1,4 +1,4 @@
-# Workouts structures V2 (P05.C)
+# Workouts structures V2 (P05.C / P05.D)
 
 ## Source de vérité
 
@@ -27,7 +27,9 @@ Une même transaction projette uniquement les valeurs legacy nécessaires :
 
 La nouvelle table a RLS activée et aucun accès direct pour les clients. Les écritures passent uniquement par RPC : bibliothèque pour un coach V2 actif; calendrier pour un coach V2 actif ayant un accès explicite à un athlète actif et mappé. Le flag public n'est jamais une autorisation.
 
-`structuredWorkoutsV2` est désactivé par défaut et P05.C ne crée aucune UI. Le rollback consiste à garder le flag désactivé pour les futurs écrans : les structures additives et leurs snapshots restent en base, tandis que le constructeur legacy continue sans changement. P05.D/E devront démontrer lecture et programmation avant tout retrait legacy.
+`structuredWorkoutsV2` est désactivé par défaut. P05.D ajoute le constructeur bibliothèque uniquement : création atomique du parent et de sa révision initiale, lecture de la révision courante, édition sous forme d'une nouvelle révision et duplication avec une nouvelle identité. Un modèle legacy détecté reste dans son constructeur historique : aucune conversion ni dual-write n'est introduit.
+
+Le rollback consiste à garder le flag désactivé : les structures et projections additives restent en base, tandis que le constructeur legacy continue sans changement. Le flag public ne donne jamais accès à lui seul; les RPC contrôlent le pilote Access Control V2.
 
 ## Vérification locale
 

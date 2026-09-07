@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 
 import type {
   CalendarSnapshotInput,
+  CreateStructuredLibraryInput,
   SaveWorkoutStructureInput,
   WorkoutStructureRpcResponse,
   WorkoutStructureV2Repository,
@@ -14,6 +15,18 @@ async function response(query: PromiseLike<{ data: unknown; error: { code?: stri
 
 /** RPC-only repository: direct table access is deliberately unavailable to clients. */
 export const workoutStructureV2Repository: WorkoutStructureV2Repository = {
+  createLibrary(input: CreateStructuredLibraryInput) {
+    return response(supabase.rpc("create_structured_workout_library_v2", {
+      p_category: input.category, p_description: input.description, p_document: input.document,
+      p_expected_rpe_global: input.expectedRpeGlobal, p_expected_rpe_specific: input.expectedRpeSpecific,
+      p_idempotency_key: input.idempotencyKey, p_subcategory: input.subcategory, p_title: input.title,
+    }));
+  },
+  getLibrary(libraryWorkoutId: string) {
+    return response(supabase.rpc("get_workout_library_structure_v2", {
+      p_library_workout_id: libraryWorkoutId,
+    }));
+  },
   saveLibrary(input: SaveWorkoutStructureInput) {
     return response(supabase.rpc("upsert_workout_library_structure_v2", {
       p_document: input.document,

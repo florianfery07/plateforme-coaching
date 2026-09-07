@@ -22,10 +22,23 @@ export type WorkoutStructurePersistenceResult = {
   totalDurationSeconds: number;
 };
 
+export type WorkoutStructureLibraryRead = {
+  document: WorkoutStructureV2;
+  revision: number;
+  specificDurationSeconds: number;
+  structureId: string;
+  totalDurationSeconds: number;
+};
+
 export type WorkoutStructureV2Repository = {
+  createLibrary: (input: CreateStructuredLibraryInput) => Promise<WorkoutStructureRpcResponse>;
+  getLibrary: (libraryWorkoutId: string) => Promise<WorkoutStructureRpcResponse>;
   createCalendarSnapshot: (input: CalendarSnapshotInput) => Promise<WorkoutStructureRpcResponse>;
   saveCalendar: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructureRpcResponse>;
   saveLibrary: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructureRpcResponse>;
+};
+export type CreateStructuredLibraryInput = {
+  category: string; description: string; document: WorkoutStructureV2; expectedRpeGlobal: number | null; expectedRpeSpecific: number | null; idempotencyKey: string; subcategory: string; title: string;
 };
 
 export type SaveWorkoutStructureInput = {
@@ -42,6 +55,8 @@ export type CalendarSnapshotInput = {
 };
 
 export type WorkoutStructureV2PersistenceService = {
+  createLibrary: (input: CreateStructuredLibraryInput) => Promise<WorkoutStructurePersistenceResult & { libraryWorkoutId: string }>;
+  getLibrary: (libraryWorkoutId: string) => Promise<WorkoutStructureLibraryRead | null>;
   createCalendarSnapshot: (input: CalendarSnapshotInput) => Promise<WorkoutStructurePersistenceResult>;
   saveCalendar: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructurePersistenceResult>;
   saveLibrary: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructurePersistenceResult>;
@@ -91,6 +106,31 @@ function parseResult(value: unknown): WorkoutStructurePersistenceResult {
     totalDurationSeconds: value.totalDurationSeconds,
   };
 }
+function parseCreateResult(value: unknown): WorkoutStructurePersistenceResult & { libraryWorkoutId: string } {
+  const result = parseResult(value);
+  if (!isRecord(value) || typeof value.libraryWorkoutId !== "string" || !uuidPattern.test(value.libraryWorkoutId)) throw new Error("La réponse Structure de séance V2 est invalide.");
+  return { ...result, libraryWorkoutId: value.libraryWorkoutId };
+}
+
+function parseLibraryRead(value: unknown): WorkoutStructureLibraryRead | null {
+  if (value === null) return null;
+  if (!isRecord(value)
+    || typeof value.structureId !== "string" || !uuidPattern.test(value.structureId)
+    || typeof value.revision !== "number" || !Number.isInteger(value.revision) || value.revision < 1
+    || typeof value.totalDurationSeconds !== "number" || value.totalDurationSeconds < 1
+    || typeof value.specificDurationSeconds !== "number" || value.specificDurationSeconds < 0
+    || value.specificDurationSeconds > value.totalDurationSeconds) {
+    throw new Error("La réponse Structure de séance V2 est invalide.");
+  }
+  assertValidWorkoutStructureV2(value.document);
+  return {
+    document: value.document as WorkoutStructureV2,
+    revision: value.revision,
+    specificDurationSeconds: value.specificDurationSeconds,
+    structureId: value.structureId,
+    totalDurationSeconds: value.totalDurationSeconds,
+  };
+}
 
 async function unwrap(response: Promise<WorkoutStructureRpcResponse>): Promise<WorkoutStructurePersistenceResult> {
   const result = await response;
@@ -112,6 +152,20 @@ export function createWorkoutStructureV2PersistenceService(
   repository: WorkoutStructureV2Repository,
 ): WorkoutStructureV2PersistenceService {
   return {
+    async createLibrary(input) {
+      assertUuid(input.idempotencyKey, "La création ne peut pas être identifiée de manière fiable.");
+      if (!input.title.trim() || !input.category.trim()) throw new Error("Renseignez un titre et une discipline.");
+      assertValidWorkoutStructureV2(input.document);
+      const result = await repository.createLibrary(input);
+      if (result.error) throw safeError(result.error);
+      return parseCreateResult(result.data);
+    },
+    async getLibrary(libraryWorkoutId) {
+      assertUuid(libraryWorkoutId, "La séance sélectionnée est invalide.");
+      const result = await repository.getLibrary(libraryWorkoutId);
+      if (result.error) throw safeError(result.error);
+      return parseLibraryRead(result.data);
+    },
     async saveLibrary(input) {
       validateSaveInput(input);
       return unwrap(repository.saveLibrary(input));
