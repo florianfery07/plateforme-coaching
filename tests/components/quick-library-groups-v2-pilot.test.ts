@@ -17,6 +17,12 @@ describe("QuickLibrary Groups V2 pilot", () => {
     expect(source).not.toContain("create_group_session_v2");
   });
 
+  it("uses a structured group snapshot only for the established structured pilot", () => {
+    expect(source).toContain("structuredWorkoutService.createGroup");
+    expect(source).toContain("structuredWorkoutsV2Enabled");
+    expect(source).toContain("structured: true");
+  });
+
   it("falls back only when the bridge is invalid and rejects duplicate intent", () => {
     expect(source).toContain('kind: "legacy_fallback"');
     expect(source).toContain('concurrency: "reject"');

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -130,6 +133,13 @@ describe("CoachPilotageWorkspace", () => {
     renderWorkspace({ structuredWorkoutsV2Enabled: true, onStructuredCalendarSaved: vi.fn() });
     fireEvent.click(screen.getByRole("button", { name: "Créer une séance" }));
     expect(screen.getByText("Éditeur séance structurée")).toBeVisible();
+  });
+
+  it("keeps direct structured group creation behind the Groups V2 bridge", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/calendar/CoachPilotageWorkspace.jsx"), "utf8");
+    expect(source).toContain('isFeatureEnabled("groupsV2") && isFeatureEnabled("accessControlV2")');
+    expect(source).toContain("groupTarget: target");
+    expect(source).toContain("onCreateSession()");
   });
 
   it("explains that a group is a programming target and never presents an invented aggregate calendar", () => {

@@ -14,6 +14,10 @@ import {
   createLegacyGroupBridgeService,
   createLegacyGroupBridgeSupabaseRepository,
 } from "@/services/groups-v2";
+import { createWorkoutStructureV2PersistenceService } from "@/services/workout-structure-v2-persistence";
+import { workoutStructureV2Repository } from "@/services/workout-structure-v2-repository";
+
+const structuredWorkoutService = createWorkoutStructureV2PersistenceService(workoutStructureV2Repository);
 
 function localDateKey(value) {
   const date = new Date(value);
@@ -49,6 +53,26 @@ export default function QuickLibrary({
       const bridge = createLegacyGroupBridgeService(createLegacyGroupBridgeSupabaseRepository(client));
       const mapping = await bridge.resolve(selectedGroup.id);
       if (mapping.kind === "error") return { kind: "legacy_fallback" };
+      if (structuredWorkoutsV2Enabled) {
+        const structure = await structuredWorkoutService.getLibrary(workout.id);
+        if (structure) {
+          const structuredResult = await structuredWorkoutService.createGroup({
+            organizationId: mapping.organizationId,
+            participantMembershipIds: mapping.athleteMembershipIds,
+            scheduledFor: localDateKey(selectedDate),
+            title: "",
+            category: "",
+            subcategory: "",
+            description: "",
+            expectedRpeGlobal: null,
+            expectedRpeSpecific: null,
+            document: null,
+            libraryWorkoutId: workout.id,
+            idempotencyKey: crypto.randomUUID(),
+          });
+          return { kind: "success", groupSessionId: structuredResult.groupSessionId, participantCount: mapping.athleteMembershipIds.length, structured: true };
+        }
+      }
       const service = createGroupSessionService(createGroupSessionSupabaseRepository(client));
       const result = await service.create({
         organizationId: mapping.organizationId,
@@ -214,7 +238,7 @@ export default function QuickLibrary({
               Annuler
             </Btn>
           </div>
-          {pilotMutation.state === "success" && <p className="mt-3 text-sm text-emerald-400">Séance V2 programmée pour {pilotMutation.lastSuccess?.participantCount} participant(s).</p>}
+          {pilotMutation.state === "success" && <p className="mt-3 text-sm text-emerald-400">{pilotMutation.lastSuccess?.structured ? "Séance structurée V2" : "Séance V2"} programmée pour {pilotMutation.lastSuccess?.participantCount} participant(s).</p>}
           {pilotMutation.error && <p className="mt-3 text-sm text-red-400">{pilotMutation.error.message}</p>}
         </div>
       )}

@@ -1,10 +1,10 @@
-# Workouts structures V2 (P05.C / P05.D / P05.E)
+# Workouts structures V2 (P05.C / P05.D / P05.E / P05.F)
 
 ## Source de vérité
 
 `public.workout_structures_v2.document` est l'unique contenu éditable V2. Il contient seulement les blocs, étapes, répétitions, durées en secondes, intensité, consigne et `isSpecific`. Le titre, la taxonomie, la description et les RPE prévus restent les métadonnées des tables parentes.
 
-La structure vise exactement une ressource explicite : `workout_library` ou `calendar_workouts`. P05.C ne crée ni propriétaire polymorphe ni cible Groups V2 dormante; P05.F pourra ajouter une cible explicite si ce flux est validé.
+La structure vise exactement une ressource explicite : `workout_library`, `calendar_workouts` ou `group_sessions_v2`. P05.F ajoute cette troisième cible concrète, sans propriétaire polymorphe ni calendrier groupe artificiel.
 
 ## Révisions et snapshots
 
@@ -31,7 +31,9 @@ La nouvelle table a RLS activée et aucun accès direct pour les clients. Les é
 
 `structuredWorkoutsV2` est désactivé par défaut. P05.D ajoute le constructeur bibliothèque uniquement : création atomique du parent et de sa révision initiale, lecture de la révision courante, édition sous forme d'une nouvelle révision et duplication avec une nouvelle identité. P05.E raccorde ce pilote à la programmation individuelle depuis Pilotage et à une lecture compacte coach/athlète. Un modèle ou une séance legacy reste sur son chemin historique : aucune conversion ni dual-write n'est introduit.
 
-Les groupes ne sont pas étendus ici : une programmation groupe structurée reste explicitement reportée à P05.F.
+P05.F programme une séance structurée de groupe dans une unique `group_sessions_v2`, avec les assignations membres Groups V2 existantes et un snapshot `workout_structures_v2` indépendant. Aucune ligne `calendar_workouts` individuelle n’est créée. La lecture du snapshot est autorisée au coach concerné ou à l’athlète assigné par le RLS Groups V2; l’interface athlète et le feedback individuel de groupe restent reportés, car le calendrier athlète ne consomme pas encore cette représentation canonique.
+
+La création directe et la programmation depuis un modèle bibliothèque utilisent les mêmes RPC transactionnelles. Toute édition structurée de groupe ajoute une révision immuable du snapshot et met à jour uniquement les métadonnées de la séance groupe canonique. La RPC historique de modification de groupe refuse une séance structurée afin d’empêcher une divergence entre les métadonnées et le document V2.
 
 Le rollback consiste à garder le flag désactivé : les structures et projections additives restent en base, tandis que le constructeur legacy continue sans changement. Le flag public ne donne jamais accès à lui seul; les RPC contrôlent le pilote Access Control V2.
 
@@ -39,7 +41,12 @@ Le rollback consiste à garder le flag désactivé : les structures et projectio
 
 ```bash
 npm run test:workout-structures-v2:sql
+npm run test:structured-group-sessions-v2:sql
 npm run generate:types:check
 ```
 
 Le test SQL utilise uniquement un PostgreSQL Docker jetable, sans projet Supabase hébergé.
+
+## Analyse et Garmin futurs
+
+Les snapshots groupe exposent déjà le document validé, les durées planifiées totale et spécifique, les intensités explicites, le nombre et la répartition des efforts, ainsi que les RPE attendus. P05 ne calcule aucune charge ni recommandation et n’intègre aucune API Garmin. `schemaVersion: 1` ne représente pas encore les cibles de cadence, fréquence cardiaque, puissance absolue ni les exports de formats partenaires; ces décisions restent du ressort de P07 et d’un lot d’intégration dédié.

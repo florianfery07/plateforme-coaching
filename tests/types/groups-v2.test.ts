@@ -30,6 +30,7 @@ const row: GroupSessionRow = {
   deleted_at: null,
   created_at: "2026-07-14T00:00:00.000Z",
   updated_at: "2026-07-14T00:00:00.000Z",
+  structured_workout_v2: false,
 };
 
 describe("group session V2 types and mappers", () => {

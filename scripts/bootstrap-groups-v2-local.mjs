@@ -25,6 +25,7 @@ const bootstrapFiles = [
   "supabase/migrations/20260908000000_workout_structures_v2.sql",
   "supabase/migrations/20260909000000_structured_workout_library_create_v2.sql",
   "supabase/migrations/20260910000000_structured_calendar_workouts_v2.sql",
+  "supabase/migrations/20260911000000_structured_group_sessions_v2.sql",
   "supabase/tests/groups-v2-local-fixture.sql",
   "supabase/tests/athlete-invites-v2-local-fixture.sql",
   "supabase/tests/reliable-mutations-v2-local-fixture.sql",
@@ -86,7 +87,7 @@ if (verification !== "t") throw new Error("Local Groups V2 bootstrap verificatio
 
 const structuredVerification = run(
   "docker",
-  ["exec", databaseContainer, "psql", "-tAc", "select to_regprocedure('public.create_structured_calendar_workout_v2(uuid,text,uuid,text,text,text,text,numeric,numeric,jsonb,uuid)') is not null and to_regprocedure('public.get_calendar_workout_structure_v2(uuid)') is not null;", "-U", "postgres", "-d", "postgres"],
+  ["exec", databaseContainer, "psql", "-tAc", "select to_regprocedure('public.create_structured_calendar_workout_v2(uuid,text,uuid,text,text,text,text,numeric,numeric,jsonb,uuid)') is not null and to_regprocedure('public.get_calendar_workout_structure_v2(uuid)') is not null and to_regprocedure('public.create_structured_group_session_v2(uuid,date,uuid[],uuid,text,text,text,text,numeric,numeric,jsonb,uuid)') is not null;", "-U", "postgres", "-d", "postgres"],
 ).trim();
 if (structuredVerification !== "t") throw new Error("Local structured workouts V2 bootstrap verification failed.");
 

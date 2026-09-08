@@ -31,6 +31,7 @@ export type WorkoutStructureLibraryRead = {
 };
 
 export type WorkoutStructureCalendarRead = WorkoutStructureLibraryRead;
+export type WorkoutStructureGroupRead = WorkoutStructureLibraryRead;
 
 export type StructuredCalendarWorkoutInput = {
   athleteId: string;
@@ -51,20 +52,41 @@ export type UpdateStructuredCalendarWorkoutInput = Omit<StructuredCalendarWorkou
   expectedRevision: number;
 };
 
+export type StructuredGroupSessionInput = Omit<StructuredCalendarWorkoutInput, "athleteId" | "date"> & {
+  organizationId: string;
+  participantMembershipIds: string[];
+  scheduledFor: string;
+};
+
+export type UpdateStructuredGroupSessionInput = Omit<StructuredGroupSessionInput, "organizationId" | "participantMembershipIds" | "scheduledFor" | "libraryWorkoutId"> & {
+  expectedGroupVersion: number;
+  expectedRevision: number;
+  groupSessionId: string;
+};
+
 export type WorkoutStructureCalendarPersistenceResult = WorkoutStructurePersistenceResult & {
   calendarWorkout: unknown;
   calendarWorkoutId: string;
 };
 
+export type WorkoutStructureGroupPersistenceResult = WorkoutStructurePersistenceResult & {
+  groupSession: unknown;
+  groupSessionId: string;
+  groupVersion: number;
+};
+
 export type WorkoutStructureV2Repository = {
   createCalendar: (input: StructuredCalendarWorkoutInput) => Promise<WorkoutStructureRpcResponse>;
+  createGroup: (input: StructuredGroupSessionInput) => Promise<WorkoutStructureRpcResponse>;
   createLibrary: (input: CreateStructuredLibraryInput) => Promise<WorkoutStructureRpcResponse>;
   getCalendar: (calendarWorkoutId: string) => Promise<WorkoutStructureRpcResponse>;
+  getGroup: (groupSessionId: string) => Promise<WorkoutStructureRpcResponse>;
   getLibrary: (libraryWorkoutId: string) => Promise<WorkoutStructureRpcResponse>;
   createCalendarSnapshot: (input: CalendarSnapshotInput) => Promise<WorkoutStructureRpcResponse>;
   saveCalendar: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructureRpcResponse>;
   saveLibrary: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructureRpcResponse>;
   updateCalendar: (input: UpdateStructuredCalendarWorkoutInput) => Promise<WorkoutStructureRpcResponse>;
+  updateGroup: (input: UpdateStructuredGroupSessionInput) => Promise<WorkoutStructureRpcResponse>;
 };
 export type CreateStructuredLibraryInput = {
   category: string; description: string; document: WorkoutStructureV2; expectedRpeGlobal: number | null; expectedRpeSpecific: number | null; idempotencyKey: string; subcategory: string; title: string;
@@ -85,13 +107,16 @@ export type CalendarSnapshotInput = {
 
 export type WorkoutStructureV2PersistenceService = {
   createCalendar: (input: StructuredCalendarWorkoutInput) => Promise<WorkoutStructureCalendarPersistenceResult>;
+  createGroup: (input: StructuredGroupSessionInput) => Promise<WorkoutStructureGroupPersistenceResult>;
   createLibrary: (input: CreateStructuredLibraryInput) => Promise<WorkoutStructurePersistenceResult & { libraryWorkoutId: string }>;
   getLibrary: (libraryWorkoutId: string) => Promise<WorkoutStructureLibraryRead | null>;
   getCalendar: (calendarWorkoutId: string) => Promise<WorkoutStructureCalendarRead | null>;
+  getGroup: (groupSessionId: string) => Promise<WorkoutStructureGroupRead | null>;
   createCalendarSnapshot: (input: CalendarSnapshotInput) => Promise<WorkoutStructurePersistenceResult>;
   saveCalendar: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructurePersistenceResult>;
   saveLibrary: (input: SaveWorkoutStructureInput) => Promise<WorkoutStructurePersistenceResult>;
   updateCalendar: (input: UpdateStructuredCalendarWorkoutInput) => Promise<WorkoutStructureCalendarPersistenceResult>;
+  updateGroup: (input: UpdateStructuredGroupSessionInput) => Promise<WorkoutStructureGroupPersistenceResult>;
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -152,6 +177,17 @@ function parseCalendarResult(value: unknown): WorkoutStructureCalendarPersistenc
   return { ...result, calendarWorkout: value.calendarWorkout, calendarWorkoutId: value.calendarWorkoutId };
 }
 
+function parseGroupResult(value: unknown): WorkoutStructureGroupPersistenceResult {
+  const result = parseResult(value);
+  if (!isRecord(value)
+    || typeof value.groupSessionId !== "string" || !uuidPattern.test(value.groupSessionId)
+    || typeof value.groupVersion !== "number" || !Number.isInteger(value.groupVersion) || value.groupVersion < 1
+    || !isRecord(value.groupSession)) {
+    throw new Error("La réponse de programmation groupe structurée est invalide.");
+  }
+  return { ...result, groupSession: value.groupSession, groupSessionId: value.groupSessionId, groupVersion: value.groupVersion };
+}
+
 function parseLibraryRead(value: unknown): WorkoutStructureLibraryRead | null {
   if (value === null) return null;
   if (!isRecord(value)
@@ -198,6 +234,23 @@ function validateCalendarInput(input: StructuredCalendarWorkoutInput): void {
   }
 }
 
+function validateGroupInput(input: StructuredGroupSessionInput): void {
+  assertUuid(input.organizationId, "L’organisation sélectionnée est invalide.");
+  assertUuid(input.idempotencyKey, "La programmation ne peut pas être identifiée de manière fiable.");
+  if (!input.scheduledFor.trim() || input.participantMembershipIds.length === 0) {
+    throw new Error("La date et les participants du groupe sont requis.");
+  }
+  if (new Set(input.participantMembershipIds).size !== input.participantMembershipIds.length) {
+    throw new Error("Les participants du groupe sont invalides.");
+  }
+  input.participantMembershipIds.forEach((participantId) => assertUuid(participantId, "Les participants du groupe sont invalides."));
+  if (input.libraryWorkoutId) assertUuid(input.libraryWorkoutId, "Le modèle sélectionné est invalide.");
+  if (!input.libraryWorkoutId) {
+    if (!input.title.trim() || !input.category.trim() || !input.document) throw new Error("Renseignez un titre, une discipline et une structure.");
+    assertValidWorkoutStructureV2(input.document);
+  }
+}
+
 /** Client validation improves feedback only; RPC validation remains authoritative. */
 export function createWorkoutStructureV2PersistenceService(
   repository: WorkoutStructureV2Repository,
@@ -208,6 +261,12 @@ export function createWorkoutStructureV2PersistenceService(
       const result = await repository.createCalendar(input);
       if (result.error) throw safeError(result.error);
       return parseCalendarResult(result.data);
+    },
+    async createGroup(input) {
+      validateGroupInput(input);
+      const result = await repository.createGroup(input);
+      if (result.error) throw safeError(result.error);
+      return parseGroupResult(result.data);
     },
     async createLibrary(input) {
       assertUuid(input.idempotencyKey, "La création ne peut pas être identifiée de manière fiable.");
@@ -226,6 +285,12 @@ export function createWorkoutStructureV2PersistenceService(
     async getCalendar(calendarWorkoutId) {
       assertUuid(calendarWorkoutId, "La séance sélectionnée est invalide.");
       const result = await repository.getCalendar(calendarWorkoutId);
+      if (result.error) throw safeError(result.error);
+      return parseLibraryRead(result.data);
+    },
+    async getGroup(groupSessionId) {
+      assertUuid(groupSessionId, "La séance groupe sélectionnée est invalide.");
+      const result = await repository.getGroup(groupSessionId);
       if (result.error) throw safeError(result.error);
       return parseLibraryRead(result.data);
     },
@@ -253,6 +318,18 @@ export function createWorkoutStructureV2PersistenceService(
       const result = await repository.updateCalendar(input);
       if (result.error) throw safeError(result.error);
       return parseCalendarResult(result.data);
+    },
+    async updateGroup(input) {
+      assertUuid(input.groupSessionId, "La séance groupe sélectionnée est invalide.");
+      assertUuid(input.idempotencyKey, "La sauvegarde ne peut pas être identifiée de manière fiable.");
+      if (!input.title.trim() || !input.category.trim() || !Number.isInteger(input.expectedRevision) || input.expectedRevision < 1
+        || !Number.isInteger(input.expectedGroupVersion) || input.expectedGroupVersion < 1 || !input.document) {
+        throw new Error("La révision de séance est invalide.");
+      }
+      assertValidWorkoutStructureV2(input.document);
+      const result = await repository.updateGroup(input);
+      if (result.error) throw safeError(result.error);
+      return parseGroupResult(result.data);
     },
   };
 }

@@ -24,6 +24,7 @@
     "test:proposal-scheduling-v2:sql": "node scripts/test-proposal-scheduling-v2-sql.mjs",
     "test:workout-taxonomy-v2:sql": "node scripts/test-workout-taxonomy-v2-sql.mjs",
     "test:workout-structures-v2:sql": "node scripts/test-workout-structures-v2-sql.mjs",
+    "test:structured-group-sessions-v2:sql": "node scripts/test-structured-group-sessions-v2-sql.mjs",
     "test:calendar-group-deletion:sql": "node scripts/test-calendar-group-deletion-sql.mjs",
     "local:groups-v2:bootstrap": "node scripts/bootstrap-groups-v2-local.mjs"
   },

@@ -95,13 +95,15 @@ proportionnés.
   désactivé par défaut et ne change ni les formules de charge, ni les retours
   legacy, ni Groups V2. Son rollout est dans
   `docs/development/athlete-feedback-v2.md`.
-- P05.D/E raccordent `structuredWorkoutsV2` au constructeur de bibliothèque puis
+- P05.D/E/F raccordent `structuredWorkoutsV2` au constructeur de bibliothèque puis
   à la programmation individuelle Pilotage : création atomique, lecture de la
   version courante, révision immuable, duplication avec identité indépendante
   et snapshot calendrier autonome. Le flag reste désactivé par défaut; un
   modèle ou une séance legacy continue dans son chemin historique, sans
-  conversion ni dual-write. La programmation structurée de groupe reste
-  explicitement reportée à P05.F.
+  conversion ni dual-write. P05.F programme un snapshot structuré sur la
+  séance canonique Groups V2, sans créer de copies `calendar_workouts`; le
+  rendu athlète et le feedback individuel de groupe restent explicitement
+  reportés jusqu’à ce que ce calendrier consomme cette représentation.
 
 La suite de la roadmap ne commence qu'après un lot explicitement approuvé.
 
@@ -146,7 +148,7 @@ défaut. Leur contrat détaillé est dans
 | `athleteGoalsV2` | Pilote UI Objectifs V2, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
 | `athleteFeedbackV2` | Pilote de retour athlète structuré P04, dépend de `accessControlV2`, d’un pilote serveur et d’un mapping athlète explicite. |
 | `coachPilotageV2` | Pilote UX coach P01-P03: shell de navigation, Pilotage semaine/mois et timeline autorisée de cycles/jalons, sans agrégation de groupes ni dual-write. |
-| `structuredWorkoutsV2` | Pilote P05.C/D/E de documents structurés versionnés, du constructeur bibliothèque et de la programmation individuelle avec snapshot calendrier autonome, dépendant de l'autorisation serveur Access Control V2; le legacy reste le rollback. |
+| `structuredWorkoutsV2` | Pilote P05.C/D/E/F de documents structurés versionnés, du constructeur bibliothèque et de la programmation individuelle ou Groups V2 avec snapshots autonomes, dépendant de l'autorisation serveur Access Control V2; le legacy reste le rollback. |
 | `reliableMutationsV2` | Pilotes locaux de mutations fiables. |
 
 Un flag public ne constitue jamais une autorisation. Les pilotes L11 et L12 ne

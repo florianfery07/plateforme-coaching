@@ -27,12 +27,13 @@ type Props = {
   categories: Array<{ id: string; name: string }>;
   date: string;
   onCancel: () => void;
-  onSaved: (result: { calendarWorkout: unknown; calendarWorkoutId: string }) => void;
+  groupTarget?: { organizationId: string; participantMembershipIds: string[] } | null;
+  onSaved: (result: { calendarWorkout?: unknown; calendarWorkoutId?: string; groupSession?: unknown; groupSessionId?: string }) => void;
   subcategories: Array<{ id: string; name: string }>;
   workout?: StructuredCalendarEditorWorkout | null;
 };
 
-export default function StructuredCalendarWorkoutEditor({ athleteId, categories, date, onCancel, onSaved, subcategories, workout }: Props) {
+export default function StructuredCalendarWorkoutEditor({ athleteId, categories, date, groupTarget, onCancel, onSaved, subcategories, workout }: Props) {
   const [title, setTitle] = useState(workout?.title ?? "");
   const [category, setCategory] = useState(workout?.category ?? "");
   const [subcategory, setSubcategory] = useState(workout?.subcategory ?? "");
@@ -73,7 +74,9 @@ export default function StructuredCalendarWorkoutEditor({ athleteId, categories,
       };
       const result = workout
         ? await service.updateCalendar({ ...common, calendarWorkoutId: workout.id, expectedRevision: revision ?? 0 })
-        : await service.createCalendar({ ...common, athleteId, date, libraryWorkoutId: null });
+        : groupTarget
+          ? await service.createGroup({ ...common, ...groupTarget, libraryWorkoutId: null, scheduledFor: date })
+          : await service.createCalendar({ ...common, athleteId, date, libraryWorkoutId: null });
       onSaved(result);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "La séance n’a pas pu être enregistrée.");
@@ -83,7 +86,7 @@ export default function StructuredCalendarWorkoutEditor({ athleteId, categories,
   return (
     <section className="space-y-4" aria-label={workout ? "Modifier la séance structurée" : "Créer une séance structurée"}>
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-3">
-        <div><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Séance calendrier V2</p><h3 className="mt-1 text-xl font-semibold">{workout ? "Modifier la séance" : "Créer une séance"}</h3></div>
+        <div><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{groupTarget ? "Séance groupe V2" : "Séance calendrier V2"}</p><h3 className="mt-1 text-xl font-semibold">{workout ? "Modifier la séance" : "Créer une séance"}</h3></div>
         <div className="flex gap-2"><Btn type="button" onClick={onCancel}>Annuler</Btn><Btn variant="primary" type="button" onClick={() => void save()} disabled={pending}>{pending ? "Enregistrement…" : workout ? "Enregistrer" : "Programmer"}</Btn></div>
       </header>
       {message && <StatusMessage variant="error">{message}</StatusMessage>}

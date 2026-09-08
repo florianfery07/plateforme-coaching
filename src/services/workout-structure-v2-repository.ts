@@ -5,7 +5,9 @@ import type {
   CreateStructuredLibraryInput,
   SaveWorkoutStructureInput,
   StructuredCalendarWorkoutInput,
+  StructuredGroupSessionInput,
   UpdateStructuredCalendarWorkoutInput,
+  UpdateStructuredGroupSessionInput,
   WorkoutStructureRpcResponse,
   WorkoutStructureV2Repository,
 } from "./workout-structure-v2-persistence";
@@ -25,6 +27,15 @@ export const workoutStructureV2Repository: WorkoutStructureV2Repository = {
       p_document: input.document, p_idempotency_key: input.idempotencyKey,
     }));
   },
+  createGroup(input: StructuredGroupSessionInput) {
+    return response(supabase.rpc("create_structured_group_session_v2", {
+      p_organization_id: input.organizationId, p_scheduled_for: input.scheduledFor,
+      p_participant_membership_ids: input.participantMembershipIds, p_library_workout_id: input.libraryWorkoutId,
+      p_title: input.title, p_category: input.category, p_subcategory: input.subcategory, p_description: input.description,
+      p_expected_rpe_global: input.expectedRpeGlobal, p_expected_rpe_specific: input.expectedRpeSpecific,
+      p_document: input.document, p_idempotency_key: input.idempotencyKey,
+    }));
+  },
   createLibrary(input: CreateStructuredLibraryInput) {
     return response(supabase.rpc("create_structured_workout_library_v2", {
       p_category: input.category, p_description: input.description, p_document: input.document,
@@ -39,6 +50,9 @@ export const workoutStructureV2Repository: WorkoutStructureV2Repository = {
   },
   getCalendar(calendarWorkoutId: string) {
     return response(supabase.rpc("get_calendar_workout_structure_v2", { p_calendar_workout_id: calendarWorkoutId }));
+  },
+  getGroup(groupSessionId: string) {
+    return response(supabase.rpc("get_group_session_structure_v2", { p_group_session_id: groupSessionId }));
   },
   saveLibrary(input: SaveWorkoutStructureInput) {
     return response(supabase.rpc("upsert_workout_library_structure_v2", {
@@ -69,6 +83,15 @@ export const workoutStructureV2Repository: WorkoutStructureV2Repository = {
       p_subcategory: input.subcategory, p_description: input.description,
       p_expected_rpe_global: input.expectedRpeGlobal, p_expected_rpe_specific: input.expectedRpeSpecific,
       p_document: input.document, p_expected_revision: input.expectedRevision, p_idempotency_key: input.idempotencyKey,
+    }));
+  },
+  updateGroup(input: UpdateStructuredGroupSessionInput) {
+    return response(supabase.rpc("update_structured_group_session_v2", {
+      p_group_session_id: input.groupSessionId, p_title: input.title, p_category: input.category,
+      p_subcategory: input.subcategory, p_description: input.description,
+      p_expected_rpe_global: input.expectedRpeGlobal, p_expected_rpe_specific: input.expectedRpeSpecific,
+      p_document: input.document, p_expected_revision: input.expectedRevision,
+      p_expected_group_version: input.expectedGroupVersion, p_idempotency_key: input.idempotencyKey,
     }));
   },
 };

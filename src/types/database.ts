@@ -17,6 +17,7 @@
  * Source: supabase/migrations/20260908000000_workout_structures_v2.sql (598c8e3e5279f36b1a2722bcc95288b503f019f3570d0916b74aca736a95a7ba)
  * Source: supabase/migrations/20260909000000_structured_workout_library_create_v2.sql (939a042c36b634f580bf8d6c9e3c0054bbb8a14382b5c2edb58fda1bef03c522)
  * Source: supabase/migrations/20260910000000_structured_calendar_workouts_v2.sql (4dfbb8a05ccf1cf659fa3563093202277d3ae63d08361658c8a74030bbfcbe36)
+ * Source: supabase/migrations/20260911000000_structured_group_sessions_v2.sql (2081ed58e1d71d6bf87add57a8e92d357f4ffc5c4160003d76ec2186bb7d0c49)
  * Regenerate: npm run generate:types
  */
 
@@ -991,7 +992,8 @@ export type Database = {
           "cancelled_at": string | null,
           "deleted_at": string | null,
           "created_at": string,
-          "updated_at": string
+          "updated_at": string,
+          "structured_workout_v2": boolean
         }
         Insert: {
           "id"?: string
@@ -1015,6 +1017,7 @@ export type Database = {
           "deleted_at"?: string | null
           "created_at"?: string
           "updated_at"?: string
+          "structured_workout_v2"?: boolean
         }
         Update: {
           "id"?: string
@@ -1038,6 +1041,7 @@ export type Database = {
           "deleted_at"?: string | null
           "created_at"?: string
           "updated_at"?: string
+          "structured_workout_v2"?: boolean
         }
         Relationships: [
           {
@@ -1314,7 +1318,8 @@ export type Database = {
           "idempotency_key": string,
           "created_by_user_id": string,
           "superseded_at": string | null,
-          "created_at": string
+          "created_at": string,
+          "group_session_id": string | null
         }
         Insert: {
           "id"?: string
@@ -1331,6 +1336,7 @@ export type Database = {
           "created_by_user_id": string
           "superseded_at"?: string | null
           "created_at"?: string
+          "group_session_id"?: string | null
         }
         Update: {
           "id"?: string
@@ -1347,6 +1353,7 @@ export type Database = {
           "created_by_user_id"?: string
           "superseded_at"?: string | null
           "created_at"?: string
+          "group_session_id"?: string | null
         }
         Relationships: [
           {
@@ -1362,6 +1369,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "workout_structures_v2_group_session_id_fkey"
+            columns: ["group_session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions_v2"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "workout_structures_v2_library_workout_id_fkey"
@@ -1521,6 +1535,23 @@ export type Database = {
         }
         Returns: Json
       }
+      "create_structured_group_session_v2": {
+        Args: {
+          "p_organization_id": string
+          "p_scheduled_for": string
+          "p_participant_membership_ids": string[]
+          "p_library_workout_id": string
+          "p_title": string
+          "p_category": string
+          "p_subcategory": string
+          "p_description": string
+          "p_expected_rpe_global": number
+          "p_expected_rpe_specific": number
+          "p_document": Json
+          "p_idempotency_key": string
+        }
+        Returns: Json
+      }
       "create_structured_workout_library_v2": {
         Args: {
           "p_title": string
@@ -1594,6 +1625,12 @@ export type Database = {
       "get_calendar_workout_structure_v2": {
         Args: {
           "p_calendar_workout_id": string
+        }
+        Returns: Json
+      }
+      "get_group_session_structure_v2": {
+        Args: {
+          "p_group_session_id": string
         }
         Returns: Json
       }
@@ -1767,6 +1804,22 @@ export type Database = {
           "p_expected_rpe_specific": number
           "p_document": Json
           "p_expected_revision": number
+          "p_idempotency_key": string
+        }
+        Returns: Json
+      }
+      "update_structured_group_session_v2": {
+        Args: {
+          "p_group_session_id": string
+          "p_title": string
+          "p_category": string
+          "p_subcategory": string
+          "p_description": string
+          "p_expected_rpe_global": number
+          "p_expected_rpe_specific": number
+          "p_document": Json
+          "p_expected_revision": number
+          "p_expected_group_version": number
           "p_idempotency_key": string
         }
         Returns: Json
@@ -2314,6 +2367,12 @@ export type Database = {
       "assert_workout_structure_calendar_read_authorized_v2": {
         Args: {
           "p_calendar_workout_id": string
+        }
+        Returns: string
+      }
+      "assert_workout_structure_group_read_authorized_v2": {
+        Args: {
+          "p_group_session_id": string
         }
         Returns: string
       }
